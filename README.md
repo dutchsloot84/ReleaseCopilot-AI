@@ -6,6 +6,15 @@ Releasecopilot AI automates release audits by correlating Jira stories with Bitb
 > GitHub Actions definitions with `actionlint` and publishes momentum snapshots every Monday at 14:00 UTC. Trigger it manually
 > from the **Actions** tab to generate an on-demand report.
 
+## LLM Workflow: MOP + Prompt Chaining (Quickstart)
+1. Read the active MOP: `prompts/mop_wave1_security.md`.
+2. Generate a sub-prompt for the next PR (template in `prompts/subprompt_template.md`).
+3. Run the **Critic Check** (`prompts/critic_check.md`) on the output; fix any defects.
+4. Open PR with **Decision / Note / Action** markers.
+5. After merge: add a Historian-style summary comment and update the board.
+
+See `docs/active_mops.md` for current MOPs.
+
 ## Features
 
 - Fetch Jira issues for a given fix version using OAuth 3LO tokens.
