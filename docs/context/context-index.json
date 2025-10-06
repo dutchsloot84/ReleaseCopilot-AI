@@ -49,7 +49,20 @@
         "notes": 6,
         "artifacts": 39
       }
+    },
+    {
+      "date": "2025-10-06",
+      "file": "docs/history/2025-10-06-checkin.md",
+      "since": "2025-09-29T14:10:23.330161+00:00",
+      "until": "2025-10-06T14:10:23.330183+00:00",
+      "counts": {
+        "completed": 25,
+        "in_progress": 0,
+        "backlog": 0,
+        "notes": 80,
+        "artifacts": 76
+      }
     }
   ],
-  "generated_at": "2025-09-29T14:10:34.851476+00:00"
+  "generated_at": "2025-10-06T14:10:57.896609+00:00"
 }
