@@ -1,0 +1,16 @@
+name: MOP Sub-Prompt Request
+description: Generate a sub-prompt from an active MOP
+title: "Sub-Prompt: [PR Title] from [MOP ID]"
+labels: ["mop", "sub-prompt"]
+body:
+  - type: input
+    id: mop
+    attributes: { label: MOP file (path), placeholder: prompts/mop_wave1_security.md }
+    validations: { required: true }
+  - type: input
+    id: prtitle
+    attributes: { label: PR Title, placeholder: "[Budget/Alarms] Low-Ceiling Budget + SNS Notice" }
+    validations: { required: true }
+  - type: textarea
+    id: extras
+    attributes: { label: Notes, description: Any repo-specific details }

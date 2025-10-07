@@ -34,6 +34,11 @@ Common secret tokens (e.g., values containing "token", "secret", "password",
 "key", or "authorization") are automatically redacted to prevent accidental
 exposure in logs.
 
+All AWS Lambda entrypoints import the shared logging configuration during cold
+starts. This ensures every function emits logs through the same filter chain
+and inherits the redaction guarantees above without requiring per-function
+customisation.
+
 ## Retry behaviour
 
 Jira and Bitbucket HTTP calls are protected with exponential backoff and
@@ -50,3 +55,17 @@ is `429` or any `5xx`, or when a timeout/connection error occurs.
 Set `RC_DISABLE_RETRIES=true` to execute each request exactly once. This is
 useful during debugging or when operating against mock services that do not
 need retry protection.
+
+## Jira cache idempotency
+
+- Webhook ingestion stores every change under the composite DynamoDB key
+  `issue_key` + `updated_at`. An `idempotency_key` derived from the webhook
+  delivery identifier prevents duplicate sort keys when retries arrive.
+- Delete events update the latest sort key in place and flag the record as a
+  tombstone (`deleted=true`). Reconciliation performs the same mutation when it
+  discovers missing issues so downstream consumers can filter deletes via the
+  `deleted` attribute.
+- Consumers such as `clients.jira_store.JiraIssueStore` query secondary indexes
+  with `ScanIndexForward=False` and only emit the newest non-deleted version per
+  `issue_key`. Historical versions remain available for audits and replay
+  tooling.

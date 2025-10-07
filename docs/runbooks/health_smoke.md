@@ -29,6 +29,11 @@ Optional flags:
 | `--config PATH` | Override the settings file used for defaults. |
 | `--log-level LEVEL` | Adjust logging verbosity (defaults to `INFO`). |
 
+The DynamoDB probe expects a composite key with both a HASH and RANGE element.
+If the health check reports `Missing range key`, confirm that the cache table
+has `issue_key` (HASH) and `updated_at` (RANGE) defined and that any overrides
+passed via `--table` point at the new schema.
+
 ### Sample Output
 
 ```json
@@ -79,6 +84,10 @@ readiness verdict to each deployment.
 | ------- | ------- | ----- |
 | Secrets Manager | `secretsmanager:GetSecretValue` | Specific release secrets (e.g. `arn:aws:secretsmanager:REGION:ACCOUNT:secret:releasecopilot/*`) |
 | DynamoDB | `DescribeTable`, `PutItem`, `DeleteItem` | ReleaseCopilot Jira cache table (e.g. `arn:aws:dynamodb:REGION:ACCOUNT:table/releasecopilot-jira-cache`) |
+
+> The readiness sentinel creates and deletes a single item using both key
+> attributes. Ensure IAM policies grant access to `PutItem`/`DeleteItem` on the
+> composite key, otherwise stale sentinel rows may accumulate.
 | S3 | `PutObject`, `DeleteObject` | Artifact bucket/prefix (e.g. `arn:aws:s3:::releasecopilot-artifacts/readiness/*`) |
 
 ## Troubleshooting
@@ -90,6 +99,34 @@ readiness verdict to each deployment.
 | S3 check fails | Missing write/delete permissions | Attempt `aws s3 cp` with the same prefix. | Grant `s3:PutObject` and `s3:DeleteObject` on the prefix. |
 | Webhook secret empty | Environment variable unset or empty secret payload | Inspect `WEBHOOK_SECRET` / `WEBHOOK_SECRET_ARN` or fetch the secret in the console. | Set the environment variable or update the secret payload. |
 | Cleanup warning present | Delete operation failed (S3 or DynamoDB) | Review CloudTrail events for the sentinel key/item. | Grant delete permissions or clean up manually. |
+
+## Jira Reconciliation DLQ Alarm Response
+
+The stack emits a `JiraReconciliationDlqMessagesVisibleAlarm` when the reconciliation dead-letter
+queue accrues messages. Use the `JiraReconciliationDlqArn` and `JiraReconciliationDlqUrl` stack
+outputs to locate the queue in the AWS console or with the AWS CLI. Example CLI discovery:
+
+```bash
+STACK_NAME=<releasecopilot-stack-name>
+DLQ_URL=$(aws cloudformation describe-stacks \
+  --stack-name "$STACK_NAME" \
+  --query "Stacks[0].Outputs[?OutputKey=='JiraReconciliationDlqUrl'].OutputValue" \
+  --output text)
+
+aws sqs get-queue-attributes \
+  --queue-url "$DLQ_URL" \
+  --attribute-names All
+```
+
+1. Inspect the queued payloads with `aws sqs receive-message --queue-url <url> --max-number-of-messages 10 --visibility-timeout 60`.
+2. Triage the failure (e.g., bad Jira credentials, throttling, malformed payload). Update secrets or
+   configuration as needed.
+3. Replay the message by posting it back to the primary reconciliation queue or invoking the Lambda
+   handler manually once the root cause is addressed.
+4. Delete or purge the DLQ messages (`aws sqs delete-message` or `aws sqs purge-queue`) after a
+   successful replay to reset the alarm.
+5. Run `rc health --readiness` to confirm the environment is back in a passing state and document the
+   incident in the deployment notes.
 
 ## Historian Anchors
 
