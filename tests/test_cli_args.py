@@ -1,8 +1,10 @@
 """CLI parsing tests for Release Copilot."""
+
 from __future__ import annotations
 
 from pathlib import Path
 
+import releasecopilot
 from releasecopilot import cli
 
 
@@ -48,3 +50,11 @@ def test_run_builds_config_from_yaml(tmp_path: Path) -> None:
     assert result["jira_base"] == "https://jira.cli"
     assert result["bitbucket_base"] == "https://bitbucket.cli"
     assert result["config_path"] == str(config_file)
+
+
+def test_package_exports_cli_surface() -> None:
+    """Top-level package should re-export stable CLI entry points."""
+
+    assert releasecopilot.parse_args is cli.parse_args
+    assert releasecopilot.run is cli.run
+    assert hasattr(releasecopilot, "load_dotenv")
