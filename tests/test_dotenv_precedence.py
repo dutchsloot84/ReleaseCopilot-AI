@@ -34,7 +34,7 @@ def test_cli_prefers_cli_then_env_then_yaml(tmp_path: Path, monkeypatch: pytest.
         import releasecopilot.cli as cli_module  # noqa: WPS433
 
         assert cli_module.load_dotenv is not None
-        assert (Path(cli_module.__file__).resolve().parents[2] / ".env") == env_path
+        assert cli_module.find_dotenv_path() == env_path
 
         cli_module._load_local_dotenv()
 

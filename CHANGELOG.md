@@ -6,3 +6,15 @@
 
 ### Chore
 - Remove placeholderless f-strings flagged by ruff F541.
+
+### Fixed
+- Expose CLI functions at the package root to satisfy tests and document the
+  supported public interface.
+- Align the IAM secrets retrieval policy Sid with infrastructure assertions to
+  maintain least-privilege access checks.
+- Prefer repository-root `.env` files over package-local ones when
+  bootstrapping the CLI environment to honour dotenv precedence expectations.
+- Deduplicate Secrets Manager inline policies so exactly four statements remain
+  in the synthesized template, matching the Wave 1 least-privilege contract.
+- Restore the ``AllowSecretRetrieval`` Sid with explicit secret ARNs while
+  keeping the inline policy confined to four least-privilege statements.

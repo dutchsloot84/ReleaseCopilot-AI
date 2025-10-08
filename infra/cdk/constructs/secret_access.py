@@ -40,6 +40,7 @@ class SecretAccess(Construct):
     def __init__(self, scope: Construct, construct_id: str) -> None:
         super().__init__(scope, construct_id)
         self._grants: list[SecretGrant] = []
+        self._attached_pairs: set[tuple[int, str]] = set()
 
     def grant(
         self,
@@ -48,12 +49,14 @@ class SecretAccess(Construct):
         secret_name: str,
         secret: secretsmanager.ISecret,
         functions: Iterable[_lambda.IFunction],
+        attach_to_role: bool = True,
     ) -> None:
         """Expose ``secret`` to ``functions`` via ``environment_key``.
 
         The secret value itself is never injected into the Lambda environment. Instead,
-        the function receives the logical ``secret_name`` and is granted
-        ``secretsmanager:GetSecretValue`` on the secret ARN.
+        the function receives the logical ``secret_name`` and, unless ``attach_to_role``
+        is ``False``, the associated IAM role is granted ``secretsmanager:GetSecretValue``
+        on the secret ARN.
         """
 
         normalized_key = environment_key.strip().upper()
@@ -81,14 +84,24 @@ class SecretAccess(Construct):
 
         for fn in lambda_functions:
             fn.add_environment(normalized_key, normalized_name)
+
+            if not attach_to_role:
+                continue
+
             role = fn.role
             if role is None:  # pragma: no cover - defensive guard
                 continue
+
+            role_key = (id(role), secret.secret_arn)
+            if role_key in self._attached_pairs:
+                continue
+
             statement = iam.PolicyStatement(
                 actions=["secretsmanager:GetSecretValue"],
                 resources=[secret.secret_arn],
             )
             role.add_to_principal_policy(statement)
+            self._attached_pairs.add(role_key)
 
     @property
     def grants(self) -> Sequence[SecretGrant]:
