@@ -49,12 +49,14 @@ class SecretAccess(Construct):
         secret_name: str,
         secret: secretsmanager.ISecret,
         functions: Iterable[_lambda.IFunction],
+        attach_to_role: bool = True,
     ) -> None:
         """Expose ``secret`` to ``functions`` via ``environment_key``.
 
         The secret value itself is never injected into the Lambda environment. Instead,
-        the function receives the logical ``secret_name`` and is granted
-        ``secretsmanager:GetSecretValue`` on the secret ARN.
+        the function receives the logical ``secret_name`` and, unless ``attach_to_role``
+        is ``False``, the associated IAM role is granted ``secretsmanager:GetSecretValue``
+        on the secret ARN.
         """
 
         normalized_key = environment_key.strip().upper()
@@ -82,6 +84,10 @@ class SecretAccess(Construct):
 
         for fn in lambda_functions:
             fn.add_environment(normalized_key, normalized_name)
+
+            if not attach_to_role:
+                continue
+
             role = fn.role
             if role is None:  # pragma: no cover - defensive guard
                 continue

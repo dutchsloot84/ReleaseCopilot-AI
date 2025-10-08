@@ -8,3 +8,6 @@
 - Ensured dotenv loading prefers the repository `.env` before package fallbacks
   and deduplicated secret access policies so the synthesized template exposes
   exactly four least-privilege statements.
+- Reinstated the ``AllowSecretRetrieval`` Sid with explicit Jira, Bitbucket, and
+  webhook secret ARNs while keeping the inline IAM policy to the four permitted
+  Wave 1 statements.

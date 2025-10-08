@@ -16,3 +16,5 @@
   bootstrapping the CLI environment to honour dotenv precedence expectations.
 - Deduplicate Secrets Manager inline policies so exactly four statements remain
   in the synthesized template, matching the Wave 1 least-privilege contract.
+- Restore the ``AllowSecretRetrieval`` Sid with explicit secret ARNs while
+  keeping the inline policy confined to four least-privilege statements.

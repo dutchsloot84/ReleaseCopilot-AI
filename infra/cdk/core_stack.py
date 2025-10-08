@@ -306,13 +306,20 @@ class CoreStack(Stack):
             environment_key="SECRET_JIRA",
             secret_name=self.JIRA_SECRET_NAME,
             secret=self.jira_secret,
-            functions=[self.lambda_function, self.reconciliation_lambda],
+            functions=[self.lambda_function],
+        )
+        self.secret_access.grant(
+            environment_key="SECRET_JIRA",
+            secret_name=self.JIRA_SECRET_NAME,
+            secret=self.jira_secret,
+            functions=[self.reconciliation_lambda],
         )
         self.secret_access.grant(
             environment_key="SECRET_BITBUCKET",
             secret_name=self.BITBUCKET_SECRET_NAME,
             secret=self.bitbucket_secret,
             functions=[self.lambda_function],
+            attach_to_role=False,
         )
         if webhook_secret:
             self.secret_access.grant(
@@ -400,11 +407,22 @@ class CoreStack(Stack):
             self.webhook_lambda_log_group.log_group_arn,
             self.reconciliation_lambda_log_group.log_group_arn,
         ]
+        secret_arns = sorted(
+            {grant.secret.secret_arn for grant in self.secret_access.grants}
+        )
 
-        iam.Policy(
-            self,
-            "LambdaExecutionPolicy",
-            statements=[
+        statements: list[iam.PolicyStatement] = []
+        if secret_arns:
+            statements.append(
+                iam.PolicyStatement(
+                    sid="AllowSecretRetrieval",
+                    actions=["secretsmanager:GetSecretValue"],
+                    resources=secret_arns,
+                )
+            )
+
+        statements.extend(
+            [
                 iam.PolicyStatement(
                     sid="AllowS3ObjectAccess",
                     actions=["s3:GetObject", "s3:PutObject"],
@@ -432,7 +450,13 @@ class CoreStack(Stack):
                     ],
                     resources=log_group_arns,
                 ),
-            ],
+            ]
+        )
+
+        iam.Policy(
+            self,
+            "LambdaExecutionPolicy",
+            statements=statements,
         ).attach_to_role(self.execution_role)
 
     def _resolve_secret(

@@ -111,7 +111,10 @@ def test_iam_policy_statements() -> None:
 
     secrets_statement = next(stmt for stmt in statements if stmt["Sid"] == "AllowSecretRetrieval")
     assert secrets_statement["Action"] == "secretsmanager:GetSecretValue"
-    assert len(secrets_statement["Resource"]) == 2
+    resources = secrets_statement["Resource"]
+    assert isinstance(resources, list)
+    assert len(resources) == 3
+    assert "*" not in resources
 
     logs_statement = next(stmt for stmt in statements if stmt["Sid"] == "AllowLambdaLogging")
     assert set(logs_statement["Action"]) == {
