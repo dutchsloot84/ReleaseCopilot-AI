@@ -40,6 +40,7 @@ class SecretAccess(Construct):
     def __init__(self, scope: Construct, construct_id: str) -> None:
         super().__init__(scope, construct_id)
         self._grants: list[SecretGrant] = []
+        self._attached_pairs: set[tuple[int, str]] = set()
 
     def grant(
         self,
@@ -84,11 +85,17 @@ class SecretAccess(Construct):
             role = fn.role
             if role is None:  # pragma: no cover - defensive guard
                 continue
+
+            role_key = (id(role), secret.secret_arn)
+            if role_key in self._attached_pairs:
+                continue
+
             statement = iam.PolicyStatement(
                 actions=["secretsmanager:GetSecretValue"],
                 resources=[secret.secret_arn],
             )
             role.add_to_principal_policy(statement)
+            self._attached_pairs.add(role_key)
 
     @property
     def grants(self) -> Sequence[SecretGrant]:

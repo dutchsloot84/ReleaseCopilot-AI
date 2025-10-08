@@ -401,12 +401,6 @@ class CoreStack(Stack):
             self.reconciliation_lambda_log_group.log_group_arn,
         ]
 
-        secrets_resources = [
-            secret.secret_arn
-            for secret in (self.jira_secret, self.bitbucket_secret)
-            if getattr(secret, "secret_arn", None)
-        ]
-
         iam.Policy(
             self,
             "LambdaExecutionPolicy",
@@ -428,11 +422,6 @@ class CoreStack(Stack):
                             ]
                         }
                     },
-                ),
-                iam.PolicyStatement(
-                    sid="AllowSecretRetrieval",
-                    actions=["secretsmanager:GetSecretValue"],
-                    resources=secrets_resources,
                 ),
                 iam.PolicyStatement(
                     sid="AllowLambdaLogging",

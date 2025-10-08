@@ -12,3 +12,7 @@
   supported public interface.
 - Align the IAM secrets retrieval policy Sid with infrastructure assertions to
   maintain least-privilege access checks.
+- Prefer repository-root `.env` files over package-local ones when
+  bootstrapping the CLI environment to honour dotenv precedence expectations.
+- Deduplicate Secrets Manager inline policies so exactly four statements remain
+  in the synthesized template, matching the Wave 1 least-privilege contract.
