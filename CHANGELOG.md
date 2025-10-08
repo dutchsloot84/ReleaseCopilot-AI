@@ -19,3 +19,5 @@
   in the synthesized template, matching the Wave 1 least-privilege contract.
 - Restore the ``AllowSecretRetrieval`` Sid with explicit secret ARNs while
   keeping the inline policy confined to four least-privilege statements.
+- Enforce TLS-only publishing on the BudgetAlerts SNS topic to resolve
+  AwsSolutions-SNS3.
