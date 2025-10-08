@@ -135,6 +135,10 @@ and webhook secret resolution. The JSON output follows
 [`docs/schemas/health.v1.json`](docs/schemas/health.v1.json) and is documented
 in [`docs/runbooks/health_smoke.md`](docs/runbooks/health_smoke.md).
 
+For a quick secrets-only smoke test, run `rc health readiness`. The command
+prints `OK SECRET_*` or `FAIL SECRET_*` lines after attempting to read the
+configured Secrets Manager entries, never logging secret payloads.
+
 ### S3 uploads
 
 Supplying `--upload s3://bucket/prefix` stages the generated artifacts and
@@ -256,6 +260,11 @@ Production buckets are retained by default; set `"retainBucket": false` in non-p
   }
   ```
 - Bitbucket secrets can include either an OAuth access token or a username/app-password pair.
+- Secrets Manager entries for the Lambda workloads use canonical names:
+  - `SECRET_JIRA` → `releasecopilot/jira/oauth`
+  - `SECRET_BITBUCKET` → `releasecopilot/bitbucket/token`
+  - `SECRET_WEBHOOK` → `releasecopilot/jira/webhook_secret`
+  Document these identifiers in local `.env` files without storing plaintext values.
 - `.env` files are intended for local experiments only—use AWS Secrets Manager for shared or deployed environments.
 
 ## Outputs

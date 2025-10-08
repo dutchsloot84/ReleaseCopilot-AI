@@ -1,8 +1,10 @@
 """CLI parsing tests for Release Copilot."""
+
 from __future__ import annotations
 
 from pathlib import Path
 
+import releasecopilot
 from releasecopilot import cli
 
 
@@ -48,3 +50,35 @@ def test_run_builds_config_from_yaml(tmp_path: Path) -> None:
     assert result["jira_base"] == "https://jira.cli"
     assert result["bitbucket_base"] == "https://bitbucket.cli"
     assert result["config_path"] == str(config_file)
+
+
+def test_package_exports_cli_surface() -> None:
+    """Top-level package should re-export stable CLI entry points."""
+
+    assert releasecopilot.parse_args is cli.parse_args
+    assert releasecopilot.run is cli.run
+    assert hasattr(releasecopilot, "load_dotenv")
+
+
+def test_find_dotenv_path_prefers_repo_root(tmp_path: Path) -> None:
+    """The CLI should prefer repository-level ``.env`` files when present."""
+
+    repo_root = tmp_path / "repo"
+    package_dir = repo_root / "src" / "releasecopilot"
+    package_dir.mkdir(parents=True)
+
+    (repo_root / "pyproject.toml").write_text("[tool.poetry]\n")
+    root_env = repo_root / ".env"
+    root_env.write_text("ROOT=1\n")
+
+    src_env = repo_root / "src" / ".env"
+    src_env.write_text("SRC=1\n")
+
+    package_env = package_dir / ".env"
+    package_env.write_text("PKG=1\n")
+
+    module_path = package_dir / "cli.py"
+    module_path.write_text("# placeholder\n")
+
+    discovered = cli.find_dotenv_path(module_path)
+    assert discovered == root_env
