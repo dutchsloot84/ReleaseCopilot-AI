@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Sequence
 
 from aws_cdk import (
     CfnOutput,
@@ -27,7 +27,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 
-from .constructs.secret_access import SecretAccess
+from .constructs import BudgetAlerts, SecretAccess
 
 
 class CoreStack(Stack):
@@ -59,9 +59,17 @@ class CoreStack(Stack):
         reconciliation_jql_template: Optional[str] = None,
         jira_base_url: Optional[str] = None,
         metrics_namespace: Optional[str] = None,
+        environment_name: str = "dev",
+        budget_amount: float = 100.0,
+        budget_currency: str = "USD",
+        budget_email_recipients: Sequence[str] | None = None,
+        budget_sns_topic_name: Optional[str] = None,
+        budget_existing_sns_topic_arn: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
+
+        self.environment_name = environment_name
 
         asset_path = Path(lambda_asset_path).expanduser().resolve()
         project_root = Path(__file__).resolve().parents[2]
@@ -127,6 +135,29 @@ class CoreStack(Stack):
         )
 
         self.secret_access = SecretAccess(self, "SecretAccess")
+
+        self.budget_alerts = BudgetAlerts(
+            self,
+            "BudgetAlerts",
+            environment_name=environment_name,
+            budget_amount=budget_amount,
+            currency=budget_currency,
+            email_recipients=budget_email_recipients,
+            sns_topic_name=budget_sns_topic_name,
+            existing_topic_arn=budget_existing_sns_topic_arn,
+        )
+
+        if budget_existing_sns_topic_arn:
+            budget_topic_arn = budget_existing_sns_topic_arn
+        else:
+            budget_topic_arn = self.budget_alerts.sns_topic.topic_arn
+
+        CfnOutput(
+            self,
+            "BudgetAlertsTopicArn",
+            value=budget_topic_arn,
+            description="SNS topic receiving AWS Budgets cost alerts.",
+        )
 
         self.execution_role = iam.Role(
             self,

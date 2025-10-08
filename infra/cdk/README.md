@@ -17,3 +17,19 @@ so that webhook replays remain idempotent. Global secondary indexes for
 `FixVersionIndex`, `StatusIndex`, and `AssigneeIndex` are unchanged. Stack
 outputs expose both the table name (`JiraTableName`) and ARN (`JiraTableArn`)
 so IAM deploy roles can scope DynamoDB permissions precisely.
+
+## Budget Alerts Configuration
+
+The stack also manages a monthly AWS Budgets cost guardrail with SNS and email
+notifications. Configure it through CDK context values:
+
+| Context key | Purpose |
+| --- | --- |
+| `budgetAmount` | Monthly spend limit (float). |
+| `budgetCurrency` | ISO currency code (defaults to `USD`). |
+| `budgetEmailRecipients` | Comma-separated email recipients. |
+| `budgetSnsTopicName` | Optional explicit SNS topic name (leave blank for generated). |
+| `budgetExistingSnsTopicArn` | Reuse an existing SNS topic ARN instead of creating one. |
+
+Deployments output `BudgetAlertsTopicArn`; persist it with run metadata to keep
+alert routing deterministic across environments.

@@ -3,6 +3,7 @@
 - Least-privilege Secrets Manager wiring with secret smoke test CLI and redaction helpers.
 - MOP + prompt-chaining scaffolding (`prompts/` templates, runbooks, PR template, Issue form).
 - Active MOP index in docs; README quickstart.
+- Monthly AWS Budgets cost guardrail with SNS/email alerts and manual verification runbook.
 
 ### Chore
 - Remove placeholderless f-strings flagged by ruff F541.
