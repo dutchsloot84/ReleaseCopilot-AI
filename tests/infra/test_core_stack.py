@@ -1,4 +1,5 @@
 """Unit tests validating the CDK core stack resources."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -15,7 +16,9 @@ REGION = "us-west-2"
 ASSET_DIR = str(Path(__file__).resolve().parents[2] / "dist")
 
 
-def _synth_template(*, app_context: dict[str, str] | None = None, **overrides) -> Template:
+def _synth_template(
+    *, app_context: dict[str, str] | None = None, **overrides
+) -> Template:
     app = App(context=app_context or {})
     stack = CoreStack(
         app,
@@ -28,7 +31,9 @@ def _synth_template(*, app_context: dict[str, str] | None = None, **overrides) -
     return Template.from_stack(stack)
 
 
-def _create_stack(*, app_context: dict[str, str] | None = None, **overrides) -> CoreStack:
+def _create_stack(
+    *, app_context: dict[str, str] | None = None, **overrides
+) -> CoreStack:
     app = App(context=app_context or {})
     return CoreStack(
         app,
@@ -74,7 +79,9 @@ def test_bucket_lifecycle_rules() -> None:
         {"StorageClass": "STANDARD_IA", "TransitionInDays": 30}
     ]
 
-    reports_rule = next(rule for rule in lifecycle_rules if rule["Prefix"] == "reports/")
+    reports_rule = next(
+        rule for rule in lifecycle_rules if rule["Prefix"] == "reports/"
+    )
     assert "ExpirationInDays" not in reports_rule
     assert reports_rule["Transitions"] == [
         {"StorageClass": "STANDARD_IA", "TransitionInDays": 60}
@@ -85,9 +92,7 @@ def test_iam_policy_statements() -> None:
     template = _synth_template()
     policies = template.find_resources("AWS::IAM::Policy")
     policy = next(
-        policy
-        for name, policy in policies.items()
-        if "LambdaExecutionPolicy" in name
+        policy for name, policy in policies.items() if "LambdaExecutionPolicy" in name
     )
     statements = policy["Properties"]["PolicyDocument"]["Statement"]
 
@@ -98,25 +103,33 @@ def test_iam_policy_statements() -> None:
         "AllowLambdaLogging",
     }
 
-    object_statement = next(stmt for stmt in statements if stmt["Sid"] == "AllowS3ObjectAccess")
+    object_statement = next(
+        stmt for stmt in statements if stmt["Sid"] == "AllowS3ObjectAccess"
+    )
     assert set(object_statement["Action"]) == {"s3:GetObject", "s3:PutObject"}
     object_resource = object_statement["Resource"]
     assert object_resource["Fn::Join"][1][1] == "/releasecopilot/*"
 
-    list_statement = next(stmt for stmt in statements if stmt["Sid"] == "AllowS3ListArtifactsPrefix")
+    list_statement = next(
+        stmt for stmt in statements if stmt["Sid"] == "AllowS3ListArtifactsPrefix"
+    )
     assert list_statement["Action"] == "s3:ListBucket"
     assert list_statement["Condition"] == {
         "StringLike": {"s3:prefix": ["releasecopilot/", "releasecopilot/*"]}
     }
 
-    secrets_statement = next(stmt for stmt in statements if stmt["Sid"] == "AllowSecretRetrieval")
+    secrets_statement = next(
+        stmt for stmt in statements if stmt["Sid"] == "AllowSecretRetrieval"
+    )
     assert secrets_statement["Action"] == "secretsmanager:GetSecretValue"
     resources = secrets_statement["Resource"]
     assert isinstance(resources, list)
     assert len(resources) == 3
     assert "*" not in resources
 
-    logs_statement = next(stmt for stmt in statements if stmt["Sid"] == "AllowLambdaLogging")
+    logs_statement = next(
+        stmt for stmt in statements if stmt["Sid"] == "AllowLambdaLogging"
+    )
     assert set(logs_statement["Action"]) == {
         "logs:CreateLogGroup",
         "logs:CreateLogStream",
@@ -127,7 +140,10 @@ def test_iam_policy_statements() -> None:
     assert len(resources) == 3
 
     log_group_ids = set(template.find_resources("AWS::Logs::LogGroup").keys())
-    assert all(isinstance(resource, dict) and "Fn::GetAtt" in resource for resource in resources)
+    assert all(
+        isinstance(resource, dict) and "Fn::GetAtt" in resource
+        for resource in resources
+    )
 
     statement_log_group_ids = {resource["Fn::GetAtt"][0] for resource in resources}
 
@@ -141,17 +157,17 @@ def test_lambda_environment_and_log_groups() -> None:
         "AWS::Lambda::Function",
         Match.object_like(
             {
-            "Runtime": "python3.11",
-            "Environment": {
-                "Variables": Match.object_like(
-                    {
-                        "RC_S3_BUCKET": Match.any_value(),
-                        "RC_S3_PREFIX": "releasecopilot",
-                        "RC_USE_AWS_SECRETS_MANAGER": "true",
-                    }
-                )
-            },
-        }
+                "Runtime": "python3.11",
+                "Environment": {
+                    "Variables": Match.object_like(
+                        {
+                            "RC_S3_BUCKET": Match.any_value(),
+                            "RC_S3_PREFIX": "releasecopilot",
+                            "RC_USE_AWS_SECRETS_MANAGER": "true",
+                        }
+                    )
+                },
+            }
         ),
     )
 
@@ -220,7 +236,9 @@ def test_reconciliation_dlq_alarm_configuration() -> None:
 
 def test_sns_topic_created_when_alarm_email_provided() -> None:
     template = _synth_template(app_context={"alarmEmail": "ops@example.com"})
-    template.resource_count_is("AWS::SNS::Topic", 1)
+    topics = template.find_resources("AWS::SNS::Topic")
+    assert len(topics) == 2
+    assert any("BudgetAlerts" in name for name in topics)
     template.resource_count_is("AWS::SNS::Subscription", 1)
     template.has_resource_properties(
         "AWS::SNS::Subscription",
@@ -250,7 +268,9 @@ def test_eventbridge_rule_targets_lambda_when_enabled() -> None:
     release_rule = next(
         rule
         for rule in rules.values()
-        if rule["Properties"]["Targets"][0]["Arn"]["Fn::GetAtt"][0].startswith("ReleaseCopilotLambda")
+        if rule["Properties"]["Targets"][0]["Arn"]["Fn::GetAtt"][0].startswith(
+            "ReleaseCopilotLambda"
+        )
     )
     release_properties = release_rule["Properties"]
     assert release_properties["ScheduleExpression"] == "cron(0 12 * * ? *)"
@@ -258,7 +278,9 @@ def test_eventbridge_rule_targets_lambda_when_enabled() -> None:
     reconciliation_rule = next(
         rule
         for rule in rules.values()
-        if rule["Properties"]["Targets"][0]["Arn"]["Fn::GetAtt"][0].startswith("JiraReconciliationLambda")
+        if rule["Properties"]["Targets"][0]["Arn"]["Fn::GetAtt"][0].startswith(
+            "JiraReconciliationLambda"
+        )
     )
     reconciliation_properties = reconciliation_rule["Properties"]
     assert reconciliation_properties["ScheduleExpression"] == "cron(15 7 * * ? *)"

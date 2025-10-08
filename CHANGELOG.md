@@ -3,6 +3,7 @@
 - Least-privilege Secrets Manager wiring with secret smoke test CLI and redaction helpers.
 - MOP + prompt-chaining scaffolding (`prompts/` templates, runbooks, PR template, Issue form).
 - Active MOP index in docs; README quickstart.
+- Monthly AWS Budgets cost guardrail with SNS/email alerts and manual verification runbook.
 
 ### Chore
 - Remove placeholderless f-strings flagged by ruff F541.
@@ -18,3 +19,5 @@
   in the synthesized template, matching the Wave 1 least-privilege contract.
 - Restore the ``AllowSecretRetrieval`` Sid with explicit secret ARNs while
   keeping the inline policy confined to four least-privilege statements.
+- Enforce TLS-only publishing on the BudgetAlerts SNS topic to resolve
+  AwsSolutions-SNS3.
