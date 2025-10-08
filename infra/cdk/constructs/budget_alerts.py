@@ -56,6 +56,16 @@ class BudgetAlerts(Construct):
                     resources=[topic.topic_arn],
                 )
             )
+            topic.add_to_resource_policy(
+                iam.PolicyStatement(
+                    sid="DenyPublishWithoutTLS",
+                    actions=["sns:Publish"],
+                    effect=iam.Effect.DENY,
+                    principals=[iam.AnyPrincipal()],
+                    resources=[topic.topic_arn],
+                    conditions={"Bool": {"aws:SecureTransport": "false"}},
+                )
+            )
             self.topic = topic
             topic_arn = topic.topic_arn
             can_add_policy = True
