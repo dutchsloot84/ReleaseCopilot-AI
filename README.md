@@ -7,13 +7,14 @@ Releasecopilot AI automates release audits by correlating Jira stories with Bitb
 > from the **Actions** tab to generate an on-demand report.
 
 ## LLM Workflow: MOP + Prompt Chaining (Quickstart)
-1. Read the active MOP: `prompts/mop_wave1_security.md`.
-2. Generate a sub-prompt for the next PR (template in `prompts/subprompt_template.md`).
-3. Run the **Critic Check** (`prompts/critic_check.md`) on the output; fix any defects.
-4. Open PR with **Decision / Note / Action** markers.
-5. After merge: add a Historian-style summary comment and update the board.
+1. Read the active MOP: `project/prompts/wave1/mop_wave1_security.md`.
+2. Generate or update a sub-prompt in `project/prompts/wave1` (use `project/prompts/wave1/subprompt_template.md`).
+3. Capture the implementation in a Prompt Recipe (`project/prompts/prompt_recipes/template.md`) and link it in the PR body.
+4. Log any manual follow-ups in `actions/pending_actions.json`; CI will surface them with `tools/render_actions_comment.py`.
+5. Run the **Critic Check** (`prompts/critic_check.md`) and `python tools/validate_prompts.py` before opening a PR with **Decision / Note / Action** markers.
+6. After merge: confirm the action comment is resolved and update historian records.
 
-See `docs/active_mops.md` for current MOPs.
+See `docs/promptops/MOP_Workflow.md` and `docs/promptops/Prompt_Recipe_Guide.md` for end-to-end guidance.
 
 ## Features
 
