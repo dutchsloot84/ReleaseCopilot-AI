@@ -1,4 +1,5 @@
 """Compute stack hosting the audit Lambda function."""
+
 from __future__ import annotations
 
 from pathlib import Path

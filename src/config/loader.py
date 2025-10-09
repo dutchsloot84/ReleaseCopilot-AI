@@ -108,7 +108,9 @@ def get_dynamodb_table(config: Mapping[str, Any]) -> str | None:
 
     storage_cfg = config.get("storage", {}) if isinstance(config, Mapping) else {}
     if isinstance(storage_cfg, Mapping):
-        dynamodb_cfg = storage_cfg.get("dynamodb", {}) if isinstance(storage_cfg, Mapping) else {}
+        dynamodb_cfg = (
+            storage_cfg.get("dynamodb", {}) if isinstance(storage_cfg, Mapping) else {}
+        )
         if isinstance(dynamodb_cfg, Mapping):
             table_name = dynamodb_cfg.get("jira_issue_table")
             if table_name:

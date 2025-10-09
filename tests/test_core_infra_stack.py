@@ -35,9 +35,7 @@ def test_bucket_configured_with_security_controls() -> None:
             "VersioningConfiguration": {"Status": "Enabled"},
             "BucketEncryption": {
                 "ServerSideEncryptionConfiguration": [
-                    {
-                        "ServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}
-                    }
+                    {"ServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}
                 ]
             },
             "PublicAccessBlockConfiguration": {
@@ -51,7 +49,9 @@ def test_bucket_configured_with_security_controls() -> None:
 
 
 def test_lambda_has_expected_configuration() -> None:
-    template = _synth_stack(lambda_handler="main.handler", lambda_timeout_sec=240, lambda_memory_mb=800)
+    template = _synth_stack(
+        lambda_handler="main.handler", lambda_timeout_sec=240, lambda_memory_mb=800
+    )
 
     template.has_resource_properties(
         "AWS::Lambda::Function",
@@ -154,16 +154,22 @@ def test_eventbridge_rule_targets_lambda_when_enabled() -> None:
     release_rule = next(
         rule
         for rule in rules.values()
-        if rule["Properties"]["Targets"][0]["Arn"]["Fn::GetAtt"][0].startswith("ReleaseCopilotLambda")
+        if rule["Properties"]["Targets"][0]["Arn"]["Fn::GetAtt"][0].startswith(
+            "ReleaseCopilotLambda"
+        )
     )
     assert release_rule["Properties"]["ScheduleExpression"] == "cron(30 8 * * ? *)"
 
     reconciliation_rule = next(
         rule
         for rule in rules.values()
-        if rule["Properties"]["Targets"][0]["Arn"]["Fn::GetAtt"][0].startswith("JiraReconciliationLambda")
+        if rule["Properties"]["Targets"][0]["Arn"]["Fn::GetAtt"][0].startswith(
+            "JiraReconciliationLambda"
+        )
     )
-    assert reconciliation_rule["Properties"]["ScheduleExpression"] == "cron(15 7 * * ? *)"
+    assert (
+        reconciliation_rule["Properties"]["ScheduleExpression"] == "cron(15 7 * * ? *)"
+    )
 
 
 def test_eventbridge_rule_not_created_when_disabled() -> None:

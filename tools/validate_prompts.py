@@ -66,7 +66,9 @@ class PromptRecipeValidator:
         missing: List[str] = []
         repo_root = Path.cwd().resolve()
         for prompt in prompts:
-            prompt_path = prompt if prompt.is_absolute() else (repo_root / prompt).resolve()
+            prompt_path = (
+                prompt if prompt.is_absolute() else (repo_root / prompt).resolve()
+            )
             try:
                 key = str(prompt_path.relative_to(repo_root))
             except ValueError:

@@ -1,4 +1,5 @@
 """Utilities for uploading audit artifacts to Amazon S3."""
+
 from __future__ import annotations
 
 import logging
@@ -35,7 +36,9 @@ def put_object(
     if content_type:
         extra_args["ContentType"] = content_type
     if metadata:
-        extra_args["Metadata"] = {key: str(value) for key, value in metadata.items() if value is not None}
+        extra_args["Metadata"] = {
+            key: str(value) for key, value in metadata.items() if value is not None
+        }
     client.put_object(Bucket=bucket, Key=key, Body=payload, **extra_args)
 
 
@@ -87,9 +90,7 @@ def upload_directory(
     combined_prefix = "/".join(filter(None, [normalized_prefix, normalized_subdir]))
 
     normalized_metadata = {
-        key: str(value)
-        for key, value in (metadata or {}).items()
-        if value is not None
+        key: str(value) for key, value in (metadata or {}).items() if value is not None
     }
 
     for file_path in files:
@@ -107,7 +108,9 @@ def upload_directory(
         try:
             client.upload_file(str(file_path), bucket, key, ExtraArgs=extra_args)
         except (BotoCoreError, ClientError):  # pragma: no cover - network failure path
-            logger.exception("Failed to upload %s to s3://%s/%s", file_path, bucket, key)
+            logger.exception(
+                "Failed to upload %s to s3://%s/%s", file_path, bucket, key
+            )
             raise
         logger.info("Uploaded %s to s3://%s/%s", file_path, bucket, key)
 
@@ -122,4 +125,3 @@ def _guess_content_type(path: Path) -> Optional[str]:
 
 
 __all__ = ["build_s3_client", "put_object", "upload_directory"]
-

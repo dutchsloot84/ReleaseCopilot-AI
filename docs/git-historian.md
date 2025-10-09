@@ -102,13 +102,19 @@ To run the workflow manually:
 * **2025-01-09:** CI failures from `tools/validate_prompts.py` complaining that a prompt path "is not in the subpath" were
   fixed by normalizing relative prompt paths before comparison. If you hit the error locally, pull the latest main branch or
   ensure you invoke the validator from the repository root so the normalized paths resolve correctly.
+* **2025-01-09:** `black --check .` now runs during the Validate Wave 1 workflow. If it flags a mass of files as "would
+  reformat", run `black .` (or the equivalent formatting task) locally and commit the changes before re-running CI.
 
 Decision:
 - Pin every formatter and type checker that runs in `validate_prompts.yml` inside `requirements-dev.txt` so the GitHub runner
   installs them before invoking the job.
+- Treat `black --check .` failures as blocking and reformat the repository before retrying the workflow to avoid churn in
+  follow-up commits.
 
 Action:
 - Add `black` (and other new lint dependencies) to `requirements-dev.txt` whenever the workflow gains a new check.
+- When the formatting job fails, run `black .` locally, validate with `black --check .`, and push the formatting commit with a
+  summary referencing the CI repair.
 
 ## Next Steps
 

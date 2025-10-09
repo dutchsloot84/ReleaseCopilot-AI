@@ -1,4 +1,5 @@
 """CLI entry point for releasecopilot-ai."""
+
 from __future__ import annotations
 
 import argparse
@@ -65,18 +66,37 @@ class AuditConfig:
     output_prefix: str = "audit_results"
 
 
-def parse_args(argv: Optional[Iterable[str]] = None) -> tuple[argparse.Namespace, AuditConfig]:
+def parse_args(
+    argv: Optional[Iterable[str]] = None,
+) -> tuple[argparse.Namespace, AuditConfig]:
     parser = argparse.ArgumentParser(description="Releasecopilot AI")
     parser.add_argument("--fix-version", required=True, help="Fix version to audit")
-    parser.add_argument("--repos", nargs="*", default=[], help="Bitbucket repositories to inspect")
+    parser.add_argument(
+        "--repos", nargs="*", default=[], help="Bitbucket repositories to inspect"
+    )
     parser.add_argument("--branches", nargs="*", help="Branches to include")
-    parser.add_argument("--develop-only", action="store_true", help="Shortcut for using the develop branch only")
+    parser.add_argument(
+        "--develop-only",
+        action="store_true",
+        help="Shortcut for using the develop branch only",
+    )
     parser.add_argument("--freeze-date", help="ISO formatted freeze date (YYYY-MM-DD)")
-    parser.add_argument("--window-days", type=int, default=28, help="Days before freeze date to include commits")
-    parser.add_argument("--use-cache", action="store_true", help="Reuse cached API responses where available")
+    parser.add_argument(
+        "--window-days",
+        type=int,
+        default=28,
+        help="Days before freeze date to include commits",
+    )
+    parser.add_argument(
+        "--use-cache",
+        action="store_true",
+        help="Reuse cached API responses where available",
+    )
     parser.add_argument("--s3-bucket", help="Override the default S3 bucket")
     parser.add_argument("--s3-prefix", help="Override the default S3 prefix")
-    parser.add_argument("--output-prefix", default="audit_results", help="Basename for output files")
+    parser.add_argument(
+        "--output-prefix", default="audit_results", help="Basename for output files"
+    )
     parser.add_argument("--log-level", default="INFO", help="Logging verbosity")
 
     args = parser.parse_args(argv)
@@ -128,7 +148,10 @@ def run_audit(config: AuditConfig) -> Dict[str, Any]:
             "fix_version": config.fix_version,
             "repos": repos,
             "branches": branches,
-            "window": {"start": window["start"].isoformat(), "end": window["end"].isoformat()},
+            "window": {
+                "start": window["start"].isoformat(),
+                "end": window["end"].isoformat(),
+            },
         },
     )
 
@@ -147,7 +170,9 @@ def run_audit(config: AuditConfig) -> Dict[str, Any]:
         use_cache=config.use_cache,
     )
     commits_output = DATA_DIR / "bitbucket_commits.json"
-    write_json(commits_output, {"repos": repos, "branches": branches, "commits": commits})
+    write_json(
+        commits_output, {"repos": repos, "branches": branches, "commits": commits}
+    )
 
     processor = AuditProcessor(issues=issues, commits=commits)
     audit_result = processor.process()
@@ -369,7 +394,9 @@ def _stage_files(target_dir: Path, sources: Iterable[Path]) -> None:
 
 def _detect_git_sha() -> Optional[str]:
     try:
-        output = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
+        output = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
+        )
     except (OSError, subprocess.CalledProcessError):
         return None
     sha = output.decode("utf-8").strip()

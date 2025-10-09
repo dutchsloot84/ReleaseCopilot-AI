@@ -28,7 +28,9 @@ def _as_bool(value: Any) -> bool:
 def _load_env_config(env_name: str) -> Dict[str, Any]:
     root = Path(__file__).resolve().parents[1]
     env_dir = root / "infra" / "envs"
-    candidates = [env_dir / f"{env_name}{suffix}" for suffix in (".json", ".yaml", ".yml")]
+    candidates = [
+        env_dir / f"{env_name}{suffix}" for suffix in (".json", ".yaml", ".yml")
+    ]
 
     for path in candidates:
         if not path.exists():
@@ -50,22 +52,30 @@ def _load_env_config(env_name: str) -> Dict[str, Any]:
     )
 
 
-def _normalise_context(config: Dict[str, Any], env_override: str, disable_schedule: bool) -> Dict[str, Any]:
+def _normalise_context(
+    config: Dict[str, Any], env_override: str, disable_schedule: bool
+) -> Dict[str, Any]:
     context: Dict[str, Any] = {}
     context["env"] = config.get("env", env_override)
     context["project"] = config.get("project", "releasecopilot")
-    context["region"] = config.get("region", os.getenv("CDK_DEFAULT_REGION", "us-west-2"))
+    context["region"] = config.get(
+        "region", os.getenv("CDK_DEFAULT_REGION", "us-west-2")
+    )
     context["bucketBase"] = config.get("bucketBase")
     context["reportPrefix"] = config.get("reportPrefix", "reports/")
     context["rawPrefix"] = config.get("rawPrefix", "raw/")
     context["logLevel"] = config.get("logLevel", "INFO")
     context["lambdaModule"] = config.get("lambdaModule", "aws.core_handler")
-    context["retainBucket"] = _as_bool(config.get("retainBucket", context["env"] == "prod"))
+    context["retainBucket"] = _as_bool(
+        config.get("retainBucket", context["env"] == "prod")
+    )
     context["scheduleCron"] = config.get("scheduleCron", "cron(30 8 * * ? *)")
 
     secrets = config.get("secrets", {})
     if not isinstance(secrets, dict):
-        raise ValueError("`secrets` must be an object mapping logical names to secret names")
+        raise ValueError(
+            "`secrets` must be an object mapping logical names to secret names"
+        )
     context["secrets"] = secrets
 
     schedule_enabled = _as_bool(config.get("scheduleEnabled", False))
@@ -101,8 +111,14 @@ def _package_lambda(root: Path) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Deploy the audit CDK stacks for an environment")
-    parser.add_argument("--env", required=True, help="Environment identifier (matches file name under infra/envs)")
+    parser = argparse.ArgumentParser(
+        description="Deploy the audit CDK stacks for an environment"
+    )
+    parser.add_argument(
+        "--env",
+        required=True,
+        help="Environment identifier (matches file name under infra/envs)",
+    )
     parser.add_argument(
         "--package",
         action="store_true",

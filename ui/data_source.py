@@ -1,4 +1,5 @@
 """Data source helpers for the Streamlit dashboard."""
+
 from __future__ import annotations
 
 import json
@@ -90,7 +91,9 @@ def load_s3_listing(bucket: str, prefix: str = "") -> List[RunRef]:
                 elif key.lower().endswith((".xlsx", ".xlsm")):
                     entry["excel"] = key
     except (ClientError, BotoCoreError) as exc:  # pragma: no cover - passthrough
-        raise RuntimeError(f"Unable to list objects in s3://{bucket}/{prefix}: {exc}") from exc
+        raise RuntimeError(
+            f"Unable to list objects in s3://{bucket}/{prefix}: {exc}"
+        ) from exc
 
     run_refs = [
         RunRef(

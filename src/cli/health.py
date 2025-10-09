@@ -1,4 +1,5 @@
 """CLI helpers for the ``rc health`` command."""
+
 from __future__ import annotations
 
 import argparse
@@ -24,7 +25,9 @@ class HealthCommandError(RuntimeError):
     """Raised when health command execution fails."""
 
 
-def register_health_parser(subparsers: argparse._SubParsersAction, defaults: Defaults) -> None:
+def register_health_parser(
+    subparsers: argparse._SubParsersAction, defaults: Defaults
+) -> None:
     parser = subparsers.add_parser(
         "health",
         help="Operational health checks",

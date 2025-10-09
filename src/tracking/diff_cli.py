@@ -1,4 +1,5 @@
 """Command line interface for diffing ReleaseCopilot audit runs."""
+
 from __future__ import annotations
 
 import argparse
@@ -16,10 +17,21 @@ def _load_json(path: Path) -> dict[str, Any]:
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--old", required=True, type=Path, help="Path to the previous JSON artifact")
-    parser.add_argument("--new", required=True, type=Path, help="Path to the new JSON artifact")
-    parser.add_argument("--out", type=Path, help="Optional path to write the markdown summary")
-    parser.add_argument("--json", dest="json_out", type=Path, help="Optional path to write the raw diff JSON")
+    parser.add_argument(
+        "--old", required=True, type=Path, help="Path to the previous JSON artifact"
+    )
+    parser.add_argument(
+        "--new", required=True, type=Path, help="Path to the new JSON artifact"
+    )
+    parser.add_argument(
+        "--out", type=Path, help="Optional path to write the markdown summary"
+    )
+    parser.add_argument(
+        "--json",
+        dest="json_out",
+        type=Path,
+        help="Optional path to write the raw diff JSON",
+    )
     return parser.parse_args(argv)
 
 
@@ -35,7 +47,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         args.out.write_text(markdown + "\n", encoding="utf-8")
     if args.json_out:
-        args.json_out.write_text(json.dumps(diff, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        args.json_out.write_text(
+            json.dumps(diff, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
 
     print(markdown)
     return 0

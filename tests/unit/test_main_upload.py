@@ -41,7 +41,9 @@ def main_module(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
 
 
 @pytest.fixture
-def fixed_datetime(monkeypatch: pytest.MonkeyPatch, main_module: types.ModuleType) -> None:
+def fixed_datetime(
+    monkeypatch: pytest.MonkeyPatch, main_module: types.ModuleType
+) -> None:
     class FixedDatetime(datetime):
         @classmethod
         def utcnow(cls) -> "FixedDatetime":  # type: ignore[override]
@@ -82,7 +84,9 @@ def test_upload_artifacts_builds_versioned_prefix(
     monkeypatch.setattr(main_module.uploader, "build_s3_client", fake_build_client)
     monkeypatch.setattr(main_module.uploader, "upload_directory", fake_upload_directory)
 
-    config = main_module.AuditConfig(fix_version="2025.10.24", s3_bucket="bucket", s3_prefix="audits")
+    config = main_module.AuditConfig(
+        fix_version="2025.10.24", s3_bucket="bucket", s3_prefix="audits"
+    )
     settings = {"aws": {}}
 
     main_module.upload_artifacts(
@@ -115,7 +119,9 @@ def test_upload_artifacts_skips_when_bucket_missing(
     monkeypatch.setattr(main_module, "TEMP_DIR", tmp_path / "temp")
 
     calls: list[dict] = []
-    monkeypatch.setattr(main_module.uploader, "upload_directory", lambda **kwargs: calls.append(kwargs))
+    monkeypatch.setattr(
+        main_module.uploader, "upload_directory", lambda **kwargs: calls.append(kwargs)
+    )
 
     config = main_module.AuditConfig(fix_version="2025.10.24")
     settings = {"aws": {}}

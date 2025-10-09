@@ -1,4 +1,5 @@
 """Public API for comparing audit run artifacts."""
+
 from __future__ import annotations
 
 import json

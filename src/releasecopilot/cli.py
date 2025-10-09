@@ -1,4 +1,5 @@
 """Command line interface for Release Copilot configuration."""
+
 from __future__ import annotations
 
 import argparse
@@ -97,7 +98,9 @@ def _create_parser() -> argparse.ArgumentParser:
         "--config",
         help="Path to a releasecopilot.yaml file (defaults to ./releasecopilot.yaml if present)",
     )
-    parser.add_argument("--fix-version", dest="fix_version", help="Fix version to operate on")
+    parser.add_argument(
+        "--fix-version", dest="fix_version", help="Fix version to operate on"
+    )
     parser.add_argument(
         "--jira-base",
         dest="jira_base",
@@ -109,7 +112,9 @@ def _create_parser() -> argparse.ArgumentParser:
         help="Base URL of the Bitbucket workspace",
     )
     parser.add_argument("--jira-user", dest="jira_user", help="Jira username or email")
-    parser.add_argument("--jira-token", dest="jira_token", help="Jira API token or password")
+    parser.add_argument(
+        "--jira-token", dest="jira_token", help="Jira API token or password"
+    )
     parser.add_argument(
         "--bitbucket-token",
         dest="bitbucket_token",
@@ -149,7 +154,10 @@ def run(argv: Optional[Iterable[str]] = None) -> dict:
     args = parse_args(argv)
     configure_logging(args.log_level)
     logger = get_logger(__name__)
-    logger.debug("CLI arguments parsed", extra={"args": {k: v for k, v in vars(args).items() if v is not None}})
+    logger.debug(
+        "CLI arguments parsed",
+        extra={"args": {k: v for k, v in vars(args).items() if v is not None}},
+    )
     return build_config(args)
 
 

@@ -1,4 +1,5 @@
 """Bitbucket Cloud client to retrieve commits for release audits."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -62,7 +63,11 @@ class BitbucketClient(BaseAPIClient):
                 if use_cache:
                     cached = self._load_latest_cache(cache_key)
                     if cached:
-                        logger.info("Loaded Bitbucket commits for %s/%s from cache", repo, branch)
+                        logger.info(
+                            "Loaded Bitbucket commits for %s/%s from cache",
+                            repo,
+                            branch,
+                        )
                         all_commits.extend(cached["values"])
                         continue
 
@@ -70,14 +75,18 @@ class BitbucketClient(BaseAPIClient):
                     commits = self._fetch_commits_for_branch(repo, branch, start, end)
                 except BitbucketRequestError:
                     raise
-                except requests.RequestException as exc:  # pragma: no cover - defensive guard
+                except (
+                    requests.RequestException
+                ) as exc:  # pragma: no cover - defensive guard
                     context = {
                         "service": "bitbucket",
                         "repository": repo,
                         "branch": branch,
                     }
                     logger.error("Bitbucket request failed", extra=context)
-                    raise BitbucketRequestError("Bitbucket request failed", context=context) from exc
+                    raise BitbucketRequestError(
+                        "Bitbucket request failed", context=context
+                    ) from exc
                 payload = {
                     "retrieved_at": datetime.utcnow().isoformat(),
                     "workspace": self.workspace,
@@ -129,7 +138,9 @@ class BitbucketClient(BaseAPIClient):
                     "snippet": snippet,
                 }
                 logger.error("Bitbucket HTTP error", extra=context)
-                raise BitbucketRequestError("Failed to fetch Bitbucket commits", context=context) from exc
+                raise BitbucketRequestError(
+                    "Failed to fetch Bitbucket commits", context=context
+                ) from exc
             payload = response.json()
             values = payload.get("values", [])
             for commit in values:

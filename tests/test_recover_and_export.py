@@ -52,7 +52,14 @@ def test_recover_and_export_matches_golden(tmp_path: Path) -> None:
     output_dir = tmp_path / "reports"
 
     result = subprocess.run(
-        [sys.executable, "recover_and_export.py", "--input-dir", str(input_dir), "--out-dir", str(output_dir)],
+        [
+            sys.executable,
+            "recover_and_export.py",
+            "--input-dir",
+            str(input_dir),
+            "--out-dir",
+            str(output_dir),
+        ],
         capture_output=True,
         text=True,
         check=False,
@@ -66,7 +73,9 @@ def test_recover_and_export_matches_golden(tmp_path: Path) -> None:
 
     assert generated_json.read_text() == (GOLDEN_DIR / "audit_results.json").read_text()
     _assert_workbook_matches_expected(generated_excel)
-    assert json.loads(generated_summary.read_text()) == json.loads((GOLDEN_DIR / "summary.json").read_text())
+    assert json.loads(generated_summary.read_text()) == json.loads(
+        (GOLDEN_DIR / "summary.json").read_text()
+    )
 
 
 def test_missing_inputs_exit_with_error(tmp_path: Path) -> None:
@@ -75,7 +84,14 @@ def test_missing_inputs_exit_with_error(tmp_path: Path) -> None:
     (input_dir / "stories.json").write_text("[]", encoding="utf-8")
 
     result = subprocess.run(
-        [sys.executable, "recover_and_export.py", "--input-dir", str(input_dir), "--out-dir", str(tmp_path / "reports")],
+        [
+            sys.executable,
+            "recover_and_export.py",
+            "--input-dir",
+            str(input_dir),
+            "--out-dir",
+            str(tmp_path / "reports"),
+        ],
         capture_output=True,
         text=True,
         check=False,

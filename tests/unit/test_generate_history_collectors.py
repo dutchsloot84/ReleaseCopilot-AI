@@ -22,12 +22,18 @@ def test_collect_project_section_prefers_projects() -> None:
     data = load_fixture("projects_v2_items.json")
 
     class FakeProjectsClient:
-        def query_issues_with_status(self, owner, repo, project_name, status_field, status_values):
+        def query_issues_with_status(
+            self, owner, repo, project_name, status_field, status_values
+        ):
             return [ProjectStatusItem(**item) for item in data["items"]]
 
     class RejectingRestClient:
-        def list_open_issues_with_label(self, label: str):  # pragma: no cover - should not be called
-            raise AssertionError("label fallback should not run when projects data is available")
+        def list_open_issues_with_label(
+            self, label: str
+        ):  # pragma: no cover - should not be called
+            raise AssertionError(
+                "label fallback should not run when projects data is available"
+            )
 
     result = generate_history._collect_project_section(  # type: ignore[attr-defined]
         owner="org",
@@ -81,7 +87,9 @@ def test_collect_project_section_label_fallback() -> None:
     assert any("labeled" in line.lower() for line in result.filters)
 
 
-def test_collect_notes_section_aggregates_markers(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_collect_notes_section_aggregates_markers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     data = load_fixture("notes_comments.json")
 
     class FakeClient:
@@ -92,10 +100,16 @@ def test_collect_notes_section_aggregates_markers(monkeypatch: pytest.MonkeyPatc
             return data["review_comments"]
 
         def get_issue(self, number: int):  # pragma: no cover - not used in this test
-            raise AssertionError("get_issue should not be called when mirroring disabled")
+            raise AssertionError(
+                "get_issue should not be called when mirroring disabled"
+            )
 
-    monkeypatch.setattr(generate_history, "_collect_local_notes", lambda root, since: [])
-    monkeypatch.setattr(generate_history, "_collect_jira_references", lambda root, since: [])
+    monkeypatch.setattr(
+        generate_history, "_collect_local_notes", lambda root, since: []
+    )
+    monkeypatch.setattr(
+        generate_history, "_collect_jira_references", lambda root, since: []
+    )
 
     since = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
     until = dt.datetime(2024, 1, 7, tzinfo=dt.timezone.utc)
@@ -167,7 +181,9 @@ def test_extract_comment_markers_supports_block_style() -> None:
     assert notes[0].detail == "Inline reminder"
 
 
-def test_collect_artifacts_section_combines_sources(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_collect_artifacts_section_combines_sources(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     data = load_fixture("gha_artifacts.json")
 
     class FakeClient:
@@ -265,8 +281,12 @@ def test_notes_mirroring_writes_deduplicated_files(
                 "html_url": f"https://github.com/org/repo/issues/{number}",
             }
 
-    monkeypatch.setattr(generate_history, "_collect_local_notes", lambda root, since: [])
-    monkeypatch.setattr(generate_history, "_collect_jira_references", lambda root, since: [])
+    monkeypatch.setattr(
+        generate_history, "_collect_local_notes", lambda root, since: []
+    )
+    monkeypatch.setattr(
+        generate_history, "_collect_jira_references", lambda root, since: []
+    )
 
     since = dt.datetime(2024, 1, 25, tzinfo=dt.timezone.utc)
     until = dt.datetime(2024, 2, 2, tzinfo=dt.timezone.utc)

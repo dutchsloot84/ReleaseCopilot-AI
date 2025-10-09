@@ -14,7 +14,9 @@ def to_markdown(adf):
         elif t == "heading":
             level = node.get("attrs", {}).get("level", 1)
             hashes = "#" * max(1, min(6, level))
-            out.append(hashes + " " + "".join(text_runs(node.get("content", []))) + "\n")
+            out.append(
+                hashes + " " + "".join(text_runs(node.get("content", []))) + "\n"
+            )
         elif t == "bulletList":
             for li in node.get("content", []) or []:
                 # listItem -> paragraph(s)
@@ -24,14 +26,16 @@ def to_markdown(adf):
             i = 1
             for li in node.get("content", []) or []:
                 for p in li.get("content", []) or []:
-                    out.append(f"{i}. " + "".join(text_runs(p.get("content", []))) + "\n")
+                    out.append(
+                        f"{i}. " + "".join(text_runs(p.get("content", []))) + "\n"
+                    )
                 i += 1
         elif t == "codeBlock":
             lang = node.get("attrs", {}).get("language") or ""
             out.append(f"```{lang}\n")
             for c in node.get("content", []) or []:
                 if c.get("type") == "text":
-                    out.append(c.get("text",""))
+                    out.append(c.get("text", ""))
             out.append("\n```\n")
         else:
             for c in node.get("content", []) or []:
@@ -41,8 +45,8 @@ def to_markdown(adf):
         segs = []
         for n in items or []:
             if n.get("type") == "text":
-                txt = n.get("text","")
-                for m in (n.get("marks") or []):
+                txt = n.get("text", "")
+                for m in n.get("marks") or []:
                     mt = m.get("type")
                     if mt == "strong":
                         txt = f"**{txt}**"
@@ -51,7 +55,7 @@ def to_markdown(adf):
                     elif mt == "code":
                         txt = f"`{txt}`"
                     elif mt == "link":
-                        href = (m.get("attrs") or {}).get("href","")
+                        href = (m.get("attrs") or {}).get("href", "")
                         txt = f"[{txt}]({href})"
                 segs.append(txt)
         return segs

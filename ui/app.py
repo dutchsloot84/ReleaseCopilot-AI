@@ -1,4 +1,5 @@
 """Streamlit dashboard for browsing audit outputs."""
+
 from __future__ import annotations
 
 import json
@@ -79,7 +80,9 @@ with st.sidebar:
                 st.error(str(exc))
     else:
         bucket = st.text_input("S3 bucket", key="bucket")
-        prefix = st.text_input("Prefix", key="prefix", help="Optional folder within the bucket")
+        prefix = st.text_input(
+            "Prefix", key="prefix", help="Optional folder within the bucket"
+        )
         run_options: list[RunRef] = []
         if bucket:
             try:
@@ -106,7 +109,9 @@ with st.sidebar:
         st.markdown("---")
         compare_enabled = st.toggle("Compare to previous run")
         if compare_enabled:
-            diff_api_url = st.text_input("Diff API endpoint", help="POST endpoint for the #24 diff API")
+            diff_api_url = st.text_input(
+                "Diff API endpoint", help="POST endpoint for the #24 diff API"
+            )
             if source == "Local":
                 uploaded = st.file_uploader("Upload previous JSON", type="json")
                 if uploaded:
@@ -116,17 +121,27 @@ with st.sidebar:
                     previous_label = uploaded.name
             else:
                 if current_run_ref and current_bucket:
-                    candidates = [run for run in run_options if run.json_key != current_run_ref.json_key]
+                    candidates = [
+                        run
+                        for run in run_options
+                        if run.json_key != current_run_ref.json_key
+                    ]
                     if candidates:
                         labels = {run.label(): run for run in candidates}
-                        previous_choice = st.selectbox("Previous run", list(labels.keys()))
+                        previous_choice = st.selectbox(
+                            "Previous run", list(labels.keys())
+                        )
                         if previous_choice:
                             prev_ref = labels[previous_choice]
                             previous_label = previous_choice
                             try:
-                                previous_report = _cached_s3_json(current_bucket, prev_ref.json_key)
+                                previous_report = _cached_s3_json(
+                                    current_bucket, prev_ref.json_key
+                                )
                                 if prev_ref.excel_key:
-                                    previous_excel_link = _cached_excel_link(current_bucket, prev_ref.excel_key)
+                                    previous_excel_link = _cached_excel_link(
+                                        current_bucket, prev_ref.excel_key
+                                    )
                             except Exception as exc:  # pragma: no cover - UI feedback
                                 st.error(str(exc))
                     else:
@@ -138,13 +153,17 @@ if not selected_report:
 
 stories_with_df, stories_without_df = transform.prepare_story_tables(selected_report)
 orphan_df = transform.build_orphan_dataframe(selected_report)
-filter_options = transform.get_filter_options(stories_with_df, stories_without_df, orphan_df)
+filter_options = transform.get_filter_options(
+    stories_with_df, stories_without_df, orphan_df
+)
 
 filters: Dict[str, object] = {}
 
 with st.sidebar:
     st.header("Filters")
-    selected_fix_versions = st.multiselect("Fix versions", filter_options["fix_versions"])
+    selected_fix_versions = st.multiselect(
+        "Fix versions", filter_options["fix_versions"]
+    )
     if selected_fix_versions:
         filters["fix_versions"] = selected_fix_versions
 
@@ -156,7 +175,9 @@ with st.sidebar:
     if selected_assignees:
         filters["assignees"] = selected_assignees
 
-    selected_labels = st.multiselect("Component / Label", filter_options["components_labels"])
+    selected_labels = st.multiselect(
+        "Component / Label", filter_options["components_labels"]
+    )
     if selected_labels:
         filters["components_labels"] = selected_labels
 
@@ -180,7 +201,11 @@ with st.sidebar:
         )
         if isinstance(chosen_dates, tuple) and len(chosen_dates) == 2:
             start_dt = pd.Timestamp(chosen_dates[0])
-            end_dt = pd.Timestamp(chosen_dates[1]) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
+            end_dt = (
+                pd.Timestamp(chosen_dates[1])
+                + pd.Timedelta(days=1)
+                - pd.Timedelta(microseconds=1)
+            )
             filters["date_range"] = (start_dt, end_dt)
 
 filtered_with_df, filtered_without_df = transform.filter_story_tables(
@@ -189,7 +214,9 @@ filtered_with_df, filtered_without_df = transform.filter_story_tables(
 filtered_orphan_df = transform.filter_orphan_commits(orphan_df, filters)
 
 filtered_total = len(filtered_with_df) + len(filtered_without_df)
-coverage = round((len(filtered_with_df) / filtered_total * 100) if filtered_total else 0.0, 2)
+coverage = round(
+    (len(filtered_with_df) / filtered_total * 100) if filtered_total else 0.0, 2
+)
 
 metric_cols = st.columns(5, gap="small")
 metric_cols[0].metric("Total stories", filtered_total)
@@ -274,12 +301,14 @@ with compare_tab:
         diff_cols[1].metric(
             "With commits",
             current_metrics["stories_with_commits"],
-            current_metrics["stories_with_commits"] - previous_metrics["stories_with_commits"],
+            current_metrics["stories_with_commits"]
+            - previous_metrics["stories_with_commits"],
         )
         diff_cols[2].metric(
             "Without commits",
             current_metrics["stories_without_commits"],
-            current_metrics["stories_without_commits"] - previous_metrics["stories_without_commits"],
+            current_metrics["stories_without_commits"]
+            - previous_metrics["stories_without_commits"],
         )
         diff_cols[3].metric(
             "Orphan commits",
@@ -295,7 +324,9 @@ with compare_tab:
         st.markdown("### Summary")
         st.markdown(render_diff_markdown(diff_payload))
 
-        def _maybe_render_table(title: str, rows: list[dict[str, object]] | list[str]) -> None:
+        def _maybe_render_table(
+            title: str, rows: list[dict[str, object]] | list[str]
+        ) -> None:
             if not rows:
                 return
             st.markdown(f"#### {title}")
@@ -309,8 +340,12 @@ with compare_tab:
                 )
             st.dataframe(df, use_container_width=True)
 
-        _maybe_render_table("Stories added", [{"key": key} for key in diff_payload["stories_added"]])
-        _maybe_render_table("Stories removed", [{"key": key} for key in diff_payload["stories_removed"]])
+        _maybe_render_table(
+            "Stories added", [{"key": key} for key in diff_payload["stories_added"]]
+        )
+        _maybe_render_table(
+            "Stories removed", [{"key": key} for key in diff_payload["stories_removed"]]
+        )
         _maybe_render_table("Status changes", diff_payload["status_changes"])
         _maybe_render_table("Assignee changes", diff_payload["assignee_changes"])
         _maybe_render_table("Commits added", diff_payload["commits_added"])
@@ -335,10 +370,14 @@ with compare_tab:
                         st.json(response.json())
                     except ValueError:
                         st.text(response.text)
-                except requests.RequestException as exc:  # pragma: no cover - network interaction
+                except (
+                    requests.RequestException
+                ) as exc:  # pragma: no cover - network interaction
                     st.error(f"Diff API request failed: {exc}")
         else:
-            st.caption("Provide a diff API endpoint in the sidebar to trigger comparisons.")
+            st.caption(
+                "Provide a diff API endpoint in the sidebar to trigger comparisons."
+            )
 
         if previous_label:
             st.caption(f"Comparing against: {previous_label}")

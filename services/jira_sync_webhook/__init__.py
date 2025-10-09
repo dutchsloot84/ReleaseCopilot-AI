@@ -1,2 +1,1 @@
 """Jira webhook ingestion service."""
-
