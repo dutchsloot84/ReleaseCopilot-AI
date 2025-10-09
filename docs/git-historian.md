@@ -104,15 +104,22 @@ To run the workflow manually:
   ensure you invoke the validator from the repository root so the normalized paths resolve correctly.
 * **2025-01-09:** `black --check .` now runs during the Validate Wave 1 workflow. If it flags a mass of files as "would
   reformat", run `black .` (or the equivalent formatting task) locally and commit the changes before re-running CI.
+* **2025-01-09:** `pytest --cov=. --cov-report=term-missing --cov-fail-under=70` requires the `pytest-cov` plugin. Install it
+  (for example via `pip install -r requirements-dev.txt`) before re-running the Validate Wave 1 workflow; otherwise pytest will
+  exit with `unrecognized arguments: --cov`.
 
 Decision:
 - Pin every formatter and type checker that runs in `validate_prompts.yml` inside `requirements-dev.txt` so the GitHub runner
   installs them before invoking the job.
+- Include coverage plugins (such as `pytest-cov`) whenever coverage flags are passed to pytest in CI workflows so runners have
+  the matching extensions available.
 - Treat `black --check .` failures as blocking and reformat the repository before retrying the workflow to avoid churn in
   follow-up commits.
 
 Action:
 - Add `black` (and other new lint dependencies) to `requirements-dev.txt` whenever the workflow gains a new check.
+- Update `requirements-dev.txt` when enabling pytest coverage arguments so the `pytest-cov` plugin is installed alongside
+  `pytest` on CI runners.
 - When the formatting job fails, run `black .` locally, validate with `black --check .`, and push the formatting commit with a
   summary referencing the CI repair.
 
