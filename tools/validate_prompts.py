@@ -64,8 +64,13 @@ class PromptRecipeValidator:
         prompts = self.gather_prompts()
         mapping = self.gather_recipe_mapping()
         missing: List[str] = []
+        repo_root = Path.cwd().resolve()
         for prompt in prompts:
-            key = str(prompt.relative_to(Path.cwd()))
+            prompt_path = prompt if prompt.is_absolute() else (repo_root / prompt).resolve()
+            try:
+                key = str(prompt_path.relative_to(repo_root))
+            except ValueError:
+                key = str(prompt_path)
             if key not in mapping:
                 missing.append(key)
         return missing

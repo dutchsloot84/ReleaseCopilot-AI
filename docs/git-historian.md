@@ -99,6 +99,9 @@ To run the workflow manually:
 * Use `--debug-scan` (or `--log-level DEBUG`) for verbose output when debugging API calls or data collectors.
 * If you rely on Jira, confirm the `HISTORIAN_JIRA_*` variables are set and the JQL matches your workflow.
 * Customize the schedule in the workflow by editing the cron expression in `weekly-history.yml`.
+* **2025-01-09:** CI failures from `tools/validate_prompts.py` complaining that a prompt path "is not in the subpath" were
+  fixed by normalizing relative prompt paths before comparison. If you hit the error locally, pull the latest main branch or
+  ensure you invoke the validator from the repository root so the normalized paths resolve correctly.
 
 ## Next Steps
 
