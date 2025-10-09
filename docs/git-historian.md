@@ -103,6 +103,13 @@ To run the workflow manually:
   fixed by normalizing relative prompt paths before comparison. If you hit the error locally, pull the latest main branch or
   ensure you invoke the validator from the repository root so the normalized paths resolve correctly.
 
+Decision:
+- Pin every formatter and type checker that runs in `validate_prompts.yml` inside `requirements-dev.txt` so the GitHub runner
+  installs them before invoking the job.
+
+Action:
+- Add `black` (and other new lint dependencies) to `requirements-dev.txt` whenever the workflow gains a new check.
+
 ## Next Steps
 
 * Link the generated check-ins from your Release Copilot dashboards or onboarding docs.
