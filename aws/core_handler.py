@@ -1,4 +1,5 @@
 """Shim handler exposing the canonical audit Lambda entrypoint."""
+
 from __future__ import annotations
 
 from typing import Any, Dict

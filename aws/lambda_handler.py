@@ -1,4 +1,5 @@
 """AWS Lambda entry point for running the releasecopilot audit."""
+
 from __future__ import annotations
 
 import json

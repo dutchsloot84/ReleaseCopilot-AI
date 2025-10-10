@@ -1,4 +1,5 @@
 """Helper utilities for persisting artifacts to Amazon S3."""
+
 from __future__ import annotations
 
 import logging

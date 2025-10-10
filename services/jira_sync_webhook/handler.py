@@ -1,4 +1,5 @@
 """Lambda handler for ingesting Jira webhook events into DynamoDB."""
+
 from __future__ import annotations
 
 import base64
@@ -41,7 +42,9 @@ _SECRETS = boto3.client("secretsmanager") if WEBHOOK_SECRET_ARN else None
 _SECRET_CACHE: Optional[str] = None
 
 
-def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:  # pragma: no cover - context unused
+def handler(
+    event: Dict[str, Any], context: Any
+) -> Dict[str, Any]:  # pragma: no cover - context unused
     """Entrypoint for API Gateway -> Lambda invocations."""
 
     LOGGER.debug("Received event", extra={"event": event})
@@ -65,7 +68,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:  # pragma: n
 
     event_type = payload.get("webhookEvent")
     if event_type not in ALLOWED_EVENTS:
-        LOGGER.info("Ignoring unsupported webhook event", extra={"event_type": event_type})
+        LOGGER.info(
+            "Ignoring unsupported webhook event", extra={"event_type": event_type}
+        )
         return _response(202, {"ignored": True})
 
     if event_type == "jira:issue_deleted":
@@ -74,7 +79,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:  # pragma: n
         result = _handle_upsert(payload)
 
     status = 202 if result.get("success") else result.get("status", 500)
-    body = {"ok": result.get("success", False), **{k: v for k, v in result.items() if k != "success"}}
+    body = {
+        "ok": result.get("success", False),
+        **{k: v for k, v in result.items() if k != "success"},
+    }
     return _response(status, body)
 
 
@@ -142,15 +150,24 @@ def _handle_upsert(payload: Dict[str, Any]) -> Dict[str, Any]:
     issue = payload.get("issue") or {}
     issue_key = issue.get("key") or issue.get("id")
     if not issue_key:
-        LOGGER.error("Webhook payload missing issue identifier", extra={"payload": payload})
+        LOGGER.error(
+            "Webhook payload missing issue identifier", extra={"payload": payload}
+        )
         return {"success": False, "status": 400, "message": "Missing issue identifier"}
 
     issue_id = str(issue.get("id") or issue_key)
     issue_fields = issue.get("fields") or {}
-    updated_at = _normalize_timestamp(
-        issue_fields.get("updated") or issue_fields.get("created") or payload.get("timestamp")
-    ) or _now_iso()
-    fix_versions = [fv.get("name") for fv in issue_fields.get("fixVersions") or [] if fv.get("name")]
+    updated_at = (
+        _normalize_timestamp(
+            issue_fields.get("updated")
+            or issue_fields.get("created")
+            or payload.get("timestamp")
+        )
+        or _now_iso()
+    )
+    fix_versions = [
+        fv.get("name") for fv in issue_fields.get("fixVersions") or [] if fv.get("name")
+    ]
     primary_fix_version = fix_versions[0] if fix_versions else "UNASSIGNED"
     status = (issue_fields.get("status") or {}).get("name", "UNKNOWN")
     assignee = (issue_fields.get("assignee") or {}).get("accountId") or (
@@ -186,7 +203,11 @@ def _handle_upsert(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     LOGGER.info(
         "Persisted Jira issue",
-        extra={"issue_key": issue_key, "issue_id": issue_id, "fix_version": primary_fix_version},
+        extra={
+            "issue_key": issue_key,
+            "issue_id": issue_id,
+            "fix_version": primary_fix_version,
+        },
     )
     return {"success": True, "issue_key": issue_key, "issue_id": issue_id}
 
@@ -210,7 +231,9 @@ def _handle_delete(payload: Dict[str, Any]) -> Dict[str, Any]:
         )
         return {"success": False, "status": 500, "message": "Failed to delete issue"}
 
-    LOGGER.info("Deleted Jira issue", extra={"issue_key": issue_key, "tombstoned": tombstoned})
+    LOGGER.info(
+        "Deleted Jira issue", extra={"issue_key": issue_key, "tombstoned": tombstoned}
+    )
     return {"success": True, "issue_key": issue_key, "deleted": True}
 
 
@@ -291,7 +314,9 @@ def _fetch_latest_issue_item(issue_key: str) -> Optional[Dict[str, Any]]:
     return items[0]
 
 
-def _compute_idempotency_key(payload: Dict[str, Any], issue_key: str, updated_at: str) -> str:
+def _compute_idempotency_key(
+    payload: Dict[str, Any], issue_key: str, updated_at: str
+) -> str:
     for key in ("deliveryId", "delivery_id", "eventId", "event_id"):
         value = payload.get(key)
         if value:
@@ -327,7 +352,8 @@ def _execute_with_backoff(action, params: Dict[str, Any]) -> None:
                 raise
             delay = base_delay * (2 ** (attempt - 1))
             LOGGER.warning(
-                "Retrying DynamoDB operation", extra={"attempt": attempt, "delay": round(delay, 2)}
+                "Retrying DynamoDB operation",
+                extra={"attempt": attempt, "delay": round(delay, 2)},
             )
             time.sleep(delay)
             attempt += 1
@@ -337,7 +363,11 @@ def _normalize_timestamp(raw: Any) -> Optional[str]:
     if raw is None:
         return None
     if isinstance(raw, (int, float)):
-        return datetime.fromtimestamp(raw / 1000.0, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+        return (
+            datetime.fromtimestamp(raw / 1000.0, tz=timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
+        )
     text = str(raw)
     for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z"):
         try:
@@ -349,7 +379,12 @@ def _normalize_timestamp(raw: Any) -> Optional[str]:
 
 
 def _now_iso() -> str:
-    return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+    return (
+        datetime.utcnow()
+        .replace(tzinfo=timezone.utc)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 def _response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
@@ -361,4 +396,3 @@ def _response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
 
 
 __all__ = ["handler"]
-

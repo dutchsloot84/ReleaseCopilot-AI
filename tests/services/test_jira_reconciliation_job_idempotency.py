@@ -40,7 +40,9 @@ def _issue(key: str, updated: str) -> Dict[str, Any]:
     }
 
 
-def test_reconciliation_skips_stale_and_marks_deletes(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_reconciliation_skips_stale_and_marks_deletes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     handler = _reload()
 
     existing_items = [
@@ -48,7 +50,9 @@ def test_reconciliation_skips_stale_and_marks_deletes(monkeypatch: pytest.Monkey
         {"issue_key": "MOB-2", "updated_at": "2024-01-01T00:00:00Z", "deleted": False},
     ]
 
-    monkeypatch.setattr(handler, "_query_fix_version", lambda fix_version: existing_items)
+    monkeypatch.setattr(
+        handler, "_query_fix_version", lambda fix_version: existing_items
+    )
 
     created: List[Dict[str, Any]] = []
     deleted: List[str] = []

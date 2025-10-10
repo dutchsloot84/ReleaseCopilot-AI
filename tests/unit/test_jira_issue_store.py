@@ -13,7 +13,9 @@ class FakeTable:
         self.pages = list(pages)
         self.calls: List[Dict[str, Any]] = []
 
-    def query(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
+    def query(
+        self, **kwargs: Any
+    ) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
         self.calls.append(kwargs)
         if not self.pages:
             return {"Items": []}
@@ -72,7 +74,10 @@ def test_fetch_issues_returns_issue_payloads(monkeypatch: pytest.MonkeyPatch) ->
 def test_fetch_issues_retries_on_throttle(monkeypatch: pytest.MonkeyPatch) -> None:
     error = ClientError(
         error_response={
-            "Error": {"Code": "ProvisionedThroughputExceededException", "Message": "throttle"},
+            "Error": {
+                "Code": "ProvisionedThroughputExceededException",
+                "Message": "throttle",
+            },
             "ResponseMetadata": {"RequestId": "abc"},
         },
         operation_name="Query",
@@ -80,10 +85,12 @@ def test_fetch_issues_retries_on_throttle(monkeypatch: pytest.MonkeyPatch) -> No
 
     class FlakyTable(FakeTable):
         def __init__(self) -> None:
-            super().__init__([{ "Items": [] }])
+            super().__init__([{"Items": []}])
             self.failures = 0
 
-        def query(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
+        def query(
+            self, **kwargs: Any
+        ) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
             self.calls.append(kwargs)
             if self.failures < 2:
                 self.failures += 1
@@ -100,7 +107,9 @@ def test_fetch_issues_retries_on_throttle(monkeypatch: pytest.MonkeyPatch) -> No
     assert len(sleeps) == 2
 
 
-def test_fetch_issues_raises_on_non_retryable_error(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fetch_issues_raises_on_non_retryable_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     error = ClientError(
         error_response={
             "Error": {"Code": "ValidationException", "Message": "bad request"},
@@ -110,7 +119,9 @@ def test_fetch_issues_raises_on_non_retryable_error(monkeypatch: pytest.MonkeyPa
     )
 
     class BrokenTable(FakeTable):
-        def query(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
+        def query(
+            self, **kwargs: Any
+        ) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
             self.calls.append(kwargs)
             raise error
 

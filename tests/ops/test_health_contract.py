@@ -1,4 +1,5 @@
 """Contract tests for readiness JSON payloads."""
+
 from __future__ import annotations
 
 import json

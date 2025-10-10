@@ -1,4 +1,5 @@
 """Excel export utilities for audit results."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -12,7 +13,9 @@ class ExcelExporter:
         self.output_dir = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    def export(self, data: Dict[str, Any], filename: str = "audit_results.xlsx") -> Path:
+    def export(
+        self, data: Dict[str, Any], filename: str = "audit_results.xlsx"
+    ) -> Path:
         output_path = self.output_dir / filename
         with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
             self._write_summary_sheet(data.get("summary", {}), writer)
@@ -21,11 +24,15 @@ class ExcelExporter:
                 "Stories Without Commits",
                 writer,
             )
-            self._write_table_sheet(data.get("orphan_commits", []), "Orphan Commits", writer)
+            self._write_table_sheet(
+                data.get("orphan_commits", []), "Orphan Commits", writer
+            )
             self._write_mapping_sheet(data.get("commit_story_mapping", []), writer)
         return output_path
 
-    def _write_summary_sheet(self, summary: Dict[str, Any], writer: pd.ExcelWriter) -> None:
+    def _write_summary_sheet(
+        self, summary: Dict[str, Any], writer: pd.ExcelWriter
+    ) -> None:
         df = pd.DataFrame([summary]) if summary else pd.DataFrame()
         df.to_excel(writer, sheet_name="Audit Summary", index=False)
 
@@ -38,12 +45,20 @@ class ExcelExporter:
         df = pd.json_normalize(items) if items else pd.DataFrame()
         df.to_excel(writer, sheet_name=sheet_name[:31], index=False)
 
-    def _write_mapping_sheet(self, mappings: List[Dict[str, Any]], writer: pd.ExcelWriter) -> None:
+    def _write_mapping_sheet(
+        self, mappings: List[Dict[str, Any]], writer: pd.ExcelWriter
+    ) -> None:
         rows: List[Dict[str, Any]] = []
         for mapping in mappings:
             commits = mapping.get("commits", [])
             if not commits:
-                rows.append({"story_key": mapping.get("story_key"), "commit_hash": None, "commit_message": None})
+                rows.append(
+                    {
+                        "story_key": mapping.get("story_key"),
+                        "commit_hash": None,
+                        "commit_message": None,
+                    }
+                )
                 continue
             for commit in commits:
                 rows.append(

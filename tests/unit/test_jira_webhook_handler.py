@@ -21,10 +21,14 @@ class DummyTable:
     def put_item(self, **kwargs: Any) -> None:  # pragma: no cover - exercised in tests
         self.items.append(kwargs)
 
-    def update_item(self, **kwargs: Any) -> None:  # pragma: no cover - exercised in tests
+    def update_item(
+        self, **kwargs: Any
+    ) -> None:  # pragma: no cover - exercised in tests
         self.updated.append(kwargs)
 
-    def query(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
+    def query(
+        self, **kwargs: Any
+    ) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
         return {"Items": []}
 
 
@@ -41,7 +45,9 @@ def _patch_table(monkeypatch: pytest.MonkeyPatch) -> DummyTable:
     return table
 
 
-def _build_event(body: Dict[str, Any], headers: Dict[str, str] | None = None) -> Dict[str, Any]:
+def _build_event(
+    body: Dict[str, Any], headers: Dict[str, str] | None = None
+) -> Dict[str, Any]:
     return {
         "httpMethod": "POST",
         "headers": headers or {},
@@ -55,7 +61,9 @@ def test_rejects_invalid_method() -> None:
     assert response["statusCode"] == 405
 
 
-def test_upsert_event_persists_issue(monkeypatch: pytest.MonkeyPatch, _patch_table: DummyTable) -> None:
+def test_upsert_event_persists_issue(
+    monkeypatch: pytest.MonkeyPatch, _patch_table: DummyTable
+) -> None:
     event = _build_event(
         {
             "webhookEvent": "jira:issue_updated",
@@ -83,10 +91,14 @@ def test_upsert_event_persists_issue(monkeypatch: pytest.MonkeyPatch, _patch_tab
     assert item["Item"]["issue_key"] == "ABC-1"
     assert item["Item"]["fix_version"] == "2024.05"
     assert item["Item"]["idempotency_key"].startswith("ABC-1")
-    assert item["ConditionExpression"].startswith("attribute_not_exists(idempotency_key)")
+    assert item["ConditionExpression"].startswith(
+        "attribute_not_exists(idempotency_key)"
+    )
 
 
-def test_delete_event_removes_issue(monkeypatch: pytest.MonkeyPatch, _patch_table: DummyTable) -> None:
+def test_delete_event_removes_issue(
+    monkeypatch: pytest.MonkeyPatch, _patch_table: DummyTable
+) -> None:
     event = _build_event(
         {
             "webhookEvent": "jira:issue_deleted",
@@ -104,24 +116,32 @@ def test_delete_event_removes_issue(monkeypatch: pytest.MonkeyPatch, _patch_tabl
 def test_rejects_invalid_secret(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("WEBHOOK_SECRET", "expected")
     monkeypatch.setitem(webhook_handler.__dict__, "WEBHOOK_SECRET", "expected")
-    event = _build_event({"webhookEvent": "jira:issue_created", "issue": {"id": "1", "key": "A"}})
+    event = _build_event(
+        {"webhookEvent": "jira:issue_created", "issue": {"id": "1", "key": "A"}}
+    )
     response = webhook_handler.handler(event, None)
     assert response["statusCode"] == 401
 
 
-def test_conditional_failure_is_ignored(monkeypatch: pytest.MonkeyPatch, _patch_table: DummyTable) -> None:
+def test_conditional_failure_is_ignored(
+    monkeypatch: pytest.MonkeyPatch, _patch_table: DummyTable
+) -> None:
     class FailOnceTable(DummyTable):
         def __init__(self) -> None:
             super().__init__()
             self.called = False
 
-        def put_item(self, **kwargs: Any) -> None:  # pragma: no cover - exercised in tests
+        def put_item(
+            self, **kwargs: Any
+        ) -> None:  # pragma: no cover - exercised in tests
             if not self.called:
                 self.called = True
                 from botocore.exceptions import ClientError
 
                 raise ClientError(
-                    error_response={"Error": {"Code": "ConditionalCheckFailedException"}},
+                    error_response={
+                        "Error": {"Code": "ConditionalCheckFailedException"}
+                    },
                     operation_name="PutItem",
                 )
             super().put_item(**kwargs)
@@ -132,9 +152,12 @@ def test_conditional_failure_is_ignored(monkeypatch: pytest.MonkeyPatch, _patch_
     event = _build_event(
         {
             "webhookEvent": "jira:issue_updated",
-            "issue": {"id": "1", "key": "A", "fields": {"updated": "2024-05-01T00:00:00.000+0000"}},
+            "issue": {
+                "id": "1",
+                "key": "A",
+                "fields": {"updated": "2024-05-01T00:00:00.000+0000"},
+            },
         }
     )
     response = webhook_handler.handler(event, None)
     assert response["statusCode"] == 202
-

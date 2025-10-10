@@ -206,9 +206,13 @@ def normalize_issue(
     return normalized
 
 
-def _write_json_to_s3(s3_client, bucket: str, key: str, payload: Dict[str, Any]) -> None:
+def _write_json_to_s3(
+    s3_client, bucket: str, key: str, payload: Dict[str, Any]
+) -> None:
     body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
-    s3_client.put_object(Bucket=bucket, Key=key, Body=body, ContentType="application/json")
+    s3_client.put_object(
+        Bucket=bucket, Key=key, Body=body, ContentType="application/json"
+    )
 
 
 def _load_secret(secret_id: str) -> Dict[str, Any]:
@@ -274,9 +278,13 @@ def _run_ingestion() -> Dict[str, Any]:
 
     field_map = discover_field_map(base_url, access_token)
     if not field_map.get("acceptance_criteria"):
-        LOGGER.warning("Acceptance Criteria field not discovered; output will omit this field")
+        LOGGER.warning(
+            "Acceptance Criteria field not discovered; output will omit this field"
+        )
     if not field_map.get("deployment_notes"):
-        LOGGER.warning("Deployment Notes field not discovered; output will omit this field")
+        LOGGER.warning(
+            "Deployment Notes field not discovered; output will omit this field"
+        )
 
     fields = list(BASE_FIELDS)
     if field_map.get("acceptance_criteria"):
@@ -303,22 +311,29 @@ def _run_ingestion() -> Dict[str, Any]:
         )
         issues = _as_dict_list(page.get("issues"))
         total = _to_int(page.get("total"), 0)
-        LOGGER.info("Fetched page startAt=%s count=%s total=%s", start_at, len(issues), total)
+        LOGGER.info(
+            "Fetched page startAt=%s count=%s total=%s", start_at, len(issues), total
+        )
 
         if not issues:
             break
 
         for issue in issues:
             fields_raw = issue.get("fields")
-            fields_data: Dict[str, Any] = fields_raw if isinstance(fields_raw, dict) else {}
+            fields_data: Dict[str, Any] = (
+                fields_raw if isinstance(fields_raw, dict) else {}
+            )
             comment_field = fields_data.get("comment")
-            comment_info: Dict[str, Any] = comment_field if isinstance(comment_field, dict) else {}
+            comment_info: Dict[str, Any] = (
+                comment_field if isinstance(comment_field, dict) else {}
+            )
             initial_comments = _as_dict_list(comment_info.get("comments"))
             total_comments = _to_int(comment_info.get("total"), len(initial_comments))
             issue_id = issue.get("id")
             if issue_id is None:
                 LOGGER.warning(
-                    "Issue %s missing id; skipping extended comment fetch", issue.get("key")
+                    "Issue %s missing id; skipping extended comment fetch",
+                    issue.get("key"),
                 )
                 all_comments = initial_comments[:COMMENT_CAP]
                 issue_id_str = issue.get("key") or "unknown"
@@ -351,7 +366,9 @@ def _run_ingestion() -> Dict[str, Any]:
             _write_json_to_s3(s3_client, s3_bucket, normalized_key, normalized)
 
             updated_value = _parse_updated(fields_data.get("updated"))
-            if updated_value and (latest_updated is None or updated_value > latest_updated):
+            if updated_value and (
+                latest_updated is None or updated_value > latest_updated
+            ):
                 latest_updated = updated_value
 
             issues_processed += 1

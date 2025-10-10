@@ -1,4 +1,5 @@
 """Lambda handler performing nightly reconciliation between Jira and DynamoDB."""
+
 from __future__ import annotations
 
 import base64
@@ -20,7 +21,9 @@ configure_logging()
 LOGGER = get_logger(__name__)
 
 TABLE_NAME = os.environ["TABLE_NAME"]
-JIRA_BASE_URL = os.getenv("JIRA_BASE_URL", "https://your-domain.atlassian.net").rstrip("/")
+JIRA_BASE_URL = os.getenv("JIRA_BASE_URL", "https://your-domain.atlassian.net").rstrip(
+    "/"
+)
 JQL_TEMPLATE = os.getenv("JQL_TEMPLATE", "fixVersion = '{fix_version}' ORDER BY key")
 FIX_VERSIONS_RAW = os.getenv("FIX_VERSIONS", "")
 MAX_RESULTS = int(os.getenv("MAX_RESULTS", "100"))
@@ -69,7 +72,9 @@ class JiraSession:
         self.refresh_token = credentials.refresh_token
         self.token_expiry = credentials.token_expiry or 0
 
-    def search(self, jql: str, *, fields: Optional[Sequence[str]] = None) -> List[Dict[str, Any]]:
+    def search(
+        self, jql: str, *, fields: Optional[Sequence[str]] = None
+    ) -> List[Dict[str, Any]]:
         headers = self._build_headers()
         params = {
             "jql": jql,
@@ -97,10 +102,15 @@ class JiraSession:
             self._ensure_token()
             if not self.access_token:
                 raise RuntimeError("Jira access token unavailable after refresh")
-            return {"Authorization": f"Bearer {self.access_token}", "Accept": "application/json"}
+            return {
+                "Authorization": f"Bearer {self.access_token}",
+                "Accept": "application/json",
+            }
 
         if self.creds.uses_basic:
-            token = base64.b64encode(f"{self.creds.email}:{self.creds.api_token}".encode()).decode()
+            token = base64.b64encode(
+                f"{self.creds.email}:{self.creds.api_token}".encode()
+            ).decode()
             return {
                 "Authorization": f"Basic {token}",
                 "Accept": "application/json",
@@ -115,7 +125,9 @@ class JiraSession:
             self._refresh_token()
 
     def _refresh_token(self) -> None:
-        if not (self.creds.client_id and self.creds.client_secret and self.refresh_token):
+        if not (
+            self.creds.client_id and self.creds.client_secret and self.refresh_token
+        ):
             raise RuntimeError("Jira refresh token flow is not configured")
         payload = json.dumps(
             {
@@ -126,7 +138,9 @@ class JiraSession:
             }
         ).encode("utf-8")
         headers = {"Content-Type": "application/json"}
-        response = _http_request("POST", TOKEN_REFRESH_ENDPOINT, headers=headers, data=payload)
+        response = _http_request(
+            "POST", TOKEN_REFRESH_ENDPOINT, headers=headers, data=payload
+        )
         token_payload = json.loads(response)
         self.access_token = token_payload.get("access_token")
         self.refresh_token = token_payload.get("refresh_token", self.refresh_token)
@@ -135,7 +149,9 @@ class JiraSession:
         LOGGER.info("Refreshed Jira OAuth token", extra={"expires_in": expires_in})
 
 
-def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:  # pragma: no cover - context unused
+def handler(
+    event: Dict[str, Any], context: Any
+) -> Dict[str, Any]:  # pragma: no cover - context unused
     """Entrypoint for the nightly reconciliation Lambda."""
 
     LOGGER.info("Starting Jira reconciliation", extra={"event": event})
@@ -153,20 +169,27 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:  # pragma: n
     fix_versions = _determine_fix_versions(event)
     if not fix_versions:
         LOGGER.info("No fix versions resolved for reconciliation")
-        return _response(200, {"ok": True, "stats": [], "message": "No fix versions configured"})
+        return _response(
+            200, {"ok": True, "stats": [], "message": "No fix versions configured"}
+        )
 
     for fix_version in fix_versions:
         try:
             jql = JQL_TEMPLATE.format(fixVersion=fix_version, fix_version=fix_version)
         except Exception as exc:
-            LOGGER.error("Failed to format JQL template", extra={"error": str(exc), "fix_version": fix_version})
+            LOGGER.error(
+                "Failed to format JQL template",
+                extra={"error": str(exc), "fix_version": fix_version},
+            )
             errors.append(f"format:{fix_version}")
             continue
 
         try:
             issues = session.search(jql)
         except Exception:  # pragma: no cover - network errors
-            LOGGER.exception("Jira search failed", extra={"fix_version": fix_version, "jql": jql})
+            LOGGER.exception(
+                "Jira search failed", extra={"fix_version": fix_version, "jql": jql}
+            )
             errors.append(f"jira:{fix_version}")
             continue
 
@@ -174,7 +197,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:  # pragma: n
             result = _reconcile_fix_version(fix_version, issues)
             stats.append(result)
         except Exception:  # pragma: no cover - defensive guard
-            LOGGER.exception("Reconciliation failed", extra={"fix_version": fix_version})
+            LOGGER.exception(
+                "Reconciliation failed", extra={"fix_version": fix_version}
+            )
             errors.append(f"ddb:{fix_version}")
 
     _publish_metrics(stats)
@@ -194,7 +219,10 @@ def _determine_fix_versions(event: Dict[str, Any]) -> List[str]:
 
 
 def _discover_fix_versions_from_table() -> Iterable[str]:
-    projection = {"ProjectionExpression": "#fv", "ExpressionAttributeNames": {"#fv": "fix_version"}}
+    projection = {
+        "ProjectionExpression": "#fv",
+        "ExpressionAttributeNames": {"#fv": "fix_version"},
+    }
     last_key: Optional[Dict[str, Any]] = None
     seen: set[str] = set()
 
@@ -213,7 +241,9 @@ def _discover_fix_versions_from_table() -> Iterable[str]:
             break
 
 
-def _reconcile_fix_version(fix_version: str, jira_issues: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
+def _reconcile_fix_version(
+    fix_version: str, jira_issues: Sequence[Dict[str, Any]]
+) -> Dict[str, Any]:
     existing_items = list(_query_fix_version(fix_version))
     existing_by_key: dict[str, Dict[str, Any]] = {}
     for item in existing_items:
@@ -231,7 +261,9 @@ def _reconcile_fix_version(fix_version: str, jira_issues: Sequence[Dict[str, Any
     for issue in jira_issues:
         issue_key = str(issue.get("key") or issue.get("id") or "").strip()
         if not issue_key:
-            LOGGER.warning("Skipping Jira issue without id", extra={"fix_version": fix_version})
+            LOGGER.warning(
+                "Skipping Jira issue without id", extra={"fix_version": fix_version}
+            )
             continue
         seen_issue_keys.add(issue_key)
         item = _build_item(issue, fix_version=fix_version)
@@ -294,13 +326,18 @@ def _is_newer(candidate: Optional[str], baseline: Optional[str]) -> bool:
 
 def _build_item(issue: Dict[str, Any], *, fix_version: str) -> Dict[str, Any]:
     fields = issue.get("fields") or {}
-    fix_versions = [fv.get("name") for fv in fields.get("fixVersions") or [] if fv.get("name")]
+    fix_versions = [
+        fv.get("name") for fv in fields.get("fixVersions") or [] if fv.get("name")
+    ]
     fix_version_value = fix_versions[0] if fix_versions else fix_version or "UNASSIGNED"
     status = (fields.get("status") or {}).get("name", "UNKNOWN")
     assignee = (fields.get("assignee") or {}).get("accountId") or (
         (fields.get("assignee") or {}).get("displayName")
     )
-    updated_at = _normalize_timestamp(fields.get("updated") or fields.get("created")) or _now_iso()
+    updated_at = (
+        _normalize_timestamp(fields.get("updated") or fields.get("created"))
+        or _now_iso()
+    )
     issue_key = issue.get("key") or issue.get("id")
     idempotency_key = f"reconciliation:{issue_key}:{updated_at}"
 
@@ -414,16 +451,23 @@ def _execute_with_backoff(action, params: Dict[str, Any]) -> Dict[str, Any]:
                 issue_key = item.get("issue_key") or key.get("issue_key")
                 LOGGER.info("Skipping outdated update", extra={"issue_key": issue_key})
                 return {}
-            if code not in {
-                "ProvisionedThroughputExceededException",
-                "ThrottlingException",
-                "RequestLimitExceeded",
-                "InternalServerError",
-                "TransactionInProgressException",
-            } or attempt >= RC_DDB_MAX_ATTEMPTS:
+            if (
+                code
+                not in {
+                    "ProvisionedThroughputExceededException",
+                    "ThrottlingException",
+                    "RequestLimitExceeded",
+                    "InternalServerError",
+                    "TransactionInProgressException",
+                }
+                or attempt >= RC_DDB_MAX_ATTEMPTS
+            ):
                 raise
             delay = RC_DDB_BASE_DELAY * (2 ** (attempt - 1))
-            LOGGER.warning("Retrying DynamoDB operation", extra={"attempt": attempt, "delay": round(delay, 2)})
+            LOGGER.warning(
+                "Retrying DynamoDB operation",
+                extra={"attempt": attempt, "delay": round(delay, 2)},
+            )
             time.sleep(delay)
             attempt += 1
 
@@ -433,7 +477,9 @@ def _load_credentials() -> JiraCredentials:
     return JiraCredentials(
         access_token=_first(payload, ["JIRA_ACCESS_TOKEN", "access_token"]),
         refresh_token=_first(payload, ["JIRA_REFRESH_TOKEN", "refresh_token"]),
-        token_expiry=_int_or_none(_first(payload, ["JIRA_TOKEN_EXPIRY", "token_expiry"])),
+        token_expiry=_int_or_none(
+            _first(payload, ["JIRA_TOKEN_EXPIRY", "token_expiry"])
+        ),
         client_id=_first(payload, ["JIRA_CLIENT_ID", "client_id"]),
         client_secret=_first(payload, ["JIRA_CLIENT_SECRET", "client_secret"]),
         email=_first(payload, ["JIRA_EMAIL", "email", "username"]),
@@ -489,7 +535,11 @@ def _normalize_timestamp(raw: Any) -> Optional[str]:
     if raw is None:
         return None
     if isinstance(raw, (int, float)):
-        return datetime.fromtimestamp(raw / 1000.0, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+        return (
+            datetime.fromtimestamp(raw / 1000.0, tz=timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
+        )
     text = str(raw)
     for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z"):
         try:
@@ -501,14 +551,29 @@ def _normalize_timestamp(raw: Any) -> Optional[str]:
 
 
 def _now_iso() -> str:
-    return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+    return (
+        datetime.utcnow()
+        .replace(tzinfo=timezone.utc)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 def _response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
-    return {"statusCode": status, "headers": {"Content-Type": "application/json"}, "body": json.dumps(body)}
+    return {
+        "statusCode": status,
+        "headers": {"Content-Type": "application/json"},
+        "body": json.dumps(body),
+    }
 
 
-def _http_request(method: str, url: str, *, headers: Optional[Dict[str, str]] = None, data: Optional[bytes] = None) -> str:
+def _http_request(
+    method: str,
+    url: str,
+    *,
+    headers: Optional[Dict[str, str]] = None,
+    data: Optional[bytes] = None,
+) -> str:
     req = request.Request(url, method=method, headers=headers or {})
     if data is not None:
         req.data = data
@@ -517,7 +582,9 @@ def _http_request(method: str, url: str, *, headers: Optional[Dict[str, str]] = 
             return resp.read().decode("utf-8")
     except error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="ignore")
-        LOGGER.error("HTTP error", extra={"url": url, "status": exc.code, "body": body[:200]})
+        LOGGER.error(
+            "HTTP error", extra={"url": url, "status": exc.code, "body": body[:200]}
+        )
         raise
     except error.URLError as exc:
         LOGGER.error("HTTP connection error", extra={"url": url, "error": str(exc)})

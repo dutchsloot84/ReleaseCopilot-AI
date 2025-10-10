@@ -99,6 +99,36 @@ To run the workflow manually:
 * Use `--debug-scan` (or `--log-level DEBUG`) for verbose output when debugging API calls or data collectors.
 * If you rely on Jira, confirm the `HISTORIAN_JIRA_*` variables are set and the JQL matches your workflow.
 * Customize the schedule in the workflow by editing the cron expression in `weekly-history.yml`.
+* **2025-01-09:** CI failures from `tools/validate_prompts.py` complaining that a prompt path "is not in the subpath" were
+  fixed by normalizing relative prompt paths before comparison. If you hit the error locally, pull the latest main branch or
+  ensure you invoke the validator from the repository root so the normalized paths resolve correctly.
+* **2025-01-09:** `black --check .` now runs during the Validate Wave 1 workflow. If it flags a mass of files as "would
+  reformat", run `black .` (or the equivalent formatting task) locally and commit the changes before re-running CI.
+* **2025-01-09:** `pytest --cov=. --cov-report=term-missing --cov-fail-under=70` requires the `pytest-cov` plugin. Install it
+  (for example via `pip install -r requirements-dev.txt`) before re-running the Validate Wave 1 workflow; otherwise pytest will
+  exit with `unrecognized arguments: --cov`.
+* **2025-01-09:** Module import errors such as `ModuleNotFoundError: No module named 'yaml'` indicate the workflow did not install
+  the runtime dependencies listed in `requirements.txt`. Install dev dependencies with `pip install -r requirements-dev.txt`
+  (which now includes the runtime requirement file) so boto3, pandas, PyYAML, and other clients are available to the test suite.
+
+Decision:
+- Pin every formatter and type checker that runs in `validate_prompts.yml` inside `requirements-dev.txt` so the GitHub runner
+  installs them before invoking the job.
+- Include coverage plugins (such as `pytest-cov`) whenever coverage flags are passed to pytest in CI workflows so runners have
+  the matching extensions available.
+- Reference runtime dependencies from the development requirement set so the Validate Wave 1 workflow can import boto3, pandas,
+  PyYAML, and other libraries exercised by the test suite.
+- Treat `black --check .` failures as blocking and reformat the repository before retrying the workflow to avoid churn in
+  follow-up commits.
+
+Action:
+- Add `black` (and other new lint dependencies) to `requirements-dev.txt` whenever the workflow gains a new check.
+- Update `requirements-dev.txt` when enabling pytest coverage arguments so the `pytest-cov` plugin is installed alongside
+  `pytest` on CI runners.
+- When the formatting job fails, run `black .` locally, validate with `black --check .`, and push the formatting commit with a
+  summary referencing the CI repair.
+- Install dev dependencies via `pip install -r requirements-dev.txt` (which now pulls in `requirements.txt`) before running the
+  Validate Wave 1 workflow locally or in CI if you encounter missing third-party modules.
 
 ## Next Steps
 

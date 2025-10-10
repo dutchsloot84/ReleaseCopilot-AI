@@ -1,4 +1,5 @@
 """Offline audit orchestration for the ``rc audit`` command."""
+
 from __future__ import annotations
 
 import json
@@ -117,14 +118,19 @@ def _build_export_payload(payloads: Mapping[str, Mapping[str, Any]]) -> Dict[str
                 "stories_with_no_commits", []
             ),
             "orphan_commits": payloads.get("commits", {}).get("orphan_commits", []),
-            "commit_story_mapping": payloads.get("links", {}).get("commit_story_mapping", []),
+            "commit_story_mapping": payloads.get("links", {}).get(
+                "commit_story_mapping", []
+            ),
         }
     )
 
 
 def run_audit(options: AuditOptions) -> AuditResult:
     plan = options.build_plan()
-    LOGGER.info("Starting offline audit", extra={"cache_dir": plan["cache_dir"], "scope": plan["scope"]})
+    LOGGER.info(
+        "Starting offline audit",
+        extra={"cache_dir": plan["cache_dir"], "scope": plan["scope"]},
+    )
 
     payloads = load_cached_payloads(options.cache_dir)
     payload = _build_export_payload(payloads)
@@ -134,7 +140,12 @@ def run_audit(options: AuditOptions) -> AuditResult:
         "excel": options.excel_path,
         "summary": options.summary_path,
     }
-    outputs = export_all(payload, out_dir=None, formats=options.defaults.export_formats, filenames=filenames)
+    outputs = export_all(
+        payload,
+        out_dir=None,
+        formats=options.defaults.export_formats,
+        filenames=filenames,
+    )
 
     uploaded = False
     if options.upload_uri:
@@ -162,7 +173,10 @@ def run_audit(options: AuditOptions) -> AuditResult:
             extra={"bucket": bucket, "prefix": prefix, "region": options.region},
         )
 
-    LOGGER.info("Offline audit completed", extra={"outputs": {k: str(v) for k, v in outputs.items()}})
+    LOGGER.info(
+        "Offline audit completed",
+        extra={"outputs": {k: str(v) for k, v in outputs.items()}},
+    )
     return AuditResult(plan=plan, outputs=outputs, uploaded=uploaded)
 
 

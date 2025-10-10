@@ -1,4 +1,5 @@
 """Base utilities for API clients with caching helpers."""
+
 from __future__ import annotations
 
 import json
@@ -27,7 +28,9 @@ class BaseAPIClient:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self._last_cache_files: dict[str, Path] = {}
         self._random = random.Random()
-        self._retries_enabled = os.getenv("RC_DISABLE_RETRIES", "false").lower() not in {
+        self._retries_enabled = os.getenv(
+            "RC_DISABLE_RETRIES", "false"
+        ).lower() not in {
             "1",
             "true",
             "yes",
@@ -80,7 +83,9 @@ class BaseAPIClient:
         if isinstance(exc, retryable):
             return True
         response = getattr(exc, "response", None)
-        if response is not None and BaseAPIClient._is_retryable_status(response.status_code):
+        if response is not None and BaseAPIClient._is_retryable_status(
+            response.status_code
+        ):
             return True
         return False
 
@@ -125,7 +130,11 @@ class BaseAPIClient:
                 continue
 
             elapsed_ms = (time.perf_counter() - start) * 1000
-            headers = {key: value for key, value in response.headers.items() if key.lower().startswith("x-rate")}
+            headers = {
+                key: value
+                for key, value in response.headers.items()
+                if key.lower().startswith("x-rate")
+            }
             response_context = dict(context)
             response_context.update(
                 {
@@ -137,7 +146,10 @@ class BaseAPIClient:
                 response_context["rate_limit"] = headers
             logger.debug("HTTP response", extra=response_context)
 
-            if self._is_retryable_status(response.status_code) and attempt < max_attempts:
+            if (
+                self._is_retryable_status(response.status_code)
+                and attempt < max_attempts
+            ):
                 delay = self._compute_delay(attempt, response)
                 retry_context = dict(response_context)
                 retry_context["retry_in_s"] = round(delay, 2)

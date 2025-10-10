@@ -26,7 +26,9 @@ def _dynamodb_arns(region: str, account: str, tables: Iterable[str]) -> list[str
 
 
 def _secret_arns(region: str, account: str, secrets: Iterable[str]) -> list[str]:
-    return [f"arn:aws:secretsmanager:{region}:{account}:secret:{name}" for name in secrets]
+    return [
+        f"arn:aws:secretsmanager:{region}:{account}:secret:{name}" for name in secrets
+    ]
 
 
 def _role_arns(account: str, roles: Iterable[str]) -> list[str]:
@@ -64,11 +66,11 @@ def build_documents(resources: dict) -> dict[str, dict]:
                     "cloudformation:GetTemplate",
                     "cloudformation:TagResource",
                     "cloudformation:UntagResource",
-                    "cloudformation:UpdateStack"
+                    "cloudformation:UpdateStack",
                 ],
-                "Resource": f"arn:aws:cloudformation:{region}:{account}:stack/{project_prefix}-*/*"
+                "Resource": f"arn:aws:cloudformation:{region}:{account}:stack/{project_prefix}-*/*",
             }
-        ]
+        ],
     }
 
     bucket = f"cdk-{qualifier}-assets-{account}-{region}"
@@ -84,14 +86,11 @@ def build_documents(resources: dict) -> dict[str, dict]:
                     "s3:DeleteObject",
                     "s3:GetObjectVersion",
                     "s3:ListBucket",
-                    "s3:GetBucketLocation"
+                    "s3:GetBucketLocation",
                 ],
-                "Resource": [
-                    f"arn:aws:s3:::{bucket}",
-                    f"arn:aws:s3:::{bucket}/*"
-                ]
+                "Resource": [f"arn:aws:s3:::{bucket}", f"arn:aws:s3:::{bucket}/*"],
             }
-        ]
+        ],
     }
 
     if log_groups:
@@ -110,11 +109,11 @@ def build_documents(resources: dict) -> dict[str, dict]:
                         "logs:DescribeLogStreams",
                         "logs:PutLogEvents",
                         "logs:PutRetentionPolicy",
-                        "logs:TagLogGroup"
+                        "logs:TagLogGroup",
                     ],
-                    "Resource": _log_group_arns(region, account, log_groups)
+                    "Resource": _log_group_arns(region, account, log_groups),
                 }
-            ]
+            ],
         }
 
     if dynamo_tables:
@@ -139,11 +138,11 @@ def build_documents(resources: dict) -> dict[str, dict]:
                         "dynamodb:TagResource",
                         "dynamodb:UpdateContinuousBackups",
                         "dynamodb:UpdateItem",
-                        "dynamodb:UpdateTable"
+                        "dynamodb:UpdateTable",
                     ],
-                    "Resource": _dynamodb_arns(region, account, dynamo_tables)
+                    "Resource": _dynamodb_arns(region, account, dynamo_tables),
                 }
-            ]
+            ],
         }
 
     if secrets:
@@ -162,11 +161,11 @@ def build_documents(resources: dict) -> dict[str, dict]:
                         "secretsmanager:PutSecretValue",
                         "secretsmanager:RestoreSecret",
                         "secretsmanager:TagResource",
-                        "secretsmanager:UpdateSecret"
+                        "secretsmanager:UpdateSecret",
                     ],
-                    "Resource": _secret_arns(region, account, secrets)
+                    "Resource": _secret_arns(region, account, secrets),
                 }
-            ]
+            ],
         }
 
     if roles:
@@ -177,9 +176,9 @@ def build_documents(resources: dict) -> dict[str, dict]:
                     "Sid": "PassRoles",
                     "Effect": "Allow",
                     "Action": "iam:PassRole",
-                    "Resource": _role_arns(account, roles)
+                    "Resource": _role_arns(account, roles),
                 }
-            ]
+            ],
         }
 
     return documents

@@ -1,4 +1,5 @@
 """Standalone recovery CLI that rebuilds export artifacts from cached JSON."""
+
 from __future__ import annotations
 
 import argparse
@@ -26,9 +27,17 @@ class MissingInputError(RuntimeError):
 
 
 def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Rebuild export artifacts from cached payloads")
-    parser.add_argument("--input-dir", default="temp_data/", help="Directory containing cached JSON payloads")
-    parser.add_argument("--out-dir", default="reports/", help="Directory to write regenerated reports")
+    parser = argparse.ArgumentParser(
+        description="Rebuild export artifacts from cached payloads"
+    )
+    parser.add_argument(
+        "--input-dir",
+        default="temp_data/",
+        help="Directory containing cached JSON payloads",
+    )
+    parser.add_argument(
+        "--out-dir", default="reports/", help="Directory to write regenerated reports"
+    )
     parser.add_argument(
         "--format",
         default="excel,json",
@@ -60,7 +69,11 @@ def load_inputs(input_dir: Path) -> Dict[str, Dict[str, Any]]:
             metadata = {"keys": sorted(payload.keys())}
         else:
             metadata = {"length": len(payload) if hasattr(payload, "__len__") else None}
-        LOGGER.info(json.dumps({"event": "input_loaded", "name": key, "path": str(path), **metadata}))
+        LOGGER.info(
+            json.dumps(
+                {"event": "input_loaded", "name": key, "path": str(path), **metadata}
+            )
+        )
     return inputs
 
 
@@ -94,9 +107,13 @@ def build_payload_from_inputs(inputs: Dict[str, Dict[str, Any]]) -> Dict[str, An
         data={
             "summary": _ensure_dict(inputs["summary"]),
             "stories_with_no_commits": _ensure_list(
-                _extract(inputs["stories"], "stories_with_no_commits", "stories", "items")
+                _extract(
+                    inputs["stories"], "stories_with_no_commits", "stories", "items"
+                )
             ),
-            "orphan_commits": _ensure_list(_extract(inputs["commits"], "orphan_commits", "commits", "items")),
+            "orphan_commits": _ensure_list(
+                _extract(inputs["commits"], "orphan_commits", "commits", "items")
+            ),
             "commit_story_mapping": _ensure_list(
                 _extract(inputs["links"], "commit_story_mapping", "links", "items")
             ),
@@ -118,7 +135,9 @@ def main(argv: Iterable[str] | None = None) -> int:
     try:
         inputs = load_inputs(input_dir)
         payload = build_payload_from_inputs(inputs)
-        outputs = export_all(payload, out_dir=output_dir, formats=parse_formats(args.format))
+        outputs = export_all(
+            payload, out_dir=output_dir, formats=parse_formats(args.format)
+        )
     except MissingInputError as exc:
         LOGGER.error(json.dumps({"event": "missing_input", "message": str(exc)}))
         print(str(exc), file=sys.stderr)
@@ -128,7 +147,14 @@ def main(argv: Iterable[str] | None = None) -> int:
         print(f"Recovery failed: {exc}", file=sys.stderr)
         return 1
 
-    LOGGER.info(json.dumps({"event": "outputs_written", "outputs": {k: str(v) for k, v in outputs.items()}}))
+    LOGGER.info(
+        json.dumps(
+            {
+                "event": "outputs_written",
+                "outputs": {k: str(v) for k, v in outputs.items()},
+            }
+        )
+    )
     return 0
 
 

@@ -1,4 +1,5 @@
 """Central logging configuration for ReleaseCopilot."""
+
 from __future__ import annotations
 
 import json
@@ -127,7 +128,9 @@ class _StructuredFormatter(logging.Formatter):
             datefmt="%Y-%m-%dT%H:%M:%S",
         )
 
-    def formatTime(self, record: logging.LogRecord, datefmt: str | None = None) -> str:  # noqa: D401, N802
+    def formatTime(
+        self, record: logging.LogRecord, datefmt: str | None = None
+    ) -> str:  # noqa: D401, N802
         dt = datetime.fromtimestamp(record.created, tz=timezone.utc)
         return dt.strftime(self.datefmt or "%Y-%m-%dT%H:%M:%S")
 
@@ -146,7 +149,9 @@ def configure_logging(level_override: str | None = None) -> None:
             use_json = os.getenv("RC_LOG_JSON", "false").lower() == "true"
             handler.addFilter(_CorrelationIdFilter())
             handler.addFilter(_RedactionFilter())
-            handler.setFormatter(_JsonFormatter() if use_json else _StructuredFormatter())
+            handler.setFormatter(
+                _JsonFormatter() if use_json else _StructuredFormatter()
+            )
             root.handlers = [handler]
             root.propagate = False
             _CONFIGURED = True

@@ -1,4 +1,5 @@
 """Core AWS infrastructure for ReleaseCopilot."""
+
 from __future__ import annotations
 
 from aws_cdk import (
@@ -15,7 +16,9 @@ from constructs import Construct
 class CoreStack(Stack):
     """Provision foundational resources shared by compute workloads."""
 
-    def __init__(self, scope: Construct, construct_id: str, *, project_name: str, **kwargs) -> None:
+    def __init__(
+        self, scope: Construct, construct_id: str, *, project_name: str, **kwargs
+    ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         self.artifacts_bucket = s3.Bucket(
@@ -58,7 +61,11 @@ class CoreStack(Stack):
                     ],
                 ),
                 iam.PolicyStatement(
-                    actions=["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+                    actions=[
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
+                    ],
                     resources=["*"],
                 ),
             ],
@@ -70,7 +77,9 @@ class CoreStack(Stack):
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
             managed_policies=[
                 self.exec_policy,
-                iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole"),
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "service-role/AWSLambdaBasicExecutionRole"
+                ),
             ],
         )
 

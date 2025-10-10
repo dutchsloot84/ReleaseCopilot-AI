@@ -1,4 +1,5 @@
 """Modern CLI shim for ``python -m src.cli.main`` usage."""
+
 from __future__ import annotations
 
 import argparse
@@ -39,6 +40,7 @@ from releasecopilot.logging_config import configure_logging, get_logger  # noqa:
 
 logger = get_logger(__name__)
 
+
 def _copy_artifacts(artifacts: dict[str, str], destination: Path) -> None:
     destination.mkdir(parents=True, exist_ok=True)
     for _, src in artifacts.items():
@@ -52,24 +54,49 @@ def _copy_artifacts(artifacts: dict[str, str], destination: Path) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="ReleaseCopilot audit runner")
-    parser.add_argument("--fix-version", required=True, help="Jira fix version to audit")
-    parser.add_argument("--repos", nargs="*", default=[], help="Bitbucket repositories to inspect")
+    parser.add_argument(
+        "--fix-version", required=True, help="Jira fix version to audit"
+    )
+    parser.add_argument(
+        "--repos", nargs="*", default=[], help="Bitbucket repositories to inspect"
+    )
     parser.add_argument("--branches", nargs="*", help="Optional branches to include")
-    parser.add_argument("--develop-only", action="store_true", help="Use the develop branch only")
+    parser.add_argument(
+        "--develop-only", action="store_true", help="Use the develop branch only"
+    )
     parser.add_argument("--freeze-date", help="ISO freeze date override")
-    parser.add_argument("--window-days", type=int, default=28, help="Lookback window in days")
-    parser.add_argument("--use-cache", action="store_true", help="Reuse cached payloads")
+    parser.add_argument(
+        "--window-days", type=int, default=28, help="Lookback window in days"
+    )
+    parser.add_argument(
+        "--use-cache", action="store_true", help="Reuse cached payloads"
+    )
     parser.add_argument("--s3-bucket", help="Override destination S3 bucket")
     parser.add_argument("--s3-prefix", help="Override destination S3 prefix")
-    parser.add_argument("--output-prefix", default="audit_results", help="Basename for generated files")
-    parser.add_argument("--output", help="Optional directory to copy generated artifacts into")
-    parser.add_argument("--format", choices=["json", "excel", "both"], default="both", help="Artifact copy format")
-    parser.add_argument("--dry-run", action="store_true", help="Skip remote calls and only echo configuration")
+    parser.add_argument(
+        "--output-prefix", default="audit_results", help="Basename for generated files"
+    )
+    parser.add_argument(
+        "--output", help="Optional directory to copy generated artifacts into"
+    )
+    parser.add_argument(
+        "--format",
+        choices=["json", "excel", "both"],
+        default="both",
+        help="Artifact copy format",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Skip remote calls and only echo configuration",
+    )
     parser.add_argument("--log-level", default="INFO", help="Logging verbosity")
     return parser
 
 
-def parse_args(argv: Optional[Iterable[str]] = None) -> tuple[argparse.Namespace, AuditConfig]:
+def parse_args(
+    argv: Optional[Iterable[str]] = None,
+) -> tuple[argparse.Namespace, AuditConfig]:
     parser = build_parser()
     args = parser.parse_args(argv)
     config = AuditConfig(
@@ -127,9 +154,13 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         if selected:
             _copy_artifacts(selected, destination)
         summary_path = destination / "summary.json"
-        summary_path.write_text(json.dumps(result.get("summary", {}), indent=2), encoding="utf-8")
+        summary_path.write_text(
+            json.dumps(result.get("summary", {}), indent=2), encoding="utf-8"
+        )
 
-    logger.info("ReleaseCopilot run completed", extra={"artifacts": list(artifacts.keys())})
+    logger.info(
+        "ReleaseCopilot run completed", extra={"artifacts": list(artifacts.keys())}
+    )
     print(json.dumps(result.get("summary", {}), indent=2))
     return 0
 

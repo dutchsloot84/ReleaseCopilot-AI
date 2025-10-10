@@ -9,7 +9,9 @@ import pytest
 pytest.importorskip("dotenv")
 
 
-def test_cli_prefers_cli_then_env_then_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cli_prefers_cli_then_env_then_yaml(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     env_path = repo_root / ".env"
 

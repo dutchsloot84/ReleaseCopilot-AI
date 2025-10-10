@@ -1,4 +1,5 @@
 """Golden-file verification tests for the JSON exporter."""
+
 from __future__ import annotations
 
 import json

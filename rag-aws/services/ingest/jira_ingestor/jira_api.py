@@ -7,7 +7,12 @@ import time
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 import requests
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 LOGGER = logging.getLogger(__name__)
 TOKEN_URL = "https://auth.atlassian.com/oauth/token"  # nosec B105
@@ -86,7 +91,9 @@ def _request(
         raise JiraTransientError(f"Jira 5xx error: {response.status_code}")
 
     if response.status_code >= 400:
-        raise JiraAuthError(f"Jira returned HTTP {response.status_code}: {response.text}")
+        raise JiraAuthError(
+            f"Jira returned HTTP {response.status_code}: {response.text}"
+        )
 
     return response
 
@@ -117,7 +124,9 @@ def refresh_access_token(client_id: str, client_secret: str, refresh_token: str)
     return token
 
 
-def jira_get(base_url: str, token: str, path: str, params: Optional[Mapping[str, Any]] = None):
+def jira_get(
+    base_url: str, token: str, path: str, params: Optional[Mapping[str, Any]] = None
+):
     """Perform a GET request against the Jira REST API with retry semantics."""
 
     url = _build_url(base_url, path)
@@ -138,12 +147,22 @@ def discover_field_map(
     """Find custom field IDs for the requested synonym sets."""
 
     synonym_map: Dict[str, Iterable[str]] = synonyms or {
-        "acceptance_criteria": ["acceptance criteria", "acceptance-criteria", "ac", "gherkin"],
-        "deployment_notes": ["deployment notes", "deploy notes", "release notes (tech)"],
+        "acceptance_criteria": [
+            "acceptance criteria",
+            "acceptance-criteria",
+            "ac",
+            "gherkin",
+        ],
+        "deployment_notes": [
+            "deployment notes",
+            "deploy notes",
+            "release notes (tech)",
+        ],
     }
 
     normalized_targets = {
-        key: {_normalize_synonym(value) for value in values} for key, values in synonym_map.items()
+        key: {_normalize_synonym(value) for value in values}
+        for key, values in synonym_map.items()
     }
 
     discovered: Dict[str, Optional[str]] = {key: None for key in normalized_targets}

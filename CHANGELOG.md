@@ -3,6 +3,7 @@
 - Least-privilege Secrets Manager wiring with secret smoke test CLI and redaction helpers.
 - MOP + prompt-chaining scaffolding (`prompts/` templates, runbooks, PR template, Issue form).
 - Active MOP index in docs; README quickstart.
+- Wave 1 prompt recipe catalog, human-in-the-loop tracking JSON, and CI validation/comment automation.
 - Monthly AWS Budgets cost guardrail with SNS/email alerts and manual verification runbook.
 
 ### Chore

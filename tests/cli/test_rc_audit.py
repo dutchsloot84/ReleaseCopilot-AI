@@ -1,4 +1,5 @@
 """Unit tests for the ``rc audit`` CLI entry point."""
+
 from __future__ import annotations
 
 import json

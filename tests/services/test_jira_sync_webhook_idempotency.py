@@ -26,7 +26,9 @@ def _reload() -> Any:
     return importlib.import_module(module)
 
 
-def _payload(updated: str = "2024-01-01T00:00:00.000+0000", delivery: str = "delivery-1") -> Dict[str, Any]:
+def _payload(
+    updated: str = "2024-01-01T00:00:00.000+0000", delivery: str = "delivery-1"
+) -> Dict[str, Any]:
     return {
         "webhookEvent": "jira:issue_updated",
         "deliveryId": delivery,
@@ -61,7 +63,9 @@ def test_upsert_persists_idempotency_key(monkeypatch: pytest.MonkeyPatch) -> Non
     assert captured["deleted"] is False
 
 
-def test_delete_creates_tombstone_when_no_existing(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_delete_creates_tombstone_when_no_existing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     handler = _reload()
     captured: Dict[str, Any] = {}
 
@@ -87,7 +91,11 @@ def test_delete_updates_existing_latest(monkeypatch: pytest.MonkeyPatch) -> None
         captured.update(params)
         return {}
 
-    monkeypatch.setattr(handler, "_fetch_latest_issue_item", lambda key: {"updated_at": "2024-01-02T00:00:00Z"})
+    monkeypatch.setattr(
+        handler,
+        "_fetch_latest_issue_item",
+        lambda key: {"updated_at": "2024-01-02T00:00:00Z"},
+    )
     monkeypatch.setattr(handler, "_execute_with_backoff", _capture)
 
     handler._handle_delete(_payload(delivery="delivery-2"))

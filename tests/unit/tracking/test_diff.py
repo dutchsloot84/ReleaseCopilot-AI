@@ -19,7 +19,9 @@ def sample_runs() -> tuple[dict[str, object], dict[str, object]]:
     return old_data, new_data
 
 
-def test_diff_runs_detects_changes(sample_runs: tuple[dict[str, object], dict[str, object]]) -> None:
+def test_diff_runs_detects_changes(
+    sample_runs: tuple[dict[str, object], dict[str, object]]
+) -> None:
     old_run, new_run = sample_runs
     diff = diff_runs(old_run, new_run)
 
@@ -43,7 +45,9 @@ def test_diff_runs_detects_changes(sample_runs: tuple[dict[str, object], dict[st
     assert diff["coverage_delta"] == 50.0
 
 
-def test_render_diff_markdown(sample_runs: tuple[dict[str, object], dict[str, object]]) -> None:
+def test_render_diff_markdown(
+    sample_runs: tuple[dict[str, object], dict[str, object]]
+) -> None:
     old_run, new_run = sample_runs
     diff = diff_runs(old_run, new_run)
 
@@ -53,7 +57,9 @@ def test_render_diff_markdown(sample_runs: tuple[dict[str, object], dict[str, ob
     assert "Coverage changed by +50.00%" in markdown
 
 
-def test_compare_supports_paths(tmp_path: Path, sample_runs: tuple[dict[str, object], dict[str, object]]) -> None:
+def test_compare_supports_paths(
+    tmp_path: Path, sample_runs: tuple[dict[str, object], dict[str, object]]
+) -> None:
     old_run, new_run = sample_runs
     old_path = tmp_path / "old.json"
     new_path = tmp_path / "new.json"
