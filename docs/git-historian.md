@@ -107,12 +107,17 @@ To run the workflow manually:
 * **2025-01-09:** `pytest --cov=. --cov-report=term-missing --cov-fail-under=70` requires the `pytest-cov` plugin. Install it
   (for example via `pip install -r requirements-dev.txt`) before re-running the Validate Wave 1 workflow; otherwise pytest will
   exit with `unrecognized arguments: --cov`.
+* **2025-01-09:** Module import errors such as `ModuleNotFoundError: No module named 'yaml'` indicate the workflow did not install
+  the runtime dependencies listed in `requirements.txt`. Install dev dependencies with `pip install -r requirements-dev.txt`
+  (which now includes the runtime requirement file) so boto3, pandas, PyYAML, and other clients are available to the test suite.
 
 Decision:
 - Pin every formatter and type checker that runs in `validate_prompts.yml` inside `requirements-dev.txt` so the GitHub runner
   installs them before invoking the job.
 - Include coverage plugins (such as `pytest-cov`) whenever coverage flags are passed to pytest in CI workflows so runners have
   the matching extensions available.
+- Reference runtime dependencies from the development requirement set so the Validate Wave 1 workflow can import boto3, pandas,
+  PyYAML, and other libraries exercised by the test suite.
 - Treat `black --check .` failures as blocking and reformat the repository before retrying the workflow to avoid churn in
   follow-up commits.
 
@@ -122,6 +127,8 @@ Action:
   `pytest` on CI runners.
 - When the formatting job fails, run `black .` locally, validate with `black --check .`, and push the formatting commit with a
   summary referencing the CI repair.
+- Install dev dependencies via `pip install -r requirements-dev.txt` (which now pulls in `requirements.txt`) before running the
+  Validate Wave 1 workflow locally or in CI if you encounter missing third-party modules.
 
 ## Next Steps
 
