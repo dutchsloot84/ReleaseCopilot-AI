@@ -334,7 +334,7 @@ def upload_artifacts(
     timestamp_source = datetime.utcnow()
     timestamp = timestamp_source.strftime("%Y-%m-%d_%H%M%S")
     generated_at = timestamp_source.replace(microsecond=0).isoformat() + "Z"
-    prefix = "/".join([prefix_root, config.fix_version, timestamp])
+    artifact_scope = list(filter(None, [config.fix_version, timestamp]))
 
     metadata = {
         "fix-version": config.fix_version,
@@ -345,30 +345,61 @@ def upload_artifacts(
         metadata["git-sha"] = git_sha
 
     staging_root = TEMP_DIR / "s3_staging" / timestamp
-    reports_dir = staging_root / "reports"
-    raw_dir = staging_root / "raw"
+    json_dir = staging_root / "artifacts" / "json"
+    excel_dir = staging_root / "artifacts" / "excel"
+    temp_dir = staging_root / "temp_data"
 
-    _stage_files(reports_dir, reports)
-    _stage_files(raw_dir, raw_files)
+    json_reports = [path for path in reports if Path(path).suffix.lower() == ".json"]
+    excel_reports = [
+        path for path in reports if Path(path).suffix.lower() in {".xls", ".xlsx"}
+    ]
+    other_reports = [
+        path
+        for path in reports
+        if Path(path).suffix.lower() not in {".json", ".xls", ".xlsx"}
+    ]
+    if other_reports:
+        logger.warning(
+            "Unclassified report types detected; uploading under JSON prefix.",
+            extra={"files": [str(path) for path in other_reports]},
+        )
+        json_reports.extend(other_reports)
+
+    _stage_files(json_dir, json_reports)
+    _stage_files(excel_dir, excel_reports)
+    _stage_files(temp_dir, raw_files)
 
     client = uploader.build_s3_client(region_name=region)
 
-    uploader.upload_directory(
-        bucket=bucket,
-        prefix=prefix,
-        local_dir=reports_dir,
-        subdir="reports",
-        client=client,
-        metadata=metadata,
-    )
-    uploader.upload_directory(
-        bucket=bucket,
-        prefix=prefix,
-        local_dir=raw_dir,
-        subdir="raw",
-        client=client,
-        metadata=metadata,
-    )
+    subdir = "/".join(artifact_scope)
+
+    if json_dir.exists():
+        uploader.upload_directory(
+            bucket=bucket,
+            prefix="/".join([prefix_root, "artifacts", "json"]),
+            local_dir=json_dir,
+            subdir=subdir,
+            client=client,
+            metadata=metadata,
+        )
+    if excel_dir.exists():
+        uploader.upload_directory(
+            bucket=bucket,
+            prefix="/".join([prefix_root, "artifacts", "excel"]),
+            local_dir=excel_dir,
+            subdir=subdir,
+            client=client,
+            metadata=metadata,
+        )
+    if temp_dir.exists():
+        uploader.upload_directory(
+            bucket=bucket,
+            prefix="/".join([prefix_root, "temp_data"]),
+            local_dir=temp_dir,
+            subdir=subdir,
+            client=client,
+            metadata=metadata,
+        )
 
 
 def _stage_files(target_dir: Path, sources: Iterable[Path]) -> None:

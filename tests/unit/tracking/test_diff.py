@@ -20,7 +20,7 @@ def sample_runs() -> tuple[dict[str, object], dict[str, object]]:
 
 
 def test_diff_runs_detects_changes(
-    sample_runs: tuple[dict[str, object], dict[str, object]]
+    sample_runs: tuple[dict[str, object], dict[str, object]],
 ) -> None:
     old_run, new_run = sample_runs
     diff = diff_runs(old_run, new_run)
@@ -46,7 +46,7 @@ def test_diff_runs_detects_changes(
 
 
 def test_render_diff_markdown(
-    sample_runs: tuple[dict[str, object], dict[str, object]]
+    sample_runs: tuple[dict[str, object], dict[str, object]],
 ) -> None:
     old_run, new_run = sample_runs
     diff = diff_runs(old_run, new_run)

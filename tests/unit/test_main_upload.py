@@ -97,13 +97,18 @@ def test_upload_artifacts_builds_versioned_prefix(
         region="us-east-1",
     )
 
-    assert len(calls) == 2
+    assert len(calls) == 3
 
-    expected_prefix = "audits/2025.10.24/2025-10-24_153000"
-    assert {call["subdir"] for call in calls} == {"reports", "raw"}
+    expected_scope = "2025.10.24/2025-10-24_153000"
+    prefixes = {call["prefix"] for call in calls}
+    assert prefixes == {
+        "audits/artifacts/json",
+        "audits/artifacts/excel",
+        "audits/temp_data",
+    }
+    assert {call["subdir"] for call in calls} == {expected_scope}
     for call in calls:
         assert call["bucket"] == "bucket"
-        assert call["prefix"] == expected_prefix
         assert call["client"] == "client"
         metadata = call["metadata"]
         assert metadata["fix-version"] == "2025.10.24"

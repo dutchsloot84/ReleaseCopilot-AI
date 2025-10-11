@@ -8,9 +8,9 @@ The initial Release Copilot proof-of-concept relied on a manually provisioned IA
 
 The new CDK `CoreStack` codifies those resources with least-privilege defaults:
 
-- **S3 artifacts bucket** &mdash; server-side encrypted with AWS-managed keys, versioned, and non-public. Lifecycle management moves `raw/` objects to Standard-IA after 30 days and deletes them after 90 days, while `reports/` objects move to Standard-IA after 60 days and are retained indefinitely.
+- **S3 artifacts bucket** &mdash; server-side encrypted with AWS-managed keys, bucket-owner enforced, and non-public. Lifecycle management aligns with the structured prefixes: JSON and Excel artifacts transition to Standard-IA after 45 days and Glacier Deep Archive after 365 days (retaining five non-current versions); `temp_data/` expires after 10 days; and `logs/` shifts to Standard-IA after 30 days then expires at 120 days. Bucket policies deny insecure transport and unencrypted uploads.
 - **Secrets** &mdash; existing Jira and Bitbucket secrets can be imported by ARN; when omitted the stack creates placeholders using `SecretStringGenerator` so synthesis/deployment succeed without pre-provisioned secrets.
-- **Lambda execution role** &mdash; grants only the actions required to write logs, list the bucket within the `releasecopilot/` prefix, read/write prefixed objects, and fetch the two exact secrets. The Lambda receives environment variables (`RC_S3_BUCKET`, `RC_S3_PREFIX`, `RC_USE_AWS_SECRETS_MANAGER`) that mirror the manual configuration but are now centrally defined.
+- **Lambda execution role** &mdash; grants only the actions required to write logs, list the bucket within the `releasecopilot/` hierarchy, read/write the artifacts and `temp_data/` prefixes, and fetch the two exact secrets. The Lambda receives environment variables (`RC_S3_BUCKET`, `RC_S3_PREFIX`, `RC_USE_AWS_SECRETS_MANAGER`) that mirror the manual configuration but are now centrally defined. Dedicated managed policies provide read-only and writer scopes for humans and automation without broadening access.
 - **Outputs** &mdash; expose the bucket name and Lambda identifiers for downstream wiring. An optional EventBridge schedule driven by the `scheduleEnabled`/`scheduleCron` context flags can trigger the audit Lambda on a cadence without altering these foundations.
 
 ## Migration guidance

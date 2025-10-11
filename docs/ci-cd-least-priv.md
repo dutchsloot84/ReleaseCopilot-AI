@@ -12,6 +12,7 @@ The repository provides policy templates under `infra/iam/policies/`:
 * `dynamodb.json` – Access to the `ReleaseCopilot-Reports` table and any secondary indexes.
 * `secrets.json` – Manage Secrets Manager secrets prefixed with `releasecopilot/`.
 * `passrole.json` – Allows passing IAM roles named `ReleaseCopilot-*`.
+* **Generated managed policies** – The CDK stack now synthesises `ReleaseCopilot-<env>-ArtifactsRead` and `ReleaseCopilot-<env>-ArtifactsWrite` managed policies that scope access to the versioned `artifacts/` prefixes and the short-lived `temp_data/` cache. Attach these to human or automation principals instead of granting wildcard S3 permissions.
 
 These templates use `${aws:AccountId}` and `${aws:Region}` variables so they can be attached directly as inline policies or further refined.
 
