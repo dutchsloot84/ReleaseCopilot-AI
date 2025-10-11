@@ -34,6 +34,18 @@ class CoreStack(Stack):
     """Provision the ReleaseCopilot storage, secrets, and execution runtime."""
 
     RC_S3_PREFIX = "releasecopilot"
+    ARTIFACTS_PREFIX = f"{RC_S3_PREFIX}/artifacts"
+    ARTIFACTS_JSON_PREFIX = f"{ARTIFACTS_PREFIX}/json"
+    ARTIFACTS_EXCEL_PREFIX = f"{ARTIFACTS_PREFIX}/excel"
+    TEMP_DATA_PREFIX = f"{RC_S3_PREFIX}/temp_data"
+    LOGS_PREFIX = f"{RC_S3_PREFIX}/logs"
+
+    TEMP_DATA_EXPIRATION_DAYS = 10
+    LOGS_IA_AFTER_DAYS = 30
+    LOGS_EXPIRATION_DAYS = 120
+    ARTIFACTS_IA_AFTER_DAYS = 45
+    ARTIFACTS_GLACIER_AFTER_DAYS = 365
+    ARTIFACTS_NONCURRENT_VERSIONS = 5
     JIRA_SECRET_NAME = "releasecopilot/jira/oauth"
     BITBUCKET_SECRET_NAME = "releasecopilot/bitbucket/token"
     WEBHOOK_SECRET_NAME = "releasecopilot/jira/webhook_secret"
@@ -96,29 +108,97 @@ class CoreStack(Stack):
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             versioned=True,
             enforce_ssl=True,
+            object_ownership=s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
+        )
+
+        self.bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                sid="DenyInsecureTransport",
+                effect=iam.Effect.DENY,
+                principals=[iam.AnyPrincipal()],
+                actions=["s3:*"],
+                resources=[
+                    self.bucket.bucket_arn,
+                    self.bucket.arn_for_objects("*"),
+                ],
+                conditions={"Bool": {"aws:SecureTransport": "false"}},
+            )
+        )
+
+        self.bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                sid="DenyUnencryptedUploads",
+                effect=iam.Effect.DENY,
+                principals=[iam.AnyPrincipal()],
+                actions=["s3:PutObject"],
+                resources=[self.bucket.arn_for_objects("*")],
+                conditions={
+                    "StringNotEquals": {"s3:x-amz-server-side-encryption": "AES256"},
+                    "Null": {"s3:x-amz-server-side-encryption": "true"},
+                },
+            )
         )
 
         self.bucket.add_lifecycle_rule(
-            id="RawArtifactsLifecycle",
-            prefix="raw/",
+            id="ArtifactsJsonLifecycle",
+            prefix=f"{self.ARTIFACTS_JSON_PREFIX}/",
             transitions=[
                 s3.Transition(
                     storage_class=s3.StorageClass.INFREQUENT_ACCESS,
-                    transition_after=Duration.days(30),
+                    transition_after=Duration.days(self.ARTIFACTS_IA_AFTER_DAYS),
+                ),
+                s3.Transition(
+                    storage_class=s3.StorageClass.DEEP_ARCHIVE,
+                    transition_after=Duration.days(self.ARTIFACTS_GLACIER_AFTER_DAYS),
+                ),
+            ],
+            noncurrent_version_transitions=[
+                s3.NoncurrentVersionTransition(
+                    storage_class=s3.StorageClass.DEEP_ARCHIVE,
+                    transition_after=Duration.days(self.ARTIFACTS_GLACIER_AFTER_DAYS),
                 )
             ],
-            expiration=Duration.days(90),
+            noncurrent_versions_to_retain=self.ARTIFACTS_NONCURRENT_VERSIONS,
         )
 
         self.bucket.add_lifecycle_rule(
-            id="ReportsLifecycle",
-            prefix="reports/",
+            id="ArtifactsExcelLifecycle",
+            prefix=f"{self.ARTIFACTS_EXCEL_PREFIX}/",
             transitions=[
                 s3.Transition(
                     storage_class=s3.StorageClass.INFREQUENT_ACCESS,
-                    transition_after=Duration.days(60),
+                    transition_after=Duration.days(self.ARTIFACTS_IA_AFTER_DAYS),
+                ),
+                s3.Transition(
+                    storage_class=s3.StorageClass.DEEP_ARCHIVE,
+                    transition_after=Duration.days(self.ARTIFACTS_GLACIER_AFTER_DAYS),
+                ),
+            ],
+            noncurrent_version_transitions=[
+                s3.NoncurrentVersionTransition(
+                    storage_class=s3.StorageClass.DEEP_ARCHIVE,
+                    transition_after=Duration.days(self.ARTIFACTS_GLACIER_AFTER_DAYS),
                 )
             ],
+            noncurrent_versions_to_retain=self.ARTIFACTS_NONCURRENT_VERSIONS,
+        )
+
+        self.bucket.add_lifecycle_rule(
+            id="TempDataExpiration",
+            prefix=f"{self.TEMP_DATA_PREFIX}/",
+            expiration=Duration.days(self.TEMP_DATA_EXPIRATION_DAYS),
+        )
+
+        self.bucket.add_lifecycle_rule(
+            id="LogsLifecycle",
+            prefix=f"{self.LOGS_PREFIX}/",
+            transitions=[
+                s3.Transition(
+                    storage_class=s3.StorageClass.INFREQUENT_ACCESS,
+                    transition_after=Duration.days(self.LOGS_IA_AFTER_DAYS),
+                )
+            ],
+            expiration=Duration.days(self.LOGS_EXPIRATION_DAYS),
         )
 
         self.jira_secret = self._resolve_secret(
@@ -414,6 +494,18 @@ class CoreStack(Stack):
         )
 
         CfnOutput(self, "ArtifactsBucketName", value=self.bucket.bucket_name)
+        CfnOutput(
+            self,
+            "ArtifactsReadPolicyArn",
+            value=self.artifact_reader_policy.managed_policy_arn,
+            description="IAM managed policy granting read-only access to release artifacts.",
+        )
+        CfnOutput(
+            self,
+            "ArtifactsWritePolicyArn",
+            value=self.artifact_writer_policy.managed_policy_arn,
+            description="IAM managed policy granting write access to release artifacts and temp data.",
+        )
         CfnOutput(self, "LambdaName", value=self.lambda_function.function_name)
         CfnOutput(self, "LambdaArn", value=self.lambda_function.function_arn)
         CfnOutput(self, "JiraTableName", value=self.jira_table.table_name)
@@ -432,7 +524,6 @@ class CoreStack(Stack):
         )
 
     def _attach_policies(self) -> None:
-        prefix_objects_arn = self.bucket.arn_for_objects(f"{self.RC_S3_PREFIX}/*")
         log_group_arns = [
             self.release_lambda_log_group.log_group_arn,
             self.webhook_lambda_log_group.log_group_arn,
@@ -452,26 +543,14 @@ class CoreStack(Stack):
                 )
             )
 
+        artifact_object_arns = [
+            self.bucket.arn_for_objects(f"{self.ARTIFACTS_JSON_PREFIX}/*"),
+            self.bucket.arn_for_objects(f"{self.ARTIFACTS_EXCEL_PREFIX}/*"),
+            self.bucket.arn_for_objects(f"{self.TEMP_DATA_PREFIX}/*"),
+        ]
+
         statements.extend(
             [
-                iam.PolicyStatement(
-                    sid="AllowS3ObjectAccess",
-                    actions=["s3:GetObject", "s3:PutObject"],
-                    resources=[prefix_objects_arn],
-                ),
-                iam.PolicyStatement(
-                    sid="AllowS3ListArtifactsPrefix",
-                    actions=["s3:ListBucket"],
-                    resources=[self.bucket.bucket_arn],
-                    conditions={
-                        "StringLike": {
-                            "s3:prefix": [
-                                f"{self.RC_S3_PREFIX}/",
-                                f"{self.RC_S3_PREFIX}/*",
-                            ]
-                        }
-                    },
-                ),
                 iam.PolicyStatement(
                     sid="AllowLambdaLogging",
                     actions=[
@@ -481,6 +560,28 @@ class CoreStack(Stack):
                     ],
                     resources=log_group_arns,
                 ),
+                iam.PolicyStatement(
+                    sid="AllowS3ObjectAccess",
+                    actions=["s3:GetObject", "s3:PutObject"],
+                    resources=artifact_object_arns,
+                ),
+                iam.PolicyStatement(
+                    sid="AllowS3ListArtifactsPrefix",
+                    actions=["s3:ListBucket"],
+                    resources=[self.bucket.bucket_arn],
+                    conditions={
+                        "StringLike": {
+                            "s3:prefix": [
+                                f"{self.ARTIFACTS_JSON_PREFIX}/",
+                                f"{self.ARTIFACTS_JSON_PREFIX}/*",
+                                f"{self.ARTIFACTS_EXCEL_PREFIX}/",
+                                f"{self.ARTIFACTS_EXCEL_PREFIX}/*",
+                                f"{self.TEMP_DATA_PREFIX}/",
+                                f"{self.TEMP_DATA_PREFIX}/*",
+                            ]
+                        }
+                    },
+                ),
             ]
         )
 
@@ -489,6 +590,81 @@ class CoreStack(Stack):
             "LambdaExecutionPolicy",
             statements=statements,
         ).attach_to_role(self.execution_role)
+
+        self.artifact_reader_policy = iam.ManagedPolicy(
+            self,
+            "ArtifactsReadManagedPolicy",
+            managed_policy_name=f"ReleaseCopilot-{self.environment_name}-ArtifactsRead",
+            statements=[
+                iam.PolicyStatement(
+                    sid="AllowArtifactReads",
+                    actions=[
+                        "s3:GetObject",
+                        "s3:GetObjectVersion",
+                        "s3:GetObjectTagging",
+                    ],
+                    resources=[
+                        self.bucket.arn_for_objects(f"{self.ARTIFACTS_JSON_PREFIX}/*"),
+                        self.bucket.arn_for_objects(f"{self.ARTIFACTS_EXCEL_PREFIX}/*"),
+                    ],
+                ),
+                iam.PolicyStatement(
+                    sid="AllowArtifactList",
+                    actions=["s3:ListBucket"],
+                    resources=[self.bucket.bucket_arn],
+                    conditions={
+                        "StringLike": {
+                            "s3:prefix": [
+                                f"{self.ARTIFACTS_JSON_PREFIX}/",
+                                f"{self.ARTIFACTS_JSON_PREFIX}/*",
+                                f"{self.ARTIFACTS_EXCEL_PREFIX}/",
+                                f"{self.ARTIFACTS_EXCEL_PREFIX}/*",
+                            ]
+                        }
+                    },
+                ),
+            ],
+        )
+
+        self.artifact_writer_policy = iam.ManagedPolicy(
+            self,
+            "ArtifactsWriteManagedPolicy",
+            managed_policy_name=f"ReleaseCopilot-{self.environment_name}-ArtifactsWrite",
+            statements=[
+                iam.PolicyStatement(
+                    sid="AllowArtifactWrites",
+                    actions=[
+                        "s3:PutObject",
+                        "s3:PutObjectTagging",
+                        "s3:AbortMultipartUpload",
+                        "s3:DeleteObject",
+                        "s3:GetObject",
+                    ],
+                    resources=[
+                        self.bucket.arn_for_objects(f"{self.ARTIFACTS_JSON_PREFIX}/*"),
+                        self.bucket.arn_for_objects(f"{self.ARTIFACTS_EXCEL_PREFIX}/*"),
+                        self.bucket.arn_for_objects(f"{self.TEMP_DATA_PREFIX}/*"),
+                    ],
+                ),
+                iam.PolicyStatement(
+                    sid="AllowArtifactWriteList",
+                    actions=["s3:ListBucket"],
+                    resources=[self.bucket.bucket_arn],
+                    conditions={
+                        "StringLike": {
+                            "s3:prefix": [
+                                f"{self.ARTIFACTS_JSON_PREFIX}/",
+                                f"{self.ARTIFACTS_JSON_PREFIX}/*",
+                                f"{self.ARTIFACTS_EXCEL_PREFIX}/",
+                                f"{self.ARTIFACTS_EXCEL_PREFIX}/*",
+                                f"{self.TEMP_DATA_PREFIX}/",
+                                f"{self.TEMP_DATA_PREFIX}/*",
+                            ]
+                        }
+                    },
+                ),
+            ],
+        )
 
     def _resolve_secret(
         self,

@@ -62,8 +62,8 @@ def _normalise_context(
         "region", os.getenv("CDK_DEFAULT_REGION", "us-west-2")
     )
     context["bucketBase"] = config.get("bucketBase")
-    context["reportPrefix"] = config.get("reportPrefix", "reports/")
-    context["rawPrefix"] = config.get("rawPrefix", "raw/")
+    context["reportPrefix"] = config.get("reportPrefix", "artifacts/json/")
+    context["rawPrefix"] = config.get("rawPrefix", "temp_data/")
     context["logLevel"] = config.get("logLevel", "INFO")
     context["lambdaModule"] = config.get("lambdaModule", "aws.core_handler")
     context["retainBucket"] = _as_bool(

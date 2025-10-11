@@ -1,5 +1,7 @@
 ## [Unreleased]
 ### Added
+- Phoenix-ready S3 artifacts bucket hardening: TLS-only bucket policy, bucket-owner enforced ownership, structured prefixes with lifecycle management, and read/write managed policies.
+- Artifacts bucket runbook documenting prefix retention, Phoenix-time procedures, and recovery guidance.
 - Least-privilege Secrets Manager wiring with secret smoke test CLI and redaction helpers.
 - MOP + prompt-chaining scaffolding (`prompts/` templates, runbooks, PR template, Issue form).
 - Active MOP index in docs; README quickstart.

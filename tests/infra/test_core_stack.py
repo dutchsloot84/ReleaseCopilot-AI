@@ -64,6 +64,17 @@ def test_bucket_encryption_and_versioning() -> None:
                     ]
                 )
             },
+            "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": True,
+                "BlockPublicPolicy": True,
+                "IgnorePublicAcls": True,
+                "RestrictPublicBuckets": True,
+            },
+            "OwnershipControls": {
+                "Rules": Match.array_with(
+                    [Match.object_like({"ObjectOwnership": "BucketOwnerEnforced"})]
+                )
+            },
         },
     )
 
@@ -73,19 +84,90 @@ def test_bucket_lifecycle_rules() -> None:
     bucket = next(iter(template.find_resources("AWS::S3::Bucket").values()))
     lifecycle_rules = bucket["Properties"]["LifecycleConfiguration"]["Rules"]
 
-    raw_rule = next(rule for rule in lifecycle_rules if rule["Prefix"] == "raw/")
-    assert raw_rule["ExpirationInDays"] == 90
-    assert raw_rule["Transitions"] == [
-        {"StorageClass": "STANDARD_IA", "TransitionInDays": 30}
+    rules_by_id = {rule["Id"]: rule for rule in lifecycle_rules}
+
+    assert {
+        "ArtifactsJsonLifecycle",
+        "ArtifactsExcelLifecycle",
+        "TempDataExpiration",
+        "LogsLifecycle",
+    }.issubset(rules_by_id)
+
+    json_rule = rules_by_id["ArtifactsJsonLifecycle"]
+    assert json_rule["Prefix"] == "releasecopilot/artifacts/json/"
+    assert json_rule["Transitions"] == [
+        {"StorageClass": "STANDARD_IA", "TransitionInDays": 45},
+        {"StorageClass": "DEEP_ARCHIVE", "TransitionInDays": 365},
+    ]
+    assert json_rule["NoncurrentVersionTransitions"] == [
+        {"StorageClass": "DEEP_ARCHIVE", "TransitionInDays": 365}
     ]
 
-    reports_rule = next(
-        rule for rule in lifecycle_rules if rule["Prefix"] == "reports/"
-    )
-    assert "ExpirationInDays" not in reports_rule
-    assert reports_rule["Transitions"] == [
-        {"StorageClass": "STANDARD_IA", "TransitionInDays": 60}
+    excel_rule = rules_by_id["ArtifactsExcelLifecycle"]
+    assert excel_rule["Prefix"] == "releasecopilot/artifacts/excel/"
+    assert excel_rule["Transitions"] == [
+        {"StorageClass": "STANDARD_IA", "TransitionInDays": 45},
+        {"StorageClass": "DEEP_ARCHIVE", "TransitionInDays": 365},
     ]
+    assert excel_rule["NoncurrentVersionTransitions"] == [
+        {"StorageClass": "DEEP_ARCHIVE", "TransitionInDays": 365}
+    ]
+
+    temp_rule = rules_by_id["TempDataExpiration"]
+    assert temp_rule["Prefix"] == "releasecopilot/temp_data/"
+    assert temp_rule["ExpirationInDays"] == 10
+
+    logs_rule = rules_by_id["LogsLifecycle"]
+    assert logs_rule["Prefix"] == "releasecopilot/logs/"
+    assert logs_rule["Transitions"] == [
+        {"StorageClass": "STANDARD_IA", "TransitionInDays": 30}
+    ]
+    assert logs_rule["ExpirationInDays"] == 120
+
+
+def test_bucket_policy_enforces_security() -> None:
+    template = _synth_template()
+    policies = template.find_resources("AWS::S3::BucketPolicy")
+    assert policies, "Expected bucket policy to be synthesized"
+    policy = next(iter(policies.values()))
+    statements = policy["Properties"]["PolicyDocument"]["Statement"]
+
+    tls_statement = next(
+        stmt
+        for stmt in statements
+        if stmt.get("Condition") == {"Bool": {"aws:SecureTransport": "false"}}
+    )
+    assert tls_statement["Effect"] == "Deny"
+    tls_actions = tls_statement["Action"]
+    if isinstance(tls_actions, list):
+        assert set(tls_actions) == {"s3:*"}
+    else:
+        assert tls_actions == "s3:*"
+
+    encryption_statement = next(
+        stmt for stmt in statements if stmt.get("Sid") == "DenyUnencryptedUploads"
+    )
+    assert encryption_statement["Effect"] == "Deny"
+    encryption_actions = encryption_statement["Action"]
+    if isinstance(encryption_actions, list):
+        assert set(encryption_actions) == {"s3:PutObject"}
+    else:
+        assert encryption_actions == "s3:PutObject"
+    expected_condition = {
+        "StringNotEquals": {"s3:x-amz-server-side-encryption": "AES256"},
+        "Null": {"s3:x-amz-server-side-encryption": True},
+    }
+    observed_condition = encryption_statement["Condition"]
+    # CDK may render the Null condition as a string or boolean literal.
+    if (
+        observed_condition.get("Null", {}).get("s3:x-amz-server-side-encryption")
+        == "true"
+    ):
+        observed_condition = {
+            **observed_condition,
+            "Null": {"s3:x-amz-server-side-encryption": True},
+        }
+    assert observed_condition == expected_condition
 
 
 def test_iam_policy_statements() -> None:
@@ -107,15 +189,26 @@ def test_iam_policy_statements() -> None:
         stmt for stmt in statements if stmt["Sid"] == "AllowS3ObjectAccess"
     )
     assert set(object_statement["Action"]) == {"s3:GetObject", "s3:PutObject"}
-    object_resource = object_statement["Resource"]
-    assert object_resource["Fn::Join"][1][1] == "/releasecopilot/*"
+    object_resources = object_statement["Resource"]
+    assert isinstance(object_resources, list)
+    for resource in object_resources:
+        assert resource["Fn::Join"][1][1].startswith("/releasecopilot/")
 
     list_statement = next(
         stmt for stmt in statements if stmt["Sid"] == "AllowS3ListArtifactsPrefix"
     )
     assert list_statement["Action"] == "s3:ListBucket"
     assert list_statement["Condition"] == {
-        "StringLike": {"s3:prefix": ["releasecopilot/", "releasecopilot/*"]}
+        "StringLike": {
+            "s3:prefix": [
+                "releasecopilot/artifacts/json/",
+                "releasecopilot/artifacts/json/*",
+                "releasecopilot/artifacts/excel/",
+                "releasecopilot/artifacts/excel/*",
+                "releasecopilot/temp_data/",
+                "releasecopilot/temp_data/*",
+            ]
+        }
     }
 
     secrets_statement = next(
@@ -149,6 +242,56 @@ def test_iam_policy_statements() -> None:
 
     assert statement_log_group_ids.issubset(log_group_ids)
     assert all(resource["Fn::GetAtt"][1] == "Arn" for resource in resources)
+
+
+def test_managed_policies_scope_access() -> None:
+    template = _synth_template()
+    policies = template.find_resources("AWS::IAM::ManagedPolicy")
+    assert len(policies) >= 2
+
+    reader_policy = next(
+        policy
+        for policy in policies.values()
+        if policy["Properties"]["ManagedPolicyName"].endswith("ArtifactsRead")
+    )
+    writer_policy = next(
+        policy
+        for policy in policies.values()
+        if policy["Properties"]["ManagedPolicyName"].endswith("ArtifactsWrite")
+    )
+
+    reader_statements = reader_policy["Properties"]["PolicyDocument"]["Statement"]
+    assert {stmt["Sid"] for stmt in reader_statements} == {
+        "AllowArtifactReads",
+        "AllowArtifactList",
+    }
+    read_resource_statement = next(
+        stmt for stmt in reader_statements if stmt["Sid"] == "AllowArtifactReads"
+    )
+    read_suffixes = {
+        resource["Fn::Join"][1][1] for resource in read_resource_statement["Resource"]
+    }
+    assert read_suffixes == {
+        "/releasecopilot/artifacts/json/*",
+        "/releasecopilot/artifacts/excel/*",
+    }
+
+    writer_statements = writer_policy["Properties"]["PolicyDocument"]["Statement"]
+    assert {stmt["Sid"] for stmt in writer_statements} == {
+        "AllowArtifactWrites",
+        "AllowArtifactWriteList",
+    }
+    write_resource_statement = next(
+        stmt for stmt in writer_statements if stmt["Sid"] == "AllowArtifactWrites"
+    )
+    write_suffixes = {
+        resource["Fn::Join"][1][1] for resource in write_resource_statement["Resource"]
+    }
+    assert write_suffixes == {
+        "/releasecopilot/artifacts/json/*",
+        "/releasecopilot/artifacts/excel/*",
+        "/releasecopilot/temp_data/*",
+    }
 
 
 def test_lambda_environment_and_log_groups() -> None:

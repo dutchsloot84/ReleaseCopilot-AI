@@ -156,17 +156,41 @@ def run_audit(options: AuditOptions) -> AuditResult:
         }
         with tempfile.TemporaryDirectory() as staging_dir:
             staging_path = Path(staging_dir)
+            json_dir = staging_path / "artifacts" / "json"
+            excel_dir = staging_path / "artifacts" / "excel"
             for _, path in outputs.items():
-                destination = staging_path / path.name
+                destination_dir = json_dir
+                suffix = path.suffix.lower()
+                if suffix in {".xls", ".xlsx"}:
+                    destination_dir = excel_dir
+                destination_dir.mkdir(parents=True, exist_ok=True)
+                destination = destination_dir / path.name
                 destination.write_bytes(path.read_bytes())
-            upload_directory(
-                bucket=bucket,
-                prefix=prefix,
-                local_dir=staging_path,
-                subdir="audit",
-                region_name=options.region,
-                metadata=metadata,
-            )
+
+            prefix_root = prefix.strip("/")
+            if prefix_root:
+                artifact_prefix_root = prefix_root
+            else:
+                artifact_prefix_root = "releasecopilot"
+
+            if json_dir.exists() and any(json_dir.iterdir()):
+                upload_directory(
+                    bucket=bucket,
+                    prefix="/".join([artifact_prefix_root, "artifacts", "json"]),
+                    local_dir=json_dir,
+                    subdir="audit",
+                    region_name=options.region,
+                    metadata=metadata,
+                )
+            if excel_dir.exists() and any(excel_dir.iterdir()):
+                upload_directory(
+                    bucket=bucket,
+                    prefix="/".join([artifact_prefix_root, "artifacts", "excel"]),
+                    local_dir=excel_dir,
+                    subdir="audit",
+                    region_name=options.region,
+                    metadata=metadata,
+                )
         uploaded = True
         LOGGER.info(
             "Uploaded audit artifacts",
