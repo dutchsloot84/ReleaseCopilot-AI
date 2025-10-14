@@ -451,13 +451,6 @@ class CoreStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
         )
 
-        self.webhook_api_access_logs = logs.LogGroup(
-            self,
-            "JiraWebhookApiAccessLogs",
-            retention=logs.RetentionDays.ONE_MONTH,
-            removal_policy=RemovalPolicy.DESTROY,
-        )
-
         self.webhook_api = apigateway.RestApi(
             self,
             "JiraWebhookApi",

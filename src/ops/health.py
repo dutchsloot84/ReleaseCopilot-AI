@@ -329,7 +329,9 @@ def _check_dynamodb(
             extra={"table_name": table_name, "key_schema": key_schema},
         )
         return (
-            CheckResult("fail", resource=f"dynamodb://{table_name}", reason="Missing range key"),
+            CheckResult(
+                "fail", resource=f"dynamodb://{table_name}", reason="Missing range key"
+            ),
             None,
         )
 
