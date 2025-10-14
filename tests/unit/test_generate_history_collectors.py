@@ -200,7 +200,7 @@ def test_collect_artifacts_section_combines_sources(
         generate_history,
         "_collect_s3_artifacts",
         lambda bucket, prefixes, since, until: [
-            "- S3 releasecopilot-artifacts → `reports/report.csv` (0 bytes, updated 2024-01-05)"
+            "- S3 releasecopilot-artifacts → `artifacts/json/report.csv` (0 bytes, updated 2024-01-05)"
         ],
     )
 
@@ -214,7 +214,7 @@ def test_collect_artifacts_section_combines_sources(
             "s3": {
                 "enabled": True,
                 "bucket": "releasecopilot-artifacts",
-                "prefixes": ["reports/"],
+                "prefixes": ["artifacts/json/"],
             },
         },
         since=since,

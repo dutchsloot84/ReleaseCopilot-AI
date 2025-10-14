@@ -29,8 +29,14 @@ npx --yes cdk deploy ReleaseCopilot-<env>-Core
 
 The unified `ReleaseCopilot-<env>-Core` stack provisions:
 
-- An artifacts S3 bucket (`ArtifactsBucket`) scoped to the account, with lifecycle
-  rules for raw and report prefixes.
+- An artifacts S3 bucket (`ArtifactsBucket`) scoped to the account, enforcing
+  TLS-only access, bucket-owner enforced object ownership, and default SSE-S3
+  encryption. Structured prefixes keep artifacts predictable: JSON and Excel
+  reports live under `releasecopilot/artifacts/` (transition to Standard-IA at
+  45 days and Glacier Deep Archive at 365 days while retaining five non-current
+  versions), `releasecopilot/temp_data/` expires after 10 days, and
+  `releasecopilot/logs/` transitions to Standard-IA after 30 days before expiring
+  at 120 days.
 - Secrets Manager secrets for Jira, Bitbucket, and an optional webhook signing
   secret, reused across runtimes when ARNs are not supplied via context.
 - A Python 3.11 ReleaseCopilot Lambda function plus API Gateway, DynamoDB table,

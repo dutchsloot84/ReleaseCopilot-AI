@@ -148,6 +148,21 @@ each object includes the serialized scope payload (for Historian traceability)
 and the `rc-audit` artifact marker, enabling downstream automation to identify
 the upload.
 
+ReleaseCopilot’s managed bucket enforces TLS-only traffic, server-side
+encryption (SSE-S3), object ownership via `BucketOwnerEnforced`, and a structured
+prefix layout:
+
+| Prefix | Purpose | Retention |
+| ------ | ------- | --------- |
+| `releasecopilot/artifacts/json/` | Versioned JSON exports for audits. | Transition to Standard-IA after 45 days, Glacier Deep Archive after 365 days (retain 5 versions). |
+| `releasecopilot/artifacts/excel/` | Versioned Excel exports for audits. | Transition to Standard-IA after 45 days, Glacier Deep Archive after 365 days (retain 5 versions). |
+| `releasecopilot/temp_data/` | Intermediate cache for resumable runs. | Expire after 10 days. |
+| `releasecopilot/logs/` | Tooling diagnostics pushed alongside artifacts. | Transition to Standard-IA after 30 days, expire after 120 days. |
+
+Reader and writer IAM managed policies scope access to those prefixes so report
+consumers can list/read artifacts while the CLI or exporter can upload results
+and short-lived cache files without broad bucket permissions.
+
 ## Streamlit Dashboard
 
 Explore generated audit reports with the bundled Streamlit UI. The app can open
