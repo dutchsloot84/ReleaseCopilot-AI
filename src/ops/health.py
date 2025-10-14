@@ -1,4 +1,5 @@
 """Readiness checks for ReleaseCopilot operational environments."""
+
 from __future__ import annotations
 
 import time
@@ -142,17 +143,27 @@ def _check_secrets(
 ) -> tuple[CheckResult, MutableMapping[str, bool]]:
     secret_status: MutableMapping[str, bool] = {}
     if not options.secrets:
-        return CheckResult("pass", resource="secretsmanager://none", reason="No secrets requested"), secret_status
+        return (
+            CheckResult(
+                "pass", resource="secretsmanager://none", reason="No secrets requested"
+            ),
+            secret_status,
+        )
 
     resource = ", ".join(
         f"{name}={secret_id}" for name, secret_id in sorted(options.secrets.items())
     )
     if options.dry_run:
-        LOGGER.info("Skipping secrets check (dry-run)", extra={"secrets": list(options.secrets.keys())})
+        LOGGER.info(
+            "Skipping secrets check (dry-run)",
+            extra={"secrets": list(options.secrets.keys())},
+        )
         for secret_id in options.secrets.values():
             secret_status[secret_id] = True
         return (
-            CheckResult("pass", resource=f"secretsmanager://{resource}", reason="Dry-run"),
+            CheckResult(
+                "pass", resource=f"secretsmanager://{resource}", reason="Dry-run"
+            ),
             secret_status,
         )
 
@@ -185,7 +196,10 @@ def _check_secrets(
 
     status = "fail" if failures else "pass"
     reason = "; ".join(failures) if failures else None
-    return CheckResult(status, resource=f"secretsmanager://{resource}", reason=reason), secret_status
+    return (
+        CheckResult(status, resource=f"secretsmanager://{resource}", reason=reason),
+        secret_status,
+    )
 
 
 def _check_webhook(
@@ -198,18 +212,26 @@ def _check_webhook(
         return CheckResult("pass", resource="webhook-secret", reason="Dry-run")
 
     if options.webhook_env_present:
-        LOGGER.info("Webhook secret resolved from environment", extra={"source": env_name})
+        LOGGER.info(
+            "Webhook secret resolved from environment", extra={"source": env_name}
+        )
         return CheckResult("pass", resource=f"env://{env_name}")
 
     secret_id = options.webhook_secret_id
     if not secret_id:
         LOGGER.error("Webhook secret is not configured")
-        return CheckResult("fail", resource="webhook-secret", reason="Webhook secret not configured")
+        return CheckResult(
+            "fail", resource="webhook-secret", reason="Webhook secret not configured"
+        )
 
     if secret_status.get(secret_id) is True:
         return CheckResult("pass", resource=f"secretsmanager://{secret_id}")
     if secret_status.get(secret_id) is False:
-        return CheckResult("fail", resource=f"secretsmanager://{secret_id}", reason="Webhook secret payload empty")
+        return CheckResult(
+            "fail",
+            resource=f"secretsmanager://{secret_id}",
+            reason="Webhook secret payload empty",
+        )
 
     try:
         response = clients.secrets.get_secret_value(SecretId=secret_id)
@@ -218,7 +240,11 @@ def _check_webhook(
             "Failed to resolve webhook secret",
             extra={"secret_id": secret_id, "error": str(exc)},
         )
-        return CheckResult("fail", resource=f"secretsmanager://{secret_id}", reason="Unable to fetch webhook secret")
+        return CheckResult(
+            "fail",
+            resource=f"secretsmanager://{secret_id}",
+            reason="Unable to fetch webhook secret",
+        )
 
     has_payload = bool(response.get("SecretString") or response.get("SecretBinary"))
     if not has_payload:
@@ -226,7 +252,11 @@ def _check_webhook(
             "Webhook secret payload empty",
             extra={"secret_id": secret_id},
         )
-        return CheckResult("fail", resource=f"secretsmanager://{secret_id}", reason="Webhook secret payload empty")
+        return CheckResult(
+            "fail",
+            resource=f"secretsmanager://{secret_id}",
+            reason="Webhook secret payload empty",
+        )
 
     return CheckResult("pass", resource=f"secretsmanager://{secret_id}")
 
@@ -237,10 +267,16 @@ def _check_dynamodb(
     table_name = options.table_name
     if not table_name:
         LOGGER.error("DynamoDB table name is not configured")
-        return CheckResult("fail", resource="dynamodb://", reason="Missing table name"), None
+        return (
+            CheckResult("fail", resource="dynamodb://", reason="Missing table name"),
+            None,
+        )
 
     if options.dry_run:
-        return CheckResult("pass", resource=f"dynamodb://{table_name}", reason="Dry-run"), None
+        return (
+            CheckResult("pass", resource=f"dynamodb://{table_name}", reason="Dry-run"),
+            None,
+        )
 
     client = clients.dynamodb
     try:
@@ -251,16 +287,25 @@ def _check_dynamodb(
             extra={"table_name": table_name, "error": str(exc)},
         )
         return (
-            CheckResult("fail", resource=f"dynamodb://{table_name}", reason="DescribeTable failed"),
+            CheckResult(
+                "fail",
+                resource=f"dynamodb://{table_name}",
+                reason="DescribeTable failed",
+            ),
             None,
         )
 
     key_schema = description.get("KeySchema") or []
-    attr_defs = {definition["AttributeName"]: definition["AttributeType"] for definition in description.get("AttributeDefinitions", [])}
+    attr_defs = {
+        definition["AttributeName"]: definition["AttributeType"]
+        for definition in description.get("AttributeDefinitions", [])
+    }
     if not key_schema:
         LOGGER.error("Table key schema missing", extra={"table_name": table_name})
         return (
-            CheckResult("fail", resource=f"dynamodb://{table_name}", reason="Missing key schema"),
+            CheckResult(
+                "fail", resource=f"dynamodb://{table_name}", reason="Missing key schema"
+            ),
             None,
         )
 
@@ -271,7 +316,22 @@ def _check_dynamodb(
             extra={"table_name": table_name, "key_schema": key_schema},
         )
         return (
-            CheckResult("fail", resource=f"dynamodb://{table_name}", reason="Missing range key"),
+            CheckResult(
+                "fail", resource=f"dynamodb://{table_name}", reason="Missing range key"
+            ),
+            None,
+        )
+
+    key_types = {element.get("KeyType") for element in key_schema}
+    if "HASH" not in key_types or "RANGE" not in key_types:
+        LOGGER.error(
+            "Table key schema incomplete",
+            extra={"table_name": table_name, "key_schema": key_schema},
+        )
+        return (
+            CheckResult(
+                "fail", resource=f"dynamodb://{table_name}", reason="Missing range key"
+            ),
             None,
         )
 
@@ -292,7 +352,9 @@ def _check_dynamodb(
             extra={"table_name": table_name, "error": str(exc)},
         )
         return (
-            CheckResult("fail", resource=f"dynamodb://{table_name}", reason="PutItem failed"),
+            CheckResult(
+                "fail", resource=f"dynamodb://{table_name}", reason="PutItem failed"
+            ),
             None,
         )
 
@@ -300,7 +362,9 @@ def _check_dynamodb(
     try:
         client.delete_item(TableName=table_name, Key=item)
     except (BotoCoreError, ClientError) as exc:
-        cleanup_warning = f"Failed to delete DynamoDB sentinel ({exc.__class__.__name__})"
+        cleanup_warning = (
+            f"Failed to delete DynamoDB sentinel ({exc.__class__.__name__})"
+        )
         LOGGER.warning(
             "Failed to delete DynamoDB sentinel",
             extra={"table_name": table_name, "error": str(exc)},
@@ -334,7 +398,9 @@ def _check_s3(
 
     client = clients.s3
     sentinel = uuid.uuid4().hex
-    key_parts = [part for part in (prefix, "health", "readiness", f"{sentinel}.txt") if part]
+    key_parts = [
+        part for part in (prefix, "health", "readiness", f"{sentinel}.txt") if part
+    ]
     key = "/".join(key_parts)
     resource = f"s3://{bucket}/{key}"
 

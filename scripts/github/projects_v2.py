@@ -79,7 +79,9 @@ class ProjectsV2Client:
                     continue
                 assignees = [
                     assignee.get("login")
-                    for assignee in (content.get("assignees", {}) or {}).get("nodes", [])
+                    for assignee in (content.get("assignees", {}) or {}).get(
+                        "nodes", []
+                    )
                     if assignee and assignee.get("login")
                 ]
                 items.append(
@@ -97,7 +99,9 @@ class ProjectsV2Client:
             after = page_info.get("endCursor")
         return items
 
-    def _resolve_project_id(self, owner: str, repo: str, project_name: str) -> Optional[str]:
+    def _resolve_project_id(
+        self, owner: str, repo: str, project_name: str
+    ) -> Optional[str]:
         """Look up the GraphQL node ID for a repository project."""
 
         data = self._execute(
@@ -118,7 +122,9 @@ class ProjectsV2Client:
                 return project.get("id")
         return None
 
-    def _execute(self, query: str, variables: Dict[str, Optional[str]]) -> Dict[str, object]:
+    def _execute(
+        self, query: str, variables: Dict[str, Optional[str]]
+    ) -> Dict[str, object]:
         response = self.session.post(
             _GRAPHQL_URL,
             json={"query": query, "variables": variables},
@@ -130,7 +136,9 @@ class ProjectsV2Client:
             )
         data = response.json()
         if errors := data.get("errors"):
-            message = ", ".join(error.get("message", "unknown error") for error in errors)
+            message = ", ".join(
+                error.get("message", "unknown error") for error in errors
+            )
             raise RuntimeError(f"GitHub GraphQL returned errors: {message}")
         return data
 

@@ -30,7 +30,9 @@ def test_filters_by_fix_version_and_repository() -> None:
     with_df, without_df = transform.prepare_story_tables(report)
 
     filters = {"fix_versions": ["MOB-1.1.0"]}
-    filtered_with, filtered_without = transform.filter_story_tables(with_df, without_df, filters)
+    filtered_with, filtered_without = transform.filter_story_tables(
+        with_df, without_df, filters
+    )
 
     assert filtered_with["story_key"].tolist() == ["APP-3"]
     assert filtered_without.empty

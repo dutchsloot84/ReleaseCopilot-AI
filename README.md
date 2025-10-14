@@ -7,13 +7,14 @@ Releasecopilot AI automates release audits by correlating Jira stories with Bitb
 > from the **Actions** tab to generate an on-demand report.
 
 ## LLM Workflow: MOP + Prompt Chaining (Quickstart)
-1. Read the active MOP: `prompts/mop_wave1_security.md`.
-2. Generate a sub-prompt for the next PR (template in `prompts/subprompt_template.md`).
-3. Run the **Critic Check** (`prompts/critic_check.md`) on the output; fix any defects.
-4. Open PR with **Decision / Note / Action** markers.
-5. After merge: add a Historian-style summary comment and update the board.
+1. Read the active MOP: `project/prompts/wave1/mop_wave1_security.md`.
+2. Generate or update a sub-prompt in `project/prompts/wave1` (use `project/prompts/wave1/subprompt_template.md`).
+3. Capture the implementation in a Prompt Recipe (`project/prompts/prompt_recipes/template.md`) and link it in the PR body.
+4. Log any manual follow-ups in `actions/pending_actions.json`; CI will surface them with `tools/render_actions_comment.py`.
+5. Run the **Critic Check** (`prompts/critic_check.md`) and `python tools/validate_prompts.py` before opening a PR with **Decision / Note / Action** markers.
+6. After merge: confirm the action comment is resolved and update historian records.
 
-See `docs/active_mops.md` for current MOPs.
+See `docs/promptops/MOP_Workflow.md` and `docs/promptops/Prompt_Recipe_Guide.md` for end-to-end guidance.
 
 ## Features
 
@@ -135,6 +136,10 @@ and webhook secret resolution. The JSON output follows
 [`docs/schemas/health.v1.json`](docs/schemas/health.v1.json) and is documented
 in [`docs/runbooks/health_smoke.md`](docs/runbooks/health_smoke.md).
 
+For a quick secrets-only smoke test, run `rc health readiness`. The command
+prints `OK SECRET_*` or `FAIL SECRET_*` lines after attempting to read the
+configured Secrets Manager entries, never logging secret payloads.
+
 ### S3 uploads
 
 Supplying `--upload s3://bucket/prefix` stages the generated artifacts and
@@ -142,6 +147,21 @@ publishes them to Amazon S3 using server-side encryption. Metadata attached to
 each object includes the serialized scope payload (for Historian traceability)
 and the `rc-audit` artifact marker, enabling downstream automation to identify
 the upload.
+
+ReleaseCopilot’s managed bucket enforces TLS-only traffic, server-side
+encryption (SSE-S3), object ownership via `BucketOwnerEnforced`, and a structured
+prefix layout:
+
+| Prefix | Purpose | Retention |
+| ------ | ------- | --------- |
+| `releasecopilot/artifacts/json/` | Versioned JSON exports for audits. | Transition to Standard-IA after 45 days, Glacier Deep Archive after 365 days (retain 5 versions). |
+| `releasecopilot/artifacts/excel/` | Versioned Excel exports for audits. | Transition to Standard-IA after 45 days, Glacier Deep Archive after 365 days (retain 5 versions). |
+| `releasecopilot/temp_data/` | Intermediate cache for resumable runs. | Expire after 10 days. |
+| `releasecopilot/logs/` | Tooling diagnostics pushed alongside artifacts. | Transition to Standard-IA after 30 days, expire after 120 days. |
+
+Reader and writer IAM managed policies scope access to those prefixes so report
+consumers can list/read artifacts while the CLI or exporter can upload results
+and short-lived cache files without broad bucket permissions.
 
 ## Streamlit Dashboard
 
@@ -256,6 +276,11 @@ Production buckets are retained by default; set `"retainBucket": false` in non-p
   }
   ```
 - Bitbucket secrets can include either an OAuth access token or a username/app-password pair.
+- Secrets Manager entries for the Lambda workloads use canonical names:
+  - `SECRET_JIRA` → `releasecopilot/jira/oauth`
+  - `SECRET_BITBUCKET` → `releasecopilot/bitbucket/token`
+  - `SECRET_WEBHOOK` → `releasecopilot/jira/webhook_secret`
+  Document these identifiers in local `.env` files without storing plaintext values.
 - `.env` files are intended for local experiments only—use AWS Secrets Manager for shared or deployed environments.
 
 ## Outputs

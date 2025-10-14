@@ -1,4 +1,5 @@
 """Processing utilities that map Jira issues to Bitbucket commits."""
+
 from __future__ import annotations
 
 import logging
@@ -23,7 +24,9 @@ class AuditResult:
 class AuditProcessor:
     """Links commits with their corresponding Jira issues."""
 
-    def __init__(self, issues: Iterable[Dict[str, Any]], commits: Iterable[Dict[str, Any]]) -> None:
+    def __init__(
+        self, issues: Iterable[Dict[str, Any]], commits: Iterable[Dict[str, Any]]
+    ) -> None:
         self.issues = list(issues)
         self.commits = list(commits)
 
@@ -52,7 +55,9 @@ class AuditProcessor:
             commit_story_mapping.append(
                 {
                     "story_key": key,
-                    "story_summary": issue.get("fields", {}).get("summary") if issue else None,
+                    "story_summary": (
+                        issue.get("fields", {}).get("summary") if issue else None
+                    ),
                     "commit_count": len(commits),
                     "commits": [self._simplify_commit(commit) for commit in commits],
                 }

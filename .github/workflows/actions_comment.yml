@@ -1,0 +1,27 @@
+name: Render Pending Human Actions
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Render human action comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python tools/render_actions_comment.py --actions-path actions/pending_actions.json --event-path "$GITHUB_EVENT_PATH"

@@ -1,8 +1,9 @@
 """CDK stack defining the ReleaseCopilot core infrastructure."""
+
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Sequence
 
 from aws_cdk import (
     CfnOutput,
@@ -26,11 +27,28 @@ from aws_cdk import (
 )
 from constructs import Construct
 
+from .constructs import BudgetAlerts, SecretAccess
+
 
 class CoreStack(Stack):
     """Provision the ReleaseCopilot storage, secrets, and execution runtime."""
 
     RC_S3_PREFIX = "releasecopilot"
+    ARTIFACTS_PREFIX = f"{RC_S3_PREFIX}/artifacts"
+    ARTIFACTS_JSON_PREFIX = f"{ARTIFACTS_PREFIX}/json"
+    ARTIFACTS_EXCEL_PREFIX = f"{ARTIFACTS_PREFIX}/excel"
+    TEMP_DATA_PREFIX = f"{RC_S3_PREFIX}/temp_data"
+    LOGS_PREFIX = f"{RC_S3_PREFIX}/logs"
+
+    TEMP_DATA_EXPIRATION_DAYS = 10
+    LOGS_IA_AFTER_DAYS = 30
+    LOGS_EXPIRATION_DAYS = 120
+    ARTIFACTS_IA_AFTER_DAYS = 45
+    ARTIFACTS_GLACIER_AFTER_DAYS = 365
+    ARTIFACTS_NONCURRENT_VERSIONS = 5
+    JIRA_SECRET_NAME = "releasecopilot/jira/oauth"
+    BITBUCKET_SECRET_NAME = "releasecopilot/bitbucket/token"
+    WEBHOOK_SECRET_NAME = "releasecopilot/jira/webhook_secret"
 
     def __init__(
         self,
@@ -53,14 +71,24 @@ class CoreStack(Stack):
         reconciliation_jql_template: Optional[str] = None,
         jira_base_url: Optional[str] = None,
         metrics_namespace: Optional[str] = None,
+        environment_name: str = "dev",
+        budget_amount: float = 100.0,
+        budget_currency: str = "USD",
+        budget_email_recipients: Sequence[str] | None = None,
+        budget_sns_topic_name: Optional[str] = None,
+        budget_existing_sns_topic_arn: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
+        self.environment_name = environment_name
+
         asset_path = Path(lambda_asset_path).expanduser().resolve()
         project_root = Path(__file__).resolve().parents[2]
         webhook_asset_path = project_root / "services" / "jira_sync_webhook"
-        reconciliation_asset_path = project_root / "services" / "jira_reconciliation_job"
+        reconciliation_asset_path = (
+            project_root / "services" / "jira_reconciliation_job"
+        )
 
         if not webhook_asset_path.exists():
             raise FileNotFoundError(
@@ -80,40 +108,135 @@ class CoreStack(Stack):
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             versioned=True,
             enforce_ssl=True,
+            object_ownership=s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
+        )
+
+        self.bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                sid="DenyInsecureTransport",
+                effect=iam.Effect.DENY,
+                principals=[iam.AnyPrincipal()],
+                actions=["s3:*"],
+                resources=[
+                    self.bucket.bucket_arn,
+                    self.bucket.arn_for_objects("*"),
+                ],
+                conditions={"Bool": {"aws:SecureTransport": "false"}},
+            )
+        )
+
+        self.bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                sid="DenyUnencryptedUploads",
+                effect=iam.Effect.DENY,
+                principals=[iam.AnyPrincipal()],
+                actions=["s3:PutObject"],
+                resources=[self.bucket.arn_for_objects("*")],
+                conditions={
+                    "StringNotEquals": {"s3:x-amz-server-side-encryption": "AES256"},
+                    "Null": {"s3:x-amz-server-side-encryption": "true"},
+                },
+            )
         )
 
         self.bucket.add_lifecycle_rule(
-            id="RawArtifactsLifecycle",
-            prefix="raw/",
+            id="ArtifactsJsonLifecycle",
+            prefix=f"{self.ARTIFACTS_JSON_PREFIX}/",
             transitions=[
                 s3.Transition(
                     storage_class=s3.StorageClass.INFREQUENT_ACCESS,
-                    transition_after=Duration.days(30),
+                    transition_after=Duration.days(self.ARTIFACTS_IA_AFTER_DAYS),
+                ),
+                s3.Transition(
+                    storage_class=s3.StorageClass.DEEP_ARCHIVE,
+                    transition_after=Duration.days(self.ARTIFACTS_GLACIER_AFTER_DAYS),
+                ),
+            ],
+            noncurrent_version_transitions=[
+                s3.NoncurrentVersionTransition(
+                    storage_class=s3.StorageClass.DEEP_ARCHIVE,
+                    transition_after=Duration.days(self.ARTIFACTS_GLACIER_AFTER_DAYS),
                 )
             ],
-            expiration=Duration.days(90),
+            noncurrent_versions_to_retain=self.ARTIFACTS_NONCURRENT_VERSIONS,
         )
 
         self.bucket.add_lifecycle_rule(
-            id="ReportsLifecycle",
-            prefix="reports/",
+            id="ArtifactsExcelLifecycle",
+            prefix=f"{self.ARTIFACTS_EXCEL_PREFIX}/",
             transitions=[
                 s3.Transition(
                     storage_class=s3.StorageClass.INFREQUENT_ACCESS,
-                    transition_after=Duration.days(60),
+                    transition_after=Duration.days(self.ARTIFACTS_IA_AFTER_DAYS),
+                ),
+                s3.Transition(
+                    storage_class=s3.StorageClass.DEEP_ARCHIVE,
+                    transition_after=Duration.days(self.ARTIFACTS_GLACIER_AFTER_DAYS),
+                ),
+            ],
+            noncurrent_version_transitions=[
+                s3.NoncurrentVersionTransition(
+                    storage_class=s3.StorageClass.DEEP_ARCHIVE,
+                    transition_after=Duration.days(self.ARTIFACTS_GLACIER_AFTER_DAYS),
                 )
             ],
+            noncurrent_versions_to_retain=self.ARTIFACTS_NONCURRENT_VERSIONS,
+        )
+
+        self.bucket.add_lifecycle_rule(
+            id="TempDataExpiration",
+            prefix=f"{self.TEMP_DATA_PREFIX}/",
+            expiration=Duration.days(self.TEMP_DATA_EXPIRATION_DAYS),
+        )
+
+        self.bucket.add_lifecycle_rule(
+            id="LogsLifecycle",
+            prefix=f"{self.LOGS_PREFIX}/",
+            transitions=[
+                s3.Transition(
+                    storage_class=s3.StorageClass.INFREQUENT_ACCESS,
+                    transition_after=Duration.days(self.LOGS_IA_AFTER_DAYS),
+                )
+            ],
+            expiration=Duration.days(self.LOGS_EXPIRATION_DAYS),
         )
 
         self.jira_secret = self._resolve_secret(
             "JiraSecret",
             provided_arn=jira_secret_arn,
             description="Placeholder Jira OAuth secret for ReleaseCopilot",
+            secret_name=self.JIRA_SECRET_NAME,
         )
         self.bitbucket_secret = self._resolve_secret(
             "BitbucketSecret",
             provided_arn=bitbucket_secret_arn,
             description="Placeholder Bitbucket OAuth secret for ReleaseCopilot",
+            secret_name=self.BITBUCKET_SECRET_NAME,
+        )
+
+        self.secret_access = SecretAccess(self, "SecretAccess")
+
+        self.budget_alerts = BudgetAlerts(
+            self,
+            "BudgetAlerts",
+            environment_name=environment_name,
+            budget_amount=budget_amount,
+            currency=budget_currency,
+            email_recipients=budget_email_recipients,
+            sns_topic_name=budget_sns_topic_name,
+            existing_topic_arn=budget_existing_sns_topic_arn,
+        )
+
+        if budget_existing_sns_topic_arn:
+            budget_topic_arn = budget_existing_sns_topic_arn
+        else:
+            budget_topic_arn = self.budget_alerts.sns_topic.topic_arn
+
+        CfnOutput(
+            self,
+            "BudgetAlertsTopicArn",
+            value=budget_topic_arn,
+            description="SNS topic receiving AWS Budgets cost alerts.",
         )
 
         self.execution_role = iam.Role(
@@ -179,29 +302,42 @@ class CoreStack(Stack):
             partition_key=dynamodb.Attribute(
                 name="fix_version", type=dynamodb.AttributeType.STRING
             ),
-            sort_key=dynamodb.Attribute(name="updated_at", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(
+                name="updated_at", type=dynamodb.AttributeType.STRING
+            ),
             projection_type=dynamodb.ProjectionType.ALL,
         )
         self.jira_table.add_global_secondary_index(
             index_name="StatusIndex",
-            partition_key=dynamodb.Attribute(name="status", type=dynamodb.AttributeType.STRING),
-            sort_key=dynamodb.Attribute(name="updated_at", type=dynamodb.AttributeType.STRING),
+            partition_key=dynamodb.Attribute(
+                name="status", type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(
+                name="updated_at", type=dynamodb.AttributeType.STRING
+            ),
             projection_type=dynamodb.ProjectionType.ALL,
         )
         self.jira_table.add_global_secondary_index(
             index_name="AssigneeIndex",
-            partition_key=dynamodb.Attribute(name="assignee", type=dynamodb.AttributeType.STRING),
-            sort_key=dynamodb.Attribute(name="updated_at", type=dynamodb.AttributeType.STRING),
+            partition_key=dynamodb.Attribute(
+                name="assignee", type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(
+                name="updated_at", type=dynamodb.AttributeType.STRING
+            ),
             projection_type=dynamodb.ProjectionType.ALL,
         )
 
-        self.lambda_function.add_environment("JIRA_TABLE_NAME", self.jira_table.table_name)
+        self.lambda_function.add_environment(
+            "JIRA_TABLE_NAME", self.jira_table.table_name
+        )
         self.jira_table.grant_read_data(self.lambda_function)
 
         webhook_secret = self._resolve_secret(
             "JiraWebhookSecret",
             provided_arn=jira_webhook_secret_arn,
             description="Shared secret used to authenticate Jira webhook deliveries",
+            secret_name=self.WEBHOOK_SECRET_NAME,
         )
 
         webhook_environment = {
@@ -232,8 +368,6 @@ class CoreStack(Stack):
         )
 
         self.jira_table.grant_read_write_data(self.webhook_lambda)
-        if webhook_secret:
-            webhook_secret.grant_read(self.webhook_lambda)
 
         reconciliation_environment = {
             "TABLE_NAME": self.jira_table.table_name,
@@ -279,10 +413,36 @@ class CoreStack(Stack):
             retry_attempts=2,
         )
 
+        self.secret_access.grant(
+            environment_key="SECRET_JIRA",
+            secret_name=self.JIRA_SECRET_NAME,
+            secret=self.jira_secret,
+            functions=[self.lambda_function],
+        )
+        self.secret_access.grant(
+            environment_key="SECRET_JIRA",
+            secret_name=self.JIRA_SECRET_NAME,
+            secret=self.jira_secret,
+            functions=[self.reconciliation_lambda],
+        )
+        self.secret_access.grant(
+            environment_key="SECRET_BITBUCKET",
+            secret_name=self.BITBUCKET_SECRET_NAME,
+            secret=self.bitbucket_secret,
+            functions=[self.lambda_function],
+            attach_to_role=False,
+        )
+        if webhook_secret:
+            self.secret_access.grant(
+                environment_key="SECRET_WEBHOOK",
+                secret_name=self.WEBHOOK_SECRET_NAME,
+                secret=webhook_secret,
+                functions=[self.webhook_lambda],
+            )
+
         self._attach_policies()
 
         self.jira_table.grant_read_write_data(self.reconciliation_lambda)
-        self.jira_secret.grant_read(self.reconciliation_lambda)
 
         self.webhook_api_access_logs = logs.LogGroup(
             self,
@@ -324,7 +484,9 @@ class CoreStack(Stack):
         self._alarm_action = self._configure_alarm_action()
         self._add_lambda_alarms()
         self._add_reconciliation_dlq_alarm()
-        self._add_schedule(schedule_enabled=schedule_enabled, schedule_cron=schedule_cron)
+        self._add_schedule(
+            schedule_enabled=schedule_enabled, schedule_cron=schedule_cron
+        )
 
         self._add_reconciliation_schedule(
             enable_schedule=enable_reconciliation_schedule,
@@ -332,53 +494,63 @@ class CoreStack(Stack):
         )
 
         CfnOutput(self, "ArtifactsBucketName", value=self.bucket.bucket_name)
+        CfnOutput(
+            self,
+            "ArtifactsReadPolicyArn",
+            value=self.artifact_reader_policy.managed_policy_arn,
+            description="IAM managed policy granting read-only access to release artifacts.",
+        )
+        CfnOutput(
+            self,
+            "ArtifactsWritePolicyArn",
+            value=self.artifact_writer_policy.managed_policy_arn,
+            description="IAM managed policy granting write access to release artifacts and temp data.",
+        )
         CfnOutput(self, "LambdaName", value=self.lambda_function.function_name)
         CfnOutput(self, "LambdaArn", value=self.lambda_function.function_arn)
         CfnOutput(self, "JiraTableName", value=self.jira_table.table_name)
         CfnOutput(self, "JiraTableArn", value=self.jira_table.table_arn)
         CfnOutput(self, "JiraWebhookUrl", value=self.webhook_api.url)
-        CfnOutput(self, "JiraReconciliationLambdaName", value=self.reconciliation_lambda.function_name)
-        CfnOutput(self, "JiraReconciliationDlqArn", value=self.reconciliation_dlq.queue_arn)
-        CfnOutput(self, "JiraReconciliationDlqUrl", value=self.reconciliation_dlq.queue_url)
+        CfnOutput(
+            self,
+            "JiraReconciliationLambdaName",
+            value=self.reconciliation_lambda.function_name,
+        )
+        CfnOutput(
+            self, "JiraReconciliationDlqArn", value=self.reconciliation_dlq.queue_arn
+        )
+        CfnOutput(
+            self, "JiraReconciliationDlqUrl", value=self.reconciliation_dlq.queue_url
+        )
 
     def _attach_policies(self) -> None:
-        prefix_objects_arn = self.bucket.arn_for_objects(f"{self.RC_S3_PREFIX}/*")
         log_group_arns = [
             self.release_lambda_log_group.log_group_arn,
             self.webhook_lambda_log_group.log_group_arn,
             self.reconciliation_lambda_log_group.log_group_arn,
         ]
+        secret_arns = sorted(
+            {grant.secret.secret_arn for grant in self.secret_access.grants}
+        )
 
-        iam.Policy(
-            self,
-            "LambdaExecutionPolicy",
-            statements=[
-                iam.PolicyStatement(
-                    sid="AllowS3ObjectAccess",
-                    actions=["s3:GetObject", "s3:PutObject"],
-                    resources=[prefix_objects_arn],
-                ),
-                iam.PolicyStatement(
-                    sid="AllowS3ListArtifactsPrefix",
-                    actions=["s3:ListBucket"],
-                    resources=[self.bucket.bucket_arn],
-                    conditions={
-                        "StringLike": {
-                            "s3:prefix": [
-                                f"{self.RC_S3_PREFIX}/",
-                                f"{self.RC_S3_PREFIX}/*",
-                            ]
-                        }
-                    },
-                ),
+        statements: list[iam.PolicyStatement] = []
+        if secret_arns:
+            statements.append(
                 iam.PolicyStatement(
                     sid="AllowSecretRetrieval",
                     actions=["secretsmanager:GetSecretValue"],
-                    resources=[
-                        self.jira_secret.secret_arn,
-                        self.bitbucket_secret.secret_arn,
-                    ],
-                ),
+                    resources=secret_arns,
+                )
+            )
+
+        artifact_object_arns = [
+            self.bucket.arn_for_objects(f"{self.ARTIFACTS_JSON_PREFIX}/*"),
+            self.bucket.arn_for_objects(f"{self.ARTIFACTS_EXCEL_PREFIX}/*"),
+            self.bucket.arn_for_objects(f"{self.TEMP_DATA_PREFIX}/*"),
+        ]
+
+        statements.extend(
+            [
                 iam.PolicyStatement(
                     sid="AllowLambdaLogging",
                     actions=[
@@ -388,8 +560,111 @@ class CoreStack(Stack):
                     ],
                     resources=log_group_arns,
                 ),
-            ],
+                iam.PolicyStatement(
+                    sid="AllowS3ObjectAccess",
+                    actions=["s3:GetObject", "s3:PutObject"],
+                    resources=artifact_object_arns,
+                ),
+                iam.PolicyStatement(
+                    sid="AllowS3ListArtifactsPrefix",
+                    actions=["s3:ListBucket"],
+                    resources=[self.bucket.bucket_arn],
+                    conditions={
+                        "StringLike": {
+                            "s3:prefix": [
+                                f"{self.ARTIFACTS_JSON_PREFIX}/",
+                                f"{self.ARTIFACTS_JSON_PREFIX}/*",
+                                f"{self.ARTIFACTS_EXCEL_PREFIX}/",
+                                f"{self.ARTIFACTS_EXCEL_PREFIX}/*",
+                                f"{self.TEMP_DATA_PREFIX}/",
+                                f"{self.TEMP_DATA_PREFIX}/*",
+                            ]
+                        }
+                    },
+                ),
+            ]
+        )
+
+        iam.Policy(
+            self,
+            "LambdaExecutionPolicy",
+            statements=statements,
         ).attach_to_role(self.execution_role)
+
+        self.artifact_reader_policy = iam.ManagedPolicy(
+            self,
+            "ArtifactsReadManagedPolicy",
+            managed_policy_name=f"ReleaseCopilot-{self.environment_name}-ArtifactsRead",
+            statements=[
+                iam.PolicyStatement(
+                    sid="AllowArtifactReads",
+                    actions=[
+                        "s3:GetObject",
+                        "s3:GetObjectVersion",
+                        "s3:GetObjectTagging",
+                    ],
+                    resources=[
+                        self.bucket.arn_for_objects(f"{self.ARTIFACTS_JSON_PREFIX}/*"),
+                        self.bucket.arn_for_objects(f"{self.ARTIFACTS_EXCEL_PREFIX}/*"),
+                    ],
+                ),
+                iam.PolicyStatement(
+                    sid="AllowArtifactList",
+                    actions=["s3:ListBucket"],
+                    resources=[self.bucket.bucket_arn],
+                    conditions={
+                        "StringLike": {
+                            "s3:prefix": [
+                                f"{self.ARTIFACTS_JSON_PREFIX}/",
+                                f"{self.ARTIFACTS_JSON_PREFIX}/*",
+                                f"{self.ARTIFACTS_EXCEL_PREFIX}/",
+                                f"{self.ARTIFACTS_EXCEL_PREFIX}/*",
+                            ]
+                        }
+                    },
+                ),
+            ],
+        )
+
+        self.artifact_writer_policy = iam.ManagedPolicy(
+            self,
+            "ArtifactsWriteManagedPolicy",
+            managed_policy_name=f"ReleaseCopilot-{self.environment_name}-ArtifactsWrite",
+            statements=[
+                iam.PolicyStatement(
+                    sid="AllowArtifactWrites",
+                    actions=[
+                        "s3:PutObject",
+                        "s3:PutObjectTagging",
+                        "s3:AbortMultipartUpload",
+                        "s3:DeleteObject",
+                        "s3:GetObject",
+                    ],
+                    resources=[
+                        self.bucket.arn_for_objects(f"{self.ARTIFACTS_JSON_PREFIX}/*"),
+                        self.bucket.arn_for_objects(f"{self.ARTIFACTS_EXCEL_PREFIX}/*"),
+                        self.bucket.arn_for_objects(f"{self.TEMP_DATA_PREFIX}/*"),
+                    ],
+                ),
+                iam.PolicyStatement(
+                    sid="AllowArtifactWriteList",
+                    actions=["s3:ListBucket"],
+                    resources=[self.bucket.bucket_arn],
+                    conditions={
+                        "StringLike": {
+                            "s3:prefix": [
+                                f"{self.ARTIFACTS_JSON_PREFIX}/",
+                                f"{self.ARTIFACTS_JSON_PREFIX}/*",
+                                f"{self.ARTIFACTS_EXCEL_PREFIX}/",
+                                f"{self.ARTIFACTS_EXCEL_PREFIX}/*",
+                                f"{self.TEMP_DATA_PREFIX}/",
+                                f"{self.TEMP_DATA_PREFIX}/*",
+                            ]
+                        }
+                    },
+                ),
+            ],
+        )
 
     def _resolve_secret(
         self,
@@ -397,6 +672,7 @@ class CoreStack(Stack):
         *,
         provided_arn: Optional[str],
         description: str,
+        secret_name: str,
     ) -> secretsmanager.ISecret:
         if provided_arn:
             return secretsmanager.Secret.from_secret_complete_arn(
@@ -406,6 +682,7 @@ class CoreStack(Stack):
             self,
             construct_id,
             description=description,
+            secret_name=secret_name,
             generate_secret_string=secretsmanager.SecretStringGenerator(
                 exclude_punctuation=True,
             ),
@@ -453,9 +730,11 @@ class CoreStack(Stack):
             throttles_alarm.add_alarm_action(self._alarm_action)
 
     def _add_reconciliation_dlq_alarm(self) -> None:
-        dlq_metric = self.reconciliation_dlq.metric_approximate_number_of_messages_visible(
-            period=Duration.minutes(5),
-            statistic="sum",
+        dlq_metric = (
+            self.reconciliation_dlq.metric_approximate_number_of_messages_visible(
+                period=Duration.minutes(5),
+                statistic="sum",
+            )
         )
 
         dlq_alarm = cw.Alarm(
@@ -474,7 +753,9 @@ class CoreStack(Stack):
         if self._alarm_action:
             dlq_alarm.add_alarm_action(self._alarm_action)
 
-    def _add_schedule(self, *, schedule_enabled: bool, schedule_cron: str | None) -> None:
+    def _add_schedule(
+        self, *, schedule_enabled: bool, schedule_cron: str | None
+    ) -> None:
         """Provision the optional EventBridge rule when scheduling is enabled.
 
         Skipping creation when ``schedule_enabled`` is false ensures the stack

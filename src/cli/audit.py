@@ -1,4 +1,5 @@
 """Offline audit orchestration for the ``rc audit`` command."""
+
 from __future__ import annotations
 
 import json
@@ -117,14 +118,19 @@ def _build_export_payload(payloads: Mapping[str, Mapping[str, Any]]) -> Dict[str
                 "stories_with_no_commits", []
             ),
             "orphan_commits": payloads.get("commits", {}).get("orphan_commits", []),
-            "commit_story_mapping": payloads.get("links", {}).get("commit_story_mapping", []),
+            "commit_story_mapping": payloads.get("links", {}).get(
+                "commit_story_mapping", []
+            ),
         }
     )
 
 
 def run_audit(options: AuditOptions) -> AuditResult:
     plan = options.build_plan()
-    LOGGER.info("Starting offline audit", extra={"cache_dir": plan["cache_dir"], "scope": plan["scope"]})
+    LOGGER.info(
+        "Starting offline audit",
+        extra={"cache_dir": plan["cache_dir"], "scope": plan["scope"]},
+    )
 
     payloads = load_cached_payloads(options.cache_dir)
     payload = _build_export_payload(payloads)
@@ -134,7 +140,12 @@ def run_audit(options: AuditOptions) -> AuditResult:
         "excel": options.excel_path,
         "summary": options.summary_path,
     }
-    outputs = export_all(payload, out_dir=None, formats=options.defaults.export_formats, filenames=filenames)
+    outputs = export_all(
+        payload,
+        out_dir=None,
+        formats=options.defaults.export_formats,
+        filenames=filenames,
+    )
 
     uploaded = False
     if options.upload_uri:
@@ -145,24 +156,51 @@ def run_audit(options: AuditOptions) -> AuditResult:
         }
         with tempfile.TemporaryDirectory() as staging_dir:
             staging_path = Path(staging_dir)
+            json_dir = staging_path / "artifacts" / "json"
+            excel_dir = staging_path / "artifacts" / "excel"
             for _, path in outputs.items():
-                destination = staging_path / path.name
+                destination_dir = json_dir
+                suffix = path.suffix.lower()
+                if suffix in {".xls", ".xlsx"}:
+                    destination_dir = excel_dir
+                destination_dir.mkdir(parents=True, exist_ok=True)
+                destination = destination_dir / path.name
                 destination.write_bytes(path.read_bytes())
-            upload_directory(
-                bucket=bucket,
-                prefix=prefix,
-                local_dir=staging_path,
-                subdir="audit",
-                region_name=options.region,
-                metadata=metadata,
-            )
+
+            prefix_root = prefix.strip("/")
+            if prefix_root:
+                artifact_prefix_root = prefix_root
+            else:
+                artifact_prefix_root = "releasecopilot"
+
+            if json_dir.exists() and any(json_dir.iterdir()):
+                upload_directory(
+                    bucket=bucket,
+                    prefix="/".join([artifact_prefix_root, "artifacts", "json"]),
+                    local_dir=json_dir,
+                    subdir="audit",
+                    region_name=options.region,
+                    metadata=metadata,
+                )
+            if excel_dir.exists() and any(excel_dir.iterdir()):
+                upload_directory(
+                    bucket=bucket,
+                    prefix="/".join([artifact_prefix_root, "artifacts", "excel"]),
+                    local_dir=excel_dir,
+                    subdir="audit",
+                    region_name=options.region,
+                    metadata=metadata,
+                )
         uploaded = True
         LOGGER.info(
             "Uploaded audit artifacts",
             extra={"bucket": bucket, "prefix": prefix, "region": options.region},
         )
 
-    LOGGER.info("Offline audit completed", extra={"outputs": {k: str(v) for k, v in outputs.items()}})
+    LOGGER.info(
+        "Offline audit completed",
+        extra={"outputs": {k: str(v) for k, v in outputs.items()}},
+    )
     return AuditResult(plan=plan, outputs=outputs, uploaded=uploaded)
 
 

@@ -1,4 +1,5 @@
 """DynamoDB-backed Jira issue store for release audits."""
+
 from __future__ import annotations
 
 import os
@@ -28,7 +29,12 @@ _RETRYABLE_DDB_ERRORS = {
 
 
 def _utcnow() -> str:
-    return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+    return (
+        datetime.utcnow()
+        .replace(tzinfo=timezone.utc)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 @dataclass
@@ -68,16 +74,25 @@ class JiraIssueStore:
     ) -> tuple[List[Dict[str, Any]], Optional[str]]:
         del use_cache, fields  # Unused but kept for interface parity
         logger.info(
-            "Querying cached Jira issues", extra={"table": self.table_name, "fix_version": fix_version}
+            "Querying cached Jira issues",
+            extra={"table": self.table_name, "fix_version": fix_version},
         )
         try:
             items = list(self._paginate_query(fix_version=fix_version))
         except ClientError as exc:
             self._handle_ddb_error(exc, fix_version)
         except Exception as exc:  # pragma: no cover - defensive
-            context = {"table": self.table_name, "fix_version": fix_version, "error": str(exc)}
-            logger.exception("Unexpected error querying Jira issue table", extra=context)
-            raise JiraQueryError("Failed to query Jira issue store", context=context) from exc
+            context = {
+                "table": self.table_name,
+                "fix_version": fix_version,
+                "error": str(exc),
+            }
+            logger.exception(
+                "Unexpected error querying Jira issue table", extra=context
+            )
+            raise JiraQueryError(
+                "Failed to query Jira issue store", context=context
+            ) from exc
 
         issues: List[Dict[str, Any]] = []
         seen_issue_keys: set[str] = set()
@@ -93,21 +108,26 @@ class JiraIssueStore:
             issue_payload = item.get("issue")
             if not isinstance(issue_payload, dict):
                 logger.warning(
-                    "Skipping malformed issue item", extra={"issue_id": item.get("issue_id")}
+                    "Skipping malformed issue item",
+                    extra={"issue_id": item.get("issue_id")},
                 )
                 continue
             issues.append(issue_payload)
 
         issues.sort(key=lambda issue: issue.get("key") or "")
         logger.info(
-            "Loaded %d Jira issues from local store", len(issues), extra={"fix_version": fix_version}
+            "Loaded %d Jira issues from local store",
+            len(issues),
+            extra={"fix_version": fix_version},
         )
         return issues, None
 
     # Internal helpers -----------------------------------------------
     def _paginate_query(self, *, fix_version: str) -> Iterable[Dict[str, Any]]:
         if not fix_version:
-            logger.warning("Empty fix version provided to JiraIssueStore; returning no items")
+            logger.warning(
+                "Empty fix version provided to JiraIssueStore; returning no items"
+            )
             return []
 
         params: Dict[str, Any] = {
@@ -141,7 +161,8 @@ class JiraIssueStore:
                     raise
                 delay = self._compute_delay(attempt, base_delay)
                 logger.warning(
-                    "Retrying DynamoDB query", extra={"attempt": attempt, "delay": round(delay, 2)}
+                    "Retrying DynamoDB query",
+                    extra={"attempt": attempt, "delay": round(delay, 2)},
                 )
                 self._sleep(delay)
                 attempt += 1
@@ -168,8 +189,9 @@ class JiraIssueStore:
             "captured_at": _utcnow(),
         }
         logger.error("DynamoDB query failed", extra=context)
-        raise JiraQueryError("Failed to query Jira issue store", context=context) from error
+        raise JiraQueryError(
+            "Failed to query Jira issue store", context=context
+        ) from error
 
 
 __all__ = ["JiraIssueStore"]
-

@@ -1,4 +1,5 @@
 """Unit tests for deterministic diffing of audit runs."""
+
 from __future__ import annotations
 
 from tracking.diff import diff_runs
@@ -66,9 +67,7 @@ def test_diff_runs_returns_sorted_changes() -> None:
         {"key": "STORY-1", "commit_ids": ["b2"]},
         {"key": "STORY-3", "commit_ids": ["c3"]},
     ]
-    assert diff["commits_removed"] == [
-        {"key": "STORY-2", "commit_ids": ["legacy"]}
-    ]
+    assert diff["commits_removed"] == [{"key": "STORY-2", "commit_ids": ["legacy"]}]
     assert diff["new_orphans"] == ["orphan-new"]
     assert diff["resolved_orphans"] == ["orphan-old"]
     assert diff["coverage_previous"] == 100.0

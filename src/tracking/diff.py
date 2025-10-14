@@ -1,11 +1,14 @@
 """Diff utilities for comparing audit run JSON artifacts."""
+
 from __future__ import annotations
 
 from typing import Dict, List, Mapping, Sequence
 
 
 def _is_sequence(value: object) -> bool:
-    return isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray))
+    return isinstance(value, Sequence) and not isinstance(
+        value, (str, bytes, bytearray)
+    )
 
 
 def _story_index(run: Mapping[str, object]) -> Dict[str, Mapping[str, object]]:
@@ -100,7 +103,9 @@ def _diff_commit_lists(
     return added, removed
 
 
-def diff_runs(old: Mapping[str, object], new: Mapping[str, object]) -> Dict[str, object]:
+def diff_runs(
+    old: Mapping[str, object], new: Mapping[str, object]
+) -> Dict[str, object]:
     """Generate a deterministic diff structure between two audit runs."""
 
     old_index = _story_index(old)
@@ -131,7 +136,9 @@ def diff_runs(old: Mapping[str, object], new: Mapping[str, object]) -> Dict[str,
             new_story.get("assignee") if isinstance(new_story, Mapping) else None
         )
         if old_assignee != new_assignee:
-            assignee_changes.append({"key": key, "from": old_assignee, "to": new_assignee})
+            assignee_changes.append(
+                {"key": key, "from": old_assignee, "to": new_assignee}
+            )
 
     commits_added, commits_removed = _diff_commit_lists(old, new)
 

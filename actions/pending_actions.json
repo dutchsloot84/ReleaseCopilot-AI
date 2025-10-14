@@ -1,0 +1,13 @@
+[
+  {
+    "wave": "Wave 1",
+    "pr": "#2",
+    "action": "Approve SNS topic policy (require SecureTransport)",
+    "owner": "John Doe",
+    "status": "Pending",
+    "due": "2025-10-15",
+    "stack": "BudgetAlertsTopic",
+    "artifact": "infra/cdk/core_stack.py",
+    "labels": ["human-action", "wave:1"]
+  }
+]

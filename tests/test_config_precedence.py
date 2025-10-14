@@ -1,4 +1,5 @@
 """Configuration precedence and validation tests for the layered loader."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -43,7 +44,9 @@ def test_missing_required_values_raise(tmp_path: Path) -> None:
 
 def test_environment_overrides_secret_values(tmp_path: Path) -> None:
     defaults = write_defaults(tmp_path)
-    secrets = StubCredentialStore({"arn:example:jira": {"client_secret": "secret-value"}})
+    secrets = StubCredentialStore(
+        {"arn:example:jira": {"client_secret": "secret-value"}}
+    )
     env = {"JIRA_CLIENT_SECRET": "env-value"}
 
     config = load_config(

@@ -46,7 +46,9 @@ def test_webhook_handler_redacts_sensitive_event_fields(monkeypatch, capsys):
     handler.handler(event, None)
 
     logs = _collect_logs(capsys)
-    received = next(payload for payload in logs if payload.get("message") == "Received event")
+    received = next(
+        payload for payload in logs if payload.get("message") == "Received event"
+    )
     event_payload = received["event"]
     assert event_payload["headers"]["Authorization"] == "***REDACTED***"
     assert event_payload["body"] == "***REDACTED***"
@@ -78,7 +80,11 @@ def test_reconciliation_handler_redacts_sensitive_event_fields(monkeypatch, caps
     handler.handler(event, None)
 
     logs = _collect_logs(capsys)
-    received = next(payload for payload in logs if payload.get("message") == "Starting Jira reconciliation")
+    received = next(
+        payload
+        for payload in logs
+        if payload.get("message") == "Starting Jira reconciliation"
+    )
     event_payload = received["event"]
     assert event_payload["headers"]["Authorization"] == "***REDACTED***"
     assert event_payload["client_secret"] == "***REDACTED***"

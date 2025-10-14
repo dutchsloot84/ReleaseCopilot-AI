@@ -1,0 +1,48 @@
+name: Validate Wave 1 Prompts
+
+on:
+  pull_request:
+    paths:
+      - 'project/prompts/**'
+      - 'tools/**'
+      - 'actions/**'
+      - 'docs/**'
+      - 'tests/**'
+      - '.github/workflows/validate_prompts.yml'
+      - 'pyproject.toml'
+      - 'pytest.ini'
+      - 'requirements*.txt'
+      - 'CHANGELOG.md'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Validate prompt coverage
+        run: |
+          python tools/validate_prompts.py --prompts-dir project/prompts/wave1 --recipes-dir project/prompts/prompt_recipes
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Black
+        run: black --check .
+
+      - name: Mypy
+        run: mypy tools/validate_prompts.py tools/render_actions_comment.py
+
+      - name: Pytest with coverage
+        run: pytest --cov=. --cov-report=term-missing --cov-fail-under=70

@@ -20,8 +20,14 @@ def _reset_module(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AWS_SESSION_TOKEN", "testing")
     monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
     monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
-    module = importlib.reload(importlib.import_module("services.jira_reconciliation_job.handler"))
-    monkeypatch.setitem(module.__dict__, "_SECRET_CACHE", {"JIRA_EMAIL": "user", "JIRA_API_TOKEN": "token"})
+    module = importlib.reload(
+        importlib.import_module("services.jira_reconciliation_job.handler")
+    )
+    monkeypatch.setitem(
+        module.__dict__,
+        "_SECRET_CACHE",
+        {"JIRA_EMAIL": "user", "JIRA_API_TOKEN": "token"},
+    )
     monkeypatch.setitem(module.__dict__, "_SECRETS", None)
 
 
@@ -33,19 +39,27 @@ class DummyTable:
         self.update_calls: List[Dict[str, Any]] = []
         self.scan_calls = 0
 
-    def query(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
+    def query(
+        self, **kwargs: Any
+    ) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
         return {"Items": list(self.items)}
 
-    def scan(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
+    def scan(
+        self, **kwargs: Any
+    ) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
         self.scan_calls += 1
         return {"Items": [{"fix_version": "2024.05"}], "LastEvaluatedKey": None}
 
-    def put_item(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
+    def put_item(
+        self, **kwargs: Any
+    ) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
         self.put_calls.append(kwargs)
         self.items.append(kwargs.get("Item", {}))
         return {}
 
-    def update_item(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
+    def update_item(
+        self, **kwargs: Any
+    ) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
         self.update_calls.append(kwargs)
         return {}
 
@@ -54,7 +68,9 @@ class DummyCloudWatch:
     def __init__(self) -> None:
         self.metric_payloads: List[Dict[str, Any]] = []
 
-    def put_metric_data(self, Namespace: str, MetricData: List[Dict[str, Any]]) -> None:  # pragma: no cover
+    def put_metric_data(
+        self, Namespace: str, MetricData: List[Dict[str, Any]]
+    ) -> None:  # pragma: no cover
         self.metric_payloads.append({"Namespace": Namespace, "MetricData": MetricData})
 
 
@@ -70,7 +86,9 @@ def test_reconciliation_upserts_new_issue(monkeypatch: pytest.MonkeyPatch) -> No
     table = DummyTable()
     module, cw = _install_table(monkeypatch, table)
 
-    def fake_http_request(method: str, url: str, headers=None, data=None) -> str:  # pragma: no cover - exercised indirectly
+    def fake_http_request(
+        method: str, url: str, headers=None, data=None
+    ) -> str:  # pragma: no cover - exercised indirectly
         payload = {
             "issues": [
                 {
@@ -117,7 +135,9 @@ def test_reconciliation_marks_missing_issue(monkeypatch: pytest.MonkeyPatch) -> 
     table = DummyTable([existing])
     module, _ = _install_table(monkeypatch, table)
 
-    def fake_http_request(method: str, url: str, headers=None, data=None) -> str:  # pragma: no cover - exercised indirectly
+    def fake_http_request(
+        method: str, url: str, headers=None, data=None
+    ) -> str:  # pragma: no cover - exercised indirectly
         return json.dumps({"issues": [], "total": 0})
 
     monkeypatch.setitem(module.__dict__, "_http_request", fake_http_request)
@@ -134,11 +154,15 @@ def test_reconciliation_marks_missing_issue(monkeypatch: pytest.MonkeyPatch) -> 
     assert update["UpdateExpression"].startswith("SET deleted = :true")
 
 
-def test_reconciliation_discovers_fix_versions_when_not_provided(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_reconciliation_discovers_fix_versions_when_not_provided(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     table = DummyTable()
     module, _ = _install_table(monkeypatch, table)
 
-    def fake_http_request(method: str, url: str, headers=None, data=None) -> str:  # pragma: no cover - exercised indirectly
+    def fake_http_request(
+        method: str, url: str, headers=None, data=None
+    ) -> str:  # pragma: no cover - exercised indirectly
         return json.dumps({"issues": [], "total": 0})
 
     monkeypatch.setitem(module.__dict__, "_http_request", fake_http_request)

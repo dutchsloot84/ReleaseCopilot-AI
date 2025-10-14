@@ -1,4 +1,5 @@
 """Unit tests for readiness health checks."""
+
 from __future__ import annotations
 
 import json

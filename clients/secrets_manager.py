@@ -40,7 +40,7 @@ class SecretsManager:
                     "secretsmanager", region_name=self.region_name
                 )
             except (BotoCoreError, ClientError):
-                logger.exception(f"Unable to create Secrets Manager client")
+                logger.exception("Unable to create Secrets Manager client")
                 self._client = None
         return self._client
 
