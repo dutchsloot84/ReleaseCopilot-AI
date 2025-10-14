@@ -1,0 +1,679 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
+    
+    
+      
+        <title>Notes & Decisions — #242 Tighten core stack log policies and integrate cdk-nag - releasecopilot-ai</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.8c3ca2c6.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#notes-decisions-242-tighten-core-stack-log-policies-and-integrate-cdk-nag" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="releasecopilot-ai" class="md-header__button md-logo" aria-label="releasecopilot-ai" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            releasecopilot-ai
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Notes &amp; Decisions — #242 Tighten core stack log policies and integrate cdk-nag
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="releasecopilot-ai" class="md-nav__button md-logo" aria-label="releasecopilot-ai" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    releasecopilot-ai
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Architecture
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Architecture
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../diagrams/system-context/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    System Context
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../diagrams/components/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Components
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../diagrams/data-flow/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Flow
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../diagrams/deployment-aws/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AWS Deployment
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../diagrams/agents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../deployment/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Deployment
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dev_setup/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Developer Setup
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../agent_research/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agent Research
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../git-historian/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Git Historian
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../markers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Marker Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../runbooks/artifacts_bucket/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Artifacts Bucket Runbook
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="notes-decisions-242-tighten-core-stack-log-policies-and-integrate-cdk-nag">Notes &amp; Decisions — #242 Tighten core stack log policies and integrate cdk-nag<a class="headerlink" href="#notes-decisions-242-tighten-core-stack-log-policies-and-integrate-cdk-nag" title="Permanent link">&para;</a></h1>
+<p><em>Repo:</em> dutchsloot84/ReleaseCopilot-AI
+<em>Source:</em> https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242</p>
+<ul>
+<li>
+<p>Decision (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Scope Lambda logging permissions to <strong>function-specific CloudWatch Log Groups</strong>; no wildcard resources.
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:ef10e2e31ed029659c3aa5042cd6144a1970fcf90b4f5343a0e9410c47a8394c --></p>
+</li>
+<li>
+<p>Decision (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Enforce <strong>TLS/SecureTransport</strong> on the artifacts S3 bucket and enable <strong>API Gateway access logging</strong> to reduce IAM blast radius.
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:7a3abccd7df8820abea45b5e84e3b4f359380a299ead5641af444281c9df30d8 --></p>
+</li>
+<li>
+<p>Decision (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Enable <strong>cdk-nag</strong> (AwsSolutions checks) during synth with documented suppressions in code.
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:f6435004ff1e32df8f424692b5b69a219e2be4e1c53e20c352591130e2921e76 --></p>
+</li>
+<li>
+<p>Decision (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Deprecate legacy CDK entry <code>cdk/stacks/core_stack.py</code> in favor of <code>infra/cdk/app.py</code>.
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:956f6db755e4a973a66e45e740c3c79064ca253ab93d08f059a01b8f6ce66647 --></p>
+</li>
+<li>
+<p>Action (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Update <code>infra/cdk/core_stack.py</code> to replace <code>/aws/lambda/*</code> with explicit ARNs:
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:bff2f0cb0292531e0fd324c42169e9e44bcd37901a75a7c79d629e3c4d4c2a63 --></p>
+</li>
+<li>
+<p>Action (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Example: <code>arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ReleaseCopilot-*:*</code>
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:a1b7f106c0146382e6e058e2ca75defa611e95c6f0778b52a1a2283c3c101d30 --></p>
+</li>
+<li>
+<p>Action (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Bind each function’s <code>LogGroup</code> construct and grant only <code>logs:CreateLogStream</code>, <code>logs:PutLogEvents</code>.
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:0a54385f09610102611bd14f381b6f14e22c5fefac75c2a5adcf4cd14b0c7409 --></p>
+</li>
+<li>
+<p>Action (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Wire <strong>cdk-nag</strong> in <code>infra/cdk/app.py</code> (Aspects + AwsSolutionsChecks) and add suppressions via <code>NagSuppressions</code> where required.
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:ac1da7158f716dff04c9bacebea044ca7427b682581fbd94dcba1f7c639dd466 --></p>
+</li>
+<li>
+<p>Action (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Add <code>aws:SecureTransport</code> bucket policy condition on the artifacts bucket; enable <strong>API GW stage</strong> <code>accessLogSettings</code> to a dedicated log group.
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:0f11a0f84565476b2875e4cfeb2212763eadb346d92babb603bfc2ca40d20927 --></p>
+</li>
+<li>
+<p>Action (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Refresh tests in <code>tests/infra/test_core_stack.py</code>:
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:7edca87a4839ed53acb335e9a411e5d867b4d0d9a59d4aed23a11b74ed7aa268 --></p>
+</li>
+<li>
+<p>Action (Uncategorized) — 2025-10-04 by @dutchsloot84
+  <code>test_log_group_policy_is_scoped</code> asserts no <code>Resource:"*"</code> and matches explicit LogGroup ARNs.
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:0edcb9a4885c625ba0b0565ca5ba34510014d709a6987b1e4cbe05ab85ddca12 --></p>
+</li>
+<li>
+<p>Action (Uncategorized) — 2025-10-04 by @dutchsloot84
+  <code>test_cdk_nag_passes_or_has_documented_suppressions</code> captures the nag baseline.
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:eb04689a3a44237e8db75dda275dc830eee4eacbe25e480f8ff6507a68421560 --></p>
+</li>
+<li>
+<p>Action (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Mark <code>cdk/stacks/core_stack.py</code> as <strong>deprecated</strong> in <code>README.md</code> and <code>docs/deployment.md</code>.
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:fe9bd9a4fabe03cbd02796d8d032aefff194ddd91dc8ec84a485c60179059f8d --></p>
+</li>
+<li>
+<p>Note (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Validation commands:
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:cc48204040d953e95eac5b38b8862a61dcc8d4556a862ad270ca5a099200a98c --></p>
+</li>
+<li>
+<p>Note (Uncategorized) — 2025-10-04 by @dutchsloot84
+  <code>pytest tests/infra/test_core_stack.py -q</code>
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:6a108317268194528c5457efcc8348071e1c55228116984415188341908033b0 --></p>
+</li>
+<li>
+<p>Note (Uncategorized) — 2025-10-04 by @dutchsloot84
+  <code>npx cdk synth -a "python -m infra.cdk.app"</code>
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:75284fa61cdd604ef154458c40394818000b9646c36a25898a2516d2e32caa31 --></p>
+</li>
+<li>
+<p>Note (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Observability: API Gateway access logs now flow to <code>LogGroup: ApiGatewayAccessLogs</code> (CDK-provisioned).
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:f60181fc48b7fbf901965c3ee8296e45a322b6b6c89c10afe0d319dbde78cab4 --></p>
+</li>
+<li>
+<p>Note (Uncategorized) — 2025-10-04 by @dutchsloot84
+  Least-privilege doc updated: <code>docs/ci-cd-least-priv.md#policy-artifacts</code>.
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:8d043abdd197bf527bdb057d216df57dfae271de1619657aaaf996bd9634112d --></p>
+</li>
+<li>
+<p>Blocker (Uncategorized) — 2025-10-04 by @dutchsloot84
+  None currently. Monitor future cdk-nag findings when adding new Lambdas.
+  <a href="https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/242#issuecomment-3368488004">View comment</a> <!-- digest:bc13889609492b34b5baf218defeb3cac3c2971dd452de01ebf541d885f8e3fa --></p>
+</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.525ec568.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>
