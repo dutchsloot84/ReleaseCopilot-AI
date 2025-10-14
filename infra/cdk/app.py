@@ -254,4 +254,64 @@ NagSuppressions.add_stack_suppressions(
     ],
 )
 
+NagSuppressions.add_stack_suppressions(
+    core_stack,
+    suppressions=[
+        {
+            "id": "AwsSolutions-S1",
+            "reason": (
+                "Artifacts bucket access is audited through CloudTrail and used only for short-lived deployment assets."
+            ),
+        },
+        {
+            "id": "AwsSolutions-SMG4",
+            "reason": (
+                "OAuth credentials are managed through Atlassian admin flows, so automated rotation is not currently possible."
+            ),
+        },
+        {
+            "id": "AwsSolutions-IAM5",
+            "reason": (
+                "Scoped wildcards are required for DynamoDB secondary indexes and the ReleaseCopilot artifacts prefix."
+            ),
+        },
+        {
+            "id": "AwsSolutions-L1",
+            "reason": (
+                "Python 3.11 remains the validated runtime for the packaged dependencies and stays within AWS support windows."
+            ),
+        },
+        {
+            "id": "AwsSolutions-IAM4",
+            "reason": (
+                "Service-linked managed policies are retained for Lambda and API Gateway to preserve AWS operational baselines."
+            ),
+        },
+        {
+            "id": "AwsSolutions-APIG2",
+            "reason": (
+                "The Jira webhook payload is validated inside the Lambda handler using a shared secret, making request validation redundant."
+            ),
+        },
+        {
+            "id": "AwsSolutions-APIG3",
+            "reason": (
+                "A WAF is deferred while the webhook remains protected by shared-secret authentication and rate limiting upstream."
+            ),
+        },
+        {
+            "id": "AwsSolutions-APIG4",
+            "reason": (
+                "Shared-secret authentication performed by the Lambda handler intentionally replaces API Gateway authorizers."
+            ),
+        },
+        {
+            "id": "AwsSolutions-COG4",
+            "reason": (
+                "Atlassian cannot integrate with Cognito authorizers; the webhook enforces authentication through the shared secret."
+            ),
+        },
+    ],
+)
+
 app.synth()

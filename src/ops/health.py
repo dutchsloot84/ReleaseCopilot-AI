@@ -322,6 +322,17 @@ def _check_dynamodb(
             None,
         )
 
+    key_types = {element.get("KeyType") for element in key_schema}
+    if "HASH" not in key_types or "RANGE" not in key_types:
+        LOGGER.error(
+            "Table key schema incomplete",
+            extra={"table_name": table_name, "key_schema": key_schema},
+        )
+        return (
+            CheckResult("fail", resource=f"dynamodb://{table_name}", reason="Missing range key"),
+            None,
+        )
+
     sentinel = f"rc-health-{uuid.uuid4().hex}"
     item: Dict[str, Dict[str, str]] = {}
     for index, element in enumerate(key_schema):
