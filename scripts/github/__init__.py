@@ -23,6 +23,7 @@ def wave2_helper_cli() -> "_ClickCommand":
         _WAVE2_HELPER_CLI = cli
     return _WAVE2_HELPER_CLI
 
+
 __all__ = [
     "ProjectStatusItem",
     "ProjectsV2Client",

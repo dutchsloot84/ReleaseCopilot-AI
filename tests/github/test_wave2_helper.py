@@ -35,14 +35,18 @@ def fixture_issues() -> list[Issue]:
     return [Issue.from_raw(item) for item in data]
 
 
-def test_prioritize_is_deterministic(helper: Wave2Helper, fixture_issues: list[Issue]) -> None:
+def test_prioritize_is_deterministic(
+    helper: Wave2Helper, fixture_issues: list[Issue]
+) -> None:
     filtered = helper.filter_issues(fixture_issues)
     numbers = [issue.number for issue in filtered]
     assert 310 not in numbers  # filtered out by label guard
 
     prioritized_first = helper.prioritize(filtered)
     prioritized_second = helper.prioritize(filtered)
-    assert [issue.number for issue in prioritized_first] == [issue.number for issue in prioritized_second]
+    assert [issue.number for issue in prioritized_first] == [
+        issue.number for issue in prioritized_second
+    ]
     assert [issue.number for issue in prioritized_first][:3] == [278, 279, 283]
 
 
@@ -57,7 +61,9 @@ def test_prioritized_artifact_contains_phoenix_timestamp(
     assert payload["metadata"]["generated_at"] == "2025-01-15T08:30:00-07:00"
 
 
-def test_seeded_prompt_includes_constraints(helper: Wave2Helper, fixture_issues: list[Issue]) -> None:
+def test_seeded_prompt_includes_constraints(
+    helper: Wave2Helper, fixture_issues: list[Issue]
+) -> None:
     prioritized = helper.prioritize(helper.filter_issues(fixture_issues))
     paths = helper.seed_prompts(prioritized[:1])
     content = paths[0].read_text(encoding="utf-8")
@@ -66,7 +72,9 @@ def test_seeded_prompt_includes_constraints(helper: Wave2Helper, fixture_issues:
     assert f"issue #{prioritized[0].number}" in content
 
 
-def test_collect_uses_gh_without_leaking_token(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
+def test_collect_uses_gh_without_leaking_token(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
     output = json.dumps(
         [
             {

@@ -17,7 +17,9 @@ import yaml
 
 try:
     from releasecopilot.logging_config import get_logger
-except ModuleNotFoundError:  # pragma: no cover - runtime fallback for python -m execution
+except (
+    ModuleNotFoundError
+):  # pragma: no cover - runtime fallback for python -m execution
     sys.path.append(str(Path(__file__).resolve().parents[2] / "src"))
     from releasecopilot.logging_config import get_logger
 
@@ -55,8 +57,13 @@ class Wave2HelperConfig:
                 for key, value in (payload.get("label_weights") or {}).items()
             },
             maintainers=list(payload.get("maintainers", [])),
-            target_labels=[(label or "").lower() for label in payload.get("target_labels", [])],
-            artifact_dirs={key: str(value) for key, value in (payload.get("artifact_dirs") or {}).items()},
+            target_labels=[
+                (label or "").lower() for label in payload.get("target_labels", [])
+            ],
+            artifact_dirs={
+                key: str(value)
+                for key, value in (payload.get("artifact_dirs") or {}).items()
+            },
             mop_constraints=dict(payload.get("mop_constraints", {})),
         )
 
@@ -118,7 +125,11 @@ class Issue:
 class Wave2Helper:
     """Primary interface for helper automation tasks."""
 
-    def __init__(self, config: Wave2HelperConfig, now_provider: Callable[[], datetime] | None = None) -> None:
+    def __init__(
+        self,
+        config: Wave2HelperConfig,
+        now_provider: Callable[[], datetime] | None = None,
+    ) -> None:
         self.config = config
         self._now = now_provider or phoenix_now
         self.logger = logger
@@ -133,7 +144,11 @@ class Wave2Helper:
             filtered.append(issue)
         self.logger.info(
             "Filtered issues",
-            extra={"command": "collect", "count": len(filtered), "target_labels": sorted(target)},
+            extra={
+                "command": "collect",
+                "count": len(filtered),
+                "target_labels": sorted(target),
+            },
         )
         return filtered
 
@@ -173,7 +188,11 @@ class Wave2Helper:
         path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
         self.logger.info(
             "Wrote prioritized issues",
-            extra={"command": "prioritize", "artifact": str(path), "generated_at": generated_at},
+            extra={
+                "command": "prioritize",
+                "artifact": str(path),
+                "generated_at": generated_at,
+            },
         )
         self._record_activity("prioritize", {"artifact": str(path)})
         return path
@@ -213,7 +232,11 @@ class Wave2Helper:
             created.append(path)
         self.logger.info(
             "Prepared comment drafts",
-            extra={"command": "post", "count": len(created), "comments_dir": str(comments_dir)},
+            extra={
+                "command": "post",
+                "count": len(created),
+                "comments_dir": str(comments_dir),
+            },
         )
         self._record_activity("post", {"files": [str(path) for path in created]})
         return created
@@ -294,7 +317,9 @@ class Wave2Helper:
             lines.append(f"- Aligns with #{primary.number} – {primary.title}.")
         else:
             lines.append("- Backlog automation support tasks.")
-        lines.append("- Ensures Phoenix-local scheduling context and deterministic artifacts.")
+        lines.append(
+            "- Ensures Phoenix-local scheduling context and deterministic artifacts."
+        )
         lines.append("")
         lines.append("## Testing")
         lines.append("- [ ] `pytest tests/github/test_wave2_helper.py` (offline)")
@@ -315,7 +340,9 @@ class Wave2Helper:
         if not issue:
             return "wave2/helper-automation"
         slug = "-".join(
-            token for token in (self._normalize_token(part) for part in issue.title.split()) if token
+            token
+            for token in (self._normalize_token(part) for part in issue.title.split())
+            if token
         )
         return f"wave2/{issue.number}-{slug or 'helper'}"
 
@@ -419,7 +446,9 @@ def prioritize(ctx: click.Context, issues_json: Path | None) -> None:
     else:
         path = config.artifact_path("collected_issues")
         if not path.exists():
-            raise click.UsageError("No collected issues found. Run 'collect' first or pass --issues-json.")
+            raise click.UsageError(
+                "No collected issues found. Run 'collect' first or pass --issues-json."
+            )
         issues = _load_issues_from_json(path)
     prioritized = helper.prioritize(issues)
     artifact = helper.write_prioritized_artifact(prioritized)
@@ -443,7 +472,9 @@ def seed(ctx: click.Context, issues_json: Path | None) -> None:
     else:
         path = config.artifact_path("prioritized")
         if not path.exists():
-            raise click.UsageError("No prioritized issues found. Run 'prioritize' first or pass --issues-json.")
+            raise click.UsageError(
+                "No prioritized issues found. Run 'prioritize' first or pass --issues-json."
+            )
         payload = json.loads(path.read_text(encoding="utf-8"))
         issues = [Issue.from_raw(item) for item in payload.get("issues", [])]
     helper.seed_prompts(issues)
@@ -488,7 +519,9 @@ def _resolve_issues_for_artifacts(
         return _load_issues_from_json(issues_json)
     path = config.artifact_path("prioritized")
     if not path.exists():
-        raise click.UsageError("No prioritized issues found. Run 'prioritize' first or pass --issues-json.")
+        raise click.UsageError(
+            "No prioritized issues found. Run 'prioritize' first or pass --issues-json."
+        )
     payload = json.loads(path.read_text(encoding="utf-8"))
     return [Issue.from_raw(item) for item in payload.get("issues", [])]
 
