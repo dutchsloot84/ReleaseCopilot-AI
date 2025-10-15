@@ -40,6 +40,10 @@ All automation that emits files or comments records:
 
 Example timestamp notation: `2024-04-15 14:05 MST`.
 
+## Wave 2 Helper Automation
+
+Use `python -m scripts.github.wave2_helper` to manage the helper backlog for Wave 2. The CLI supports `collect`, `prioritize`, `seed`, `post`, and `open-pr` subcommands, each writing deterministic artifacts under `artifacts/helpers/` and `project/prompts/wave2/`. See `docs/promptops/helpers.md` for detailed usage. When preparing manual comments or PRs, keep the Decision / Note / Action markers and include Phoenix-local scheduling context (America/Phoenix) in every timestamp.
+
 ## Prompt Wave CI Validation
 
 - GitHub Actions exposes a reusable job named **Validate Prompt Waves**. The workflow reads `project/prompts/waves.json` for entries marked with `"validate_recipes": true`, validates recipe coverage for each active wave, and then runs the shared lint/test gate (`ruff`, `black --check`, `mypy`, `pytest --cov`).

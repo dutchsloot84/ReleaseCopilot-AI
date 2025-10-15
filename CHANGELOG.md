@@ -1,5 +1,7 @@
 ## [Unreleased]
 ### Added
+- Wave 2 helper automation CLI for backlog collection, deterministic prioritization,
+  prompt seeding, Phoenix-local comment drafts, and PR scaffolding.
 - Wave 2 orchestrator CLI with slash-command planning, Phoenix-stamped artifacts,
   and dispatch envelopes for the `orchestrator-runner` workflow.
 - GitHub Action automation for `/orchestrate` commands, including Phoenix-timestamped artifacts,

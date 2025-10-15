@@ -1,0 +1,42 @@
+[
+  {
+    "number": 278,
+    "title": "Helpers: backlog, prioritize, seed, post sub-prompts, open impl PRs",
+    "html_url": "https://github.com/dutchsloot84/ReleaseCopilot-AI/issues/278",
+    "body": "Implement helper automation for Wave 2.",
+    "labels": [
+      {"name": "wave:wave2"},
+      {"name": "automation"},
+      {"name": "high-priority"}
+    ]
+  },
+  {
+    "number": 279,
+    "title": "Generate Human Actions checklist + Runbook",
+    "html_url": "https://github.com/dutchsloot84/ReleaseCopilot-AI/issues/279",
+    "body": "Create promptops checklist generator.",
+    "labels": [
+      {"name": "wave:wave2"},
+      {"name": "mop"}
+    ]
+  },
+  {
+    "number": 283,
+    "title": "CI Watchdog + Auto-Fix (command-gated)",
+    "html_url": "https://github.com/dutchsloot84/ReleaseCopilot-AI/issues/283",
+    "body": "Add CI automation guardrails.",
+    "labels": [
+      {"name": "ci"},
+      {"name": "wave:wave2"}
+    ]
+  },
+  {
+    "number": 310,
+    "title": "Docs tidy up",
+    "html_url": "https://github.com/dutchsloot84/ReleaseCopilot-AI/issues/310",
+    "body": "Documentation cleanup for unrelated wave.",
+    "labels": [
+      {"name": "docs"}
+    ]
+  }
+]

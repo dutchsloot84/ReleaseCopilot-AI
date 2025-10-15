@@ -1,0 +1,32 @@
+label_weights:
+  high-priority: 100
+  mop: 90
+  automation: 80
+  ci: 60
+  github-integration: 40
+  default: 10
+maintainers:
+  - dutchsloot84
+  - ops-bot
+  - promptops-maintainers
+target_labels:
+  - wave:wave2
+  - mop
+  - automation
+  - ci
+  - github-integration
+artifact_dirs:
+  base: artifacts/helpers
+  collected_issues: artifacts/helpers/issues.json
+  prioritized: artifacts/helpers/prioritized-issues.json
+  comments: artifacts/helpers/comments
+  pr_template: artifacts/helpers/pr_template.md
+  activity_log: artifacts/helpers/activity-log.ndjson
+  prompts_dir: project/prompts/wave2
+mop_constraints:
+  timezone: America/Phoenix
+  markers:
+    - Decision
+    - Note
+    - Action
+  deterministic: true
