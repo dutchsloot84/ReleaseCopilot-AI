@@ -26,7 +26,10 @@ def test_orchestrator_runner_configuration() -> None:
     assert orchestrate_job["uses"] == "./.github/workflows/reusable-orchestrator.yml"
     assert orchestrate_job["with"]["allowed-roles"] == "MEMBER,OWNER,TRIAGE"
     assert "allowed-users" in orchestrate_job["with"]
-    assert orchestrate_job["secrets"]["orchestrator-bot-token"] == "${{ secrets.ORCHESTRATOR_BOT_TOKEN }}"
+    assert (
+        orchestrate_job["secrets"]["orchestrator-bot-token"]
+        == "${{ secrets.ORCHESTRATOR_BOT_TOKEN }}"
+    )
 
 
 def test_reusable_orchestrator_contains_expected_steps() -> None:

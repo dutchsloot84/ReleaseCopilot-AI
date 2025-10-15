@@ -23,7 +23,9 @@ def event_file(tmp_path: Path) -> Path:
     return path
 
 
-def _run_cli(event_path: Path, roles: str, users: str = "", event_name: str = "issue_comment") -> subprocess.CompletedProcess[str]:
+def _run_cli(
+    event_path: Path, roles: str, users: str = "", event_name: str = "issue_comment"
+) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env.update(
         {

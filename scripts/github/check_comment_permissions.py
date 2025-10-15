@@ -74,7 +74,9 @@ def _command_in_comment(body: str, command: str) -> bool:
     return bool(pattern.search(body or ""))
 
 
-def _is_allowed(ctx: CommentContext, allowed_users: Iterable[str], allowed_roles: Iterable[str]) -> bool:
+def _is_allowed(
+    ctx: CommentContext, allowed_users: Iterable[str], allowed_roles: Iterable[str]
+) -> bool:
     login = (ctx.login or "").upper()
     association = (ctx.association or "").upper()
     normalized_users = {user.upper() for user in allowed_users}
@@ -84,7 +86,9 @@ def _is_allowed(ctx: CommentContext, allowed_users: Iterable[str], allowed_roles
     )
 
 
-def _validate_issue_comment(event: dict, allowed_roles: Set[str], allowed_users: Set[str], command: str) -> None:
+def _validate_issue_comment(
+    event: dict, allowed_roles: Set[str], allowed_users: Set[str], command: str
+) -> None:
     ctx = _extract_comment(event)
     if not _command_in_comment(ctx.body, command):
         raise PermissionError(f"Command '{command}' not detected in comment body.")
@@ -113,7 +117,9 @@ def main() -> None:
 
     # If no roles or users are configured we fail closed.
     if not allowed_roles and not allowed_users:
-        raise PermissionError("No allowed roles or users configured for orchestrator dispatch.")
+        raise PermissionError(
+            "No allowed roles or users configured for orchestrator dispatch."
+        )
 
     if event_name == "issue_comment":
         _validate_issue_comment(payload, allowed_roles, allowed_users, command)
