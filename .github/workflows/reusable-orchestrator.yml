@@ -1,0 +1,132 @@
+name: Reusable Orchestrator Dispatch
+
+on:
+  workflow_call:
+    inputs:
+      allowed-roles:
+        required: false
+        type: string
+        default: MEMBER,OWNER,TRIAGE
+      allowed-users:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      orchestrator-bot-token:
+        required: true
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    env:
+      TZ: America/Phoenix
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+      workflows: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify comment permissions
+        if: ${{ github.event_name == 'issue_comment' }}
+        run: python scripts/github/check_comment_permissions.py
+        env:
+          ALLOWED_ROLES: ${{ inputs.allowed-roles }}
+          ALLOWED_USERS: ${{ inputs.allowed-users }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install orchestrator dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Calculate Phoenix run identifier
+        id: phoenix
+        run: |
+          PHOENIX_RUN_ID="$(TZ="America/Phoenix" date +"%Y-%m-%dT%H-%M-%S%z")"
+          echo "PHOENIX_RUN_ID=$PHOENIX_RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Prepare orchestrator artifact directory
+        run: |
+          mkdir -p artifacts/orchestrator
+
+      - name: Dispatch orchestrator workflow
+        env:
+          ORCHESTRATOR_BOT_TOKEN: ${{ secrets.orchestrator-bot-token }}
+        run: |
+          rc orchestrator dispatch --event-path "$GITHUB_EVENT_PATH"
+
+      - name: Append dispatch metadata
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          event_path = os.environ.get("GITHUB_EVENT_PATH")
+          phoenix_run_id = os.environ.get("PHOENIX_RUN_ID")
+
+          record = {
+              "command": "",
+              "issue": None,
+              "phoenix_run_id": phoenix_run_id,
+              "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+          }
+
+          if event_path and Path(event_path).is_file():
+              with open(event_path, "r", encoding="utf-8") as fh:
+                  payload = json.load(fh)
+              comment_body = (payload.get("comment") or {}).get("body", "")
+              for line in comment_body.splitlines():
+                  stripped = line.strip()
+                  if stripped.startswith("/orchestrate"):
+                      record["command"] = stripped
+                      break
+              issue = payload.get("issue") or {}
+              record["issue"] = issue.get("html_url") or issue.get("number")
+
+          output_dir = Path("artifacts/orchestrator")
+          output_dir.mkdir(parents=True, exist_ok=True)
+          log_path = output_dir / "dispatch-log.ndjson"
+          with open(log_path, "a", encoding="utf-8") as log_file:
+              json.dump(record, log_file, sort_keys=True)
+              log_file.write("\n")
+          PY
+
+      - name: Publish workflow summary
+        uses: actions/github-script@v7
+        env:
+          PHOENIX_RUN_ID: ${{ env.PHOENIX_RUN_ID }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = process.env.GITHUB_EVENT_PATH;
+            let commandLine = '';
+            let issueRef = '';
+            if (path && fs.existsSync(path)) {
+              const payload = JSON.parse(fs.readFileSync(path, 'utf8'));
+              const lines = (payload.comment?.body || '').split(/\r?\n/);
+              commandLine = (lines.find((line) => line.trim().startsWith('/orchestrate')) || '').trim();
+              issueRef = payload.issue?.html_url || payload.issue?.number || '';
+            }
+            const summary = core.summary
+              .addHeading('Orchestrator Dispatch Summary')
+              .addTable([
+                ['Phoenix Timestamp', process.env.PHOENIX_RUN_ID || ''],
+                ['Command', commandLine || 'n/a'],
+                ['Issue', issueRef || 'n/a']
+              ]);
+            await summary.write();
+
+      - name: Upload orchestrator artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: orchestrator-${{ env.PHOENIX_RUN_ID }}
+          path: artifacts/orchestrator
+          if-no-files-found: warn

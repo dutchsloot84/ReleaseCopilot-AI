@@ -9,3 +9,5 @@ jsonschema>=4.23.0
 black==24.10.0
 mypy==1.11.2
 pre-commit==3.8.0
+
+ruamel.yaml==0.18.6
