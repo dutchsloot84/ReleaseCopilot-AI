@@ -39,3 +39,13 @@ All automation that emits files or comments records:
 - Timestamp in America/Phoenix.
 
 Example timestamp notation: `2024-04-15 14:05 MST`.
+
+## Wave 2 Orchestrator Entry Points
+Wave 2 helpers are dispatched via the CLI:
+
+```bash
+rc orchestrator plan --event-path path/to/issue_comment.json
+rc orchestrator dispatch --plan-path artifacts/orchestrator/<timestamp>/plan.json
+```
+
+Both commands log the Phoenix timestamp and issue number for traceability and align with the Wave 2 runbook documented in `docs/promptops/orchestrator.md`.

@@ -1,5 +1,7 @@
 ## [Unreleased]
 ### Added
+- Wave 2 orchestrator CLI with slash-command planning, Phoenix-stamped artifacts,
+  and dispatch envelopes for the `orchestrator-runner` workflow.
 - Phoenix-ready S3 artifacts bucket hardening: TLS-only bucket policy, bucket-owner enforced ownership, structured prefixes with lifecycle management, and read/write managed policies.
 - Artifacts bucket runbook documenting prefix retention, Phoenix-time procedures, and recovery guidance.
 - Least-privilege Secrets Manager wiring with secret smoke test CLI and redaction helpers.

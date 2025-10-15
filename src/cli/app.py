@@ -14,6 +14,11 @@ from releasecopilot.logging_config import configure_logging, get_logger
 from ..config.loader import Defaults, load_defaults
 from .audit import AuditInputError, AuditOptions, AuditResult, run_audit
 from .health import HealthCommandError, register_health_parser, run_health_command
+from .orchestrator import (
+    OrchestratorCommandError,
+    register_orchestrator_parser,
+    run_orchestrator_command,
+)
 
 LOGGER = get_logger(__name__)
 
@@ -87,6 +92,7 @@ def build_parser(defaults: Defaults | None = None) -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     _build_audit_parser(subparsers, defaults)
     register_health_parser(subparsers, defaults)
+    register_orchestrator_parser(subparsers, defaults)
     return parser
 
 
@@ -149,6 +155,14 @@ def main(argv: Iterable[str] | None = None, *, defaults: Defaults | None = None)
             return run_health_command(args, defaults)
         except HealthCommandError as exc:
             LOGGER.error("Health command failed", extra={"error": str(exc)})
+            print(str(exc), file=sys.stderr)
+            return 1
+
+    if args.command == "orchestrator":
+        try:
+            return run_orchestrator_command(args, defaults)
+        except OrchestratorCommandError as exc:
+            LOGGER.error("Orchestrator command failed", extra={"error": str(exc)})
             print(str(exc), file=sys.stderr)
             return 1
 
