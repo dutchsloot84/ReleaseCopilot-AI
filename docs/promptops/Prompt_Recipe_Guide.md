@@ -3,7 +3,7 @@
 Prompt Recipes explain how Codex executed a sub-prompt and which manual steps remain. They create an auditable chain from prompts to deployments.
 
 ## When to Write a Recipe
-- Every `project/prompts/wave1/*.md` sub-prompt (excluding README files) must have a companion recipe.
+- Every sub-prompt in a wave flagged with `"validate_recipes": true` inside `project/prompts/waves.json` (excluding README files) must have a companion recipe.
 - Update the recipe whenever the automation changes or new human-in-the-loop actions are introduced.
 
 ## Template Walkthrough

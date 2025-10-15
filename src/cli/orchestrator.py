@@ -151,12 +151,12 @@ def _handle_plan(
     return envelope, artifact_path
 
 
-def _handle_dispatch(args: argparse.Namespace, context: OrchestratorContext) -> DispatchEnvelope:
+def _handle_dispatch(
+    args: argparse.Namespace, context: OrchestratorContext
+) -> DispatchEnvelope:
     plan_path = Path(args.plan_path)
     if not plan_path.exists():
-        raise OrchestratorCommandError(
-            f"Dispatch plan not found at {plan_path}"
-        )
+        raise OrchestratorCommandError(f"Dispatch plan not found at {plan_path}")
     try:
         payload = json.loads(plan_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
@@ -195,7 +195,9 @@ def _load_event_payload(
     try:
         return json.loads(content)
     except json.JSONDecodeError as exc:
-        raise OrchestratorCommandError(f"Stdin payload is not valid JSON: {exc}") from exc
+        raise OrchestratorCommandError(
+            f"Stdin payload is not valid JSON: {exc}"
+        ) from exc
 
 
 def _parse_slash_command(
@@ -208,7 +210,9 @@ def _parse_slash_command(
         raise OrchestratorCommandError("Event payload is missing issue information")
     issue_number = issue.get("number")
     if not isinstance(issue_number, int):
-        raise OrchestratorCommandError("Issue payload did not include a numeric issue number")
+        raise OrchestratorCommandError(
+            "Issue payload did not include a numeric issue number"
+        )
 
     labels = issue.get("labels", [])
     label_names = [label.get("name") for label in labels if isinstance(label, dict)]
@@ -238,7 +242,9 @@ def _parse_slash_command(
 
 def _extract_helper_prompt(body: str) -> str:
     lines = [line.strip() for line in body.splitlines() if line.strip()]
-    command_line = next((line for line in lines if line.startswith("/orchestrate")), None)
+    command_line = next(
+        (line for line in lines if line.startswith("/orchestrate")), None
+    )
     if not command_line:
         raise OrchestratorCommandError("No /orchestrate command found in comment")
 

@@ -31,12 +31,18 @@ def _build_parser(defaults: Defaults) -> argparse.ArgumentParser:
     return parser
 
 
-def test_plan_creates_artifact(tmp_path: Path, defaults: Defaults, capsys: pytest.CaptureFixture[str]):
-    prompt_path = defaults.project_root / "project" / "prompts" / "wave2" / "helper_prompt.md"
+def test_plan_creates_artifact(
+    tmp_path: Path, defaults: Defaults, capsys: pytest.CaptureFixture[str]
+):
+    prompt_path = (
+        defaults.project_root / "project" / "prompts" / "wave2" / "helper_prompt.md"
+    )
     prompt_path.write_text("helper instructions", encoding="utf-8")
     event_path = tmp_path / "event.json"
     event_path.write_text(
-        Path("tests/fixtures/github_issue_comment_wave2.json").read_text(encoding="utf-8"),
+        Path("tests/fixtures/github_issue_comment_wave2.json").read_text(
+            encoding="utf-8"
+        ),
         encoding="utf-8",
     )
 
@@ -54,7 +60,9 @@ def test_plan_creates_artifact(tmp_path: Path, defaults: Defaults, capsys: pytes
     assert payload["command"]["helper_prompt"] == "helper_prompt"
 
 
-def test_plan_requires_helper_token(defaults: Defaults, capsys: pytest.CaptureFixture[str]):
+def test_plan_requires_helper_token(
+    defaults: Defaults, capsys: pytest.CaptureFixture[str]
+):
     event = {
         "issue": {"number": 280, "labels": [{"name": "wave:wave2"}]},
         "comment": {"body": "/orchestrate"},
@@ -67,20 +75,32 @@ def test_plan_requires_helper_token(defaults: Defaults, capsys: pytest.CaptureFi
     assert "Helper prompt not provided" in captured
 
 
-def test_dispatch_round_trip(tmp_path: Path, defaults: Defaults, capsys: pytest.CaptureFixture[str]):
-    prompt_path = defaults.project_root / "project" / "prompts" / "wave2" / "helper_prompt.md"
+def test_dispatch_round_trip(
+    tmp_path: Path, defaults: Defaults, capsys: pytest.CaptureFixture[str]
+):
+    prompt_path = (
+        defaults.project_root / "project" / "prompts" / "wave2" / "helper_prompt.md"
+    )
     prompt_path.write_text("helper instructions", encoding="utf-8")
     event_path = tmp_path / "event.json"
-    event = json.loads(Path("tests/fixtures/github_issue_comment_wave2.json").read_text(encoding="utf-8"))
+    event = json.loads(
+        Path("tests/fixtures/github_issue_comment_wave2.json").read_text(
+            encoding="utf-8"
+        )
+    )
     event_path.write_text(json.dumps(event), encoding="utf-8")
 
     parser = _build_parser(defaults)
-    plan_args = parser.parse_args(["orchestrator", "plan", "--event-path", str(event_path)])
+    plan_args = parser.parse_args(
+        ["orchestrator", "plan", "--event-path", str(event_path)]
+    )
     assert run_orchestrator_command(plan_args, defaults) == 0
     plan_output = json.loads(capsys.readouterr().out)
     plan_path = plan_output["artifact_path"]
 
-    dispatch_args = parser.parse_args(["orchestrator", "dispatch", "--plan-path", plan_path])
+    dispatch_args = parser.parse_args(
+        ["orchestrator", "dispatch", "--plan-path", plan_path]
+    )
     assert run_orchestrator_command(dispatch_args, defaults) == 0
     dispatch_payload = json.loads(capsys.readouterr().out)
     assert dispatch_payload["plan"]["workflow_name"] == "orchestrator-runner"

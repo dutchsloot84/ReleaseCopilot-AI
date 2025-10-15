@@ -5,7 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from releasecopilot.orchestrator.command import DispatchEnvelope, DispatchPlan, SlashCommand
+from releasecopilot.orchestrator.command import (
+    DispatchEnvelope,
+    DispatchPlan,
+    SlashCommand,
+)
 
 
 def test_serialization_uses_phoenix_timezone(tmp_path: Path) -> None:
