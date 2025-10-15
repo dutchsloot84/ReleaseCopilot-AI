@@ -1,0 +1,23 @@
+name: Orchestrator Runner
+
+on:
+  workflow_dispatch:
+  issue_comment:
+    types:
+      - created
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  workflows: write
+
+jobs:
+  orchestrate:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'issue_comment' && github.event.action == 'created' && contains(github.event.comment.body, '/orchestrate')) }}
+    uses: ./.github/workflows/reusable-orchestrator.yml
+    with:
+      allowed-roles: MEMBER,OWNER,TRIAGE
+      allowed-users: ${{ vars.RELEASECOPILOT_MAINTAINERS || '' }}
+    secrets:
+      orchestrator-bot-token: ${{ secrets.ORCHESTRATOR_BOT_TOKEN }}
