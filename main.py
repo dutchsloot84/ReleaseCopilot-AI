@@ -11,7 +11,16 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Protocol,
+    runtime_checkable,
+)
 
 try:  # pragma: no cover - best effort optional dependency
     from dotenv import load_dotenv
@@ -66,6 +75,35 @@ class AuditConfig:
     output_prefix: str = "audit_results"
 
 
+@runtime_checkable
+class IssueProvider(Protocol):
+    """Minimal interface for fetching issues for an audit."""
+
+    def fetch_issues(
+        self,
+        *,
+        fix_version: str,
+        use_cache: bool = False,
+    ) -> tuple[List[Dict[str, Any]], Optional[Path | str]]: ...
+
+
+@runtime_checkable
+class CommitProvider(Protocol):
+    """Minimal interface for fetching commits for an audit."""
+
+    def fetch_commits(
+        self,
+        *,
+        repositories: Iterable[str],
+        branches: Iterable[str],
+        start: datetime,
+        end: datetime,
+        use_cache: bool = False,
+    ) -> tuple[List[Dict[str, Any]], List[str]]: ...
+
+    def get_last_cache_file(self, name: str) -> Optional[Path]: ...
+
+
 def parse_args(
     argv: Optional[Iterable[str]] = None,
 ) -> tuple[argparse.Namespace, AuditConfig]:
@@ -116,7 +154,14 @@ def parse_args(
     return args, config
 
 
-def run_audit(config: AuditConfig) -> Dict[str, Any]:
+def run_audit(
+    config: AuditConfig,
+    *,
+    issue_provider: IssueProvider | None = None,
+    commit_provider: CommitProvider | None = None,
+    issue_provider_factory: Callable[[Dict[str, Any]], IssueProvider] | None = None,
+    commit_provider_factory: Callable[[Dict[str, Any]], CommitProvider] | None = None,
+) -> Dict[str, Any]:
     logger = get_logger(__name__)
 
     overrides: Dict[str, Any] = {}
@@ -133,8 +178,17 @@ def run_audit(config: AuditConfig) -> Dict[str, Any]:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
-    jira_store = build_jira_store(settings)
-    bitbucket_client = build_bitbucket_client(settings)
+    if issue_provider is None:
+        if issue_provider_factory is not None:
+            issue_provider = issue_provider_factory(settings)
+        else:
+            issue_provider = build_jira_store(settings)
+
+    if commit_provider is None:
+        if commit_provider_factory is not None:
+            commit_provider = commit_provider_factory(settings)
+        else:
+            commit_provider = build_bitbucket_client(settings)
 
     freeze_dt = parse_freeze_date(config.freeze_date)
     window = compute_fix_version_window(freeze_dt, config.window_days)
@@ -155,14 +209,14 @@ def run_audit(config: AuditConfig) -> Dict[str, Any]:
         },
     )
 
-    issues, jira_cache_path = jira_store.fetch_issues(
+    issues, jira_cache_path = issue_provider.fetch_issues(
         fix_version=config.fix_version,
         use_cache=config.use_cache,
     )
     jira_output = DATA_DIR / "jira_issues.json"
     write_json(jira_output, {"fixVersion": config.fix_version, "issues": issues})
 
-    commits, cache_keys = bitbucket_client.fetch_commits(
+    commits, cache_keys = commit_provider.fetch_commits(
         repositories=repos,
         branches=branches,
         start=window["start"],
@@ -205,10 +259,12 @@ def run_audit(config: AuditConfig) -> Dict[str, Any]:
 
     # Collect raw payload cache files for optional S3 upload
     raw_files: List[Path] = [jira_output, commits_output]
-    raw_cache_sources: List[Path] = [path for path in [jira_cache_path] if path]
+    raw_cache_sources: List[Path] = []
+    if jira_cache_path:
+        raw_cache_sources.append(Path(jira_cache_path))
     raw_files.extend(raw_cache_sources)
     for cache_key in cache_keys:
-        cache_file = bitbucket_client.get_last_cache_file(cache_key)
+        cache_file = commit_provider.get_last_cache_file(cache_key)
         if cache_file:
             raw_files.append(cache_file)
 
@@ -224,7 +280,7 @@ def run_audit(config: AuditConfig) -> Dict[str, Any]:
     return {"summary": audit_result.summary, "artifacts": artifacts}
 
 
-def build_jira_client(settings: Dict[str, Any]) -> JiraClient:
+def build_jira_client(settings: Dict[str, Any]) -> IssueProvider:
     jira_cfg = settings.get("jira", {})
 
     base_url = jira_cfg.get("base_url")
@@ -246,7 +302,7 @@ def build_jira_client(settings: Dict[str, Any]) -> JiraClient:
     )
 
 
-def build_jira_store(settings: Dict[str, Any]) -> JiraIssueStore:
+def build_jira_store(settings: Dict[str, Any]) -> IssueProvider:
     storage_cfg = settings.get("storage", {})
     table_name = storage_cfg.get("dynamodb", {}).get("jira_issue_table")
     if not table_name:
@@ -256,7 +312,7 @@ def build_jira_store(settings: Dict[str, Any]) -> JiraIssueStore:
     return JiraIssueStore(table_name=table_name, region_name=region)
 
 
-def build_bitbucket_client(settings: Dict[str, Any]) -> BitbucketClient:
+def build_bitbucket_client(settings: Dict[str, Any]) -> CommitProvider:
     bitbucket_cfg = settings.get("bitbucket", {})
 
     workspace = bitbucket_cfg.get("workspace")
