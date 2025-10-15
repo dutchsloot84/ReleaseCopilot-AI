@@ -1,0 +1,14 @@
+{
+  "action": "created",
+  "comment": {
+    "body": "/orchestrate dry-run\n--notes placeholder",
+    "author_association": "MEMBER",
+    "user": {
+      "login": "phoenix-dev"
+    }
+  },
+  "issue": {
+    "number": 277,
+    "html_url": "https://github.com/releasecopilot-ai/repo/issues/277"
+  }
+}
