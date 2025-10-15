@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 from typing import Iterable, Optional
 
 try:
-    from main import AuditConfig, run_audit
+    from main import run_audit
 except ModuleNotFoundError:
     fallback_root = Path(__file__).resolve().parents[2]
     if str(fallback_root) not in sys.path:
@@ -16,7 +15,7 @@ except ModuleNotFoundError:
     fallback_src = fallback_root / "src"
     if str(fallback_src) not in sys.path:
         sys.path.insert(1, str(fallback_src))
-    from main import AuditConfig, run_audit
+    from main import run_audit
 
 try:  # pragma: no cover - optional dependency loading
     from dotenv import load_dotenv
