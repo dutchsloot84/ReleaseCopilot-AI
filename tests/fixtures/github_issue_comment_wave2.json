@@ -1,0 +1,15 @@
+{
+  "action": "created",
+  "issue": {
+    "number": 276,
+    "title": "Add Orchestrator workflow",
+    "labels": [
+      {"name": "wave:wave2"},
+      {"name": "priority:high"}
+    ]
+  },
+  "comment": {
+    "id": 12345,
+    "body": "/orchestrate helper:helper_prompt"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "waves": [
+    {
+      "name": "wave1",
+      "path": "project/prompts/archive/wave1",
+      "validate_recipes": true
+    },
+    {
+      "name": "wave2",
+      "path": "project/prompts/wave2",
+      "validate_recipes": false
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 - **Purpose:** Capture how Wave 1 implemented low-ceiling AWS Budget alerts with SNS notifications.
 - **MOP Wave:** Wave 1 – Security/Costs/Storage
-- **Sub-Prompt Path:** project/prompts/wave1/subprompt_budget_alarms.md
+- **Sub-Prompt Path:** project/prompts/archive/wave1/subprompt_budget_alarms.md
 - **Triggering Issue/PR:** #2
 - **Phoenix Timestamp Prepared:** 2024-04-15 09:30 MST
 

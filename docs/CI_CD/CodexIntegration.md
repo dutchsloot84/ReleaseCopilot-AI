@@ -1,17 +1,17 @@
 # Codex and CI/CD Integration
 
-Wave 1 automation relies on Codex-generated artifacts backed by CI enforcement.
+Prompt waves rely on Codex-generated artifacts backed by CI enforcement.
 
 ## Codex Usage
-- Codex runs the Master Orchestrator Prompt (MOP) followed by scoped sub-prompts in `project/prompts/wave1`.
+- Codex runs the Master Orchestrator Prompt (MOP) followed by scoped sub-prompts in the active wave directories listed in `project/prompts/waves.json`.
 - Each run records CLI arguments, default values, and Git SHA in the resulting Prompt Recipe.
 - Prompt authors commit both the sub-prompt updates and their recipe to maintain parity.
 
 ## CI Enforcement
 - **`validate_prompts.yml`**
   - Triggers on pull requests.
-  - Executes `tools/validate_prompts.py` to ensure every sub-prompt has a recipe that cites its path.
-  - Runs `ruff`, `black --check`, `mypy`, and `pytest -q` with coverage ≥ 70% (configured via `pytest.ini`).
+  - Uses `project/prompts/waves.json` to determine which waves enforce recipe coverage and executes `tools/validate_prompts.py` for each active wave.
+  - Runs `ruff`, `black --check`, `mypy`, and `pytest --cov=. --cov-report=term-missing --cov-fail-under=70` for consistent linting and coverage gates.
 - **`actions_comment.yml`**
   - Triggers on PR open and synchronize events.
   - Runs `tools/render_actions_comment.py` to read `actions/pending_actions.json`, render outstanding human actions, and apply labels.
