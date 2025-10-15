@@ -11,7 +11,7 @@
 4) Docs excerpt (README and/or runbook).
 5) Risk & rollback (what to verify in CI/CloudWatch; revert path).
 
-**PR markers to include:**
+**PR markers to include (use canonical prefixes with trailing colons):**
 - Decision: <key choice & rationale>
 - Note: <operator tip and where to look>
 - Action: <owner + target date>

@@ -14,7 +14,7 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Set
 
 import requests
 import yaml
@@ -493,7 +493,58 @@ def _extract_comment_markers(
     until: dt.datetime,
 ) -> List[NoteMarker]:
     results: List[NoteMarker] = []
-    marker_prefixes = list(markers)
+    normalized_markers: List[Tuple[str, str]] = []
+    seen_labels: Set[str] = set()
+
+    for marker in markers:
+        canonical = (marker or "").strip()
+        if not canonical:
+            continue
+        if canonical.endswith(":"):
+            canonical = canonical[:-1]
+        canonical = canonical.strip()
+        if not canonical:
+            continue
+        lower_label = canonical.lower()
+        if lower_label in seen_labels:
+            continue
+        normalized_markers.append((canonical, lower_label))
+        seen_labels.add(lower_label)
+
+    if not normalized_markers:
+        return results
+
+    punctuation_chars = ":;.-–—"
+
+    def match_marker(text: str) -> Optional[Tuple[str, str]]:
+        candidate = text.strip()
+        if not candidate:
+            return None
+        candidate = re.sub(r"^[#>*\s]+", "", candidate)
+        candidate = candidate.lstrip("*_~`")
+        candidate = candidate.lstrip()
+        if not candidate:
+            return None
+        for canonical, lower_label in normalized_markers:
+            lower_candidate = candidate.lower()
+            if not lower_candidate.startswith(lower_label):
+                continue
+            remainder = candidate[len(canonical) :]
+            if remainder:
+                first_char = remainder[0]
+                if (
+                    first_char not in punctuation_chars
+                    and not first_char.isspace()
+                    and first_char not in "*_~`"
+                ):
+                    continue
+            remainder = remainder.lstrip("*_~`")
+            remainder = remainder.lstrip()
+            while remainder and remainder[0] in punctuation_chars:
+                remainder = remainder[1:].lstrip()
+            return canonical, remainder
+        return None
+
     for comment in comments:
         body = comment.get("body") or ""
         if not body:
@@ -525,16 +576,11 @@ def _extract_comment_markers(
             if not stripped:
                 index += 1
                 continue
-            matched_marker = None
-            for marker in marker_prefixes:
-                if stripped.startswith(marker):
-                    matched_marker = marker
-                    break
-            if not matched_marker:
+            match = match_marker(lines[index])
+            if not match:
                 index += 1
                 continue
-            detail_text = stripped[len(matched_marker) :].strip()
-            label = matched_marker.rstrip(":")
+            label, detail_text = match
             if detail_text:
                 results.append(
                     NoteMarker(
@@ -563,9 +609,7 @@ def _extract_comment_markers(
                 candidate_stripped = candidate.strip()
                 if not candidate_stripped:
                     break
-                if any(
-                    candidate_stripped.startswith(prefix) for prefix in marker_prefixes
-                ):
+                if match_marker(candidate):
                     break
                 if not candidate.lstrip().startswith("-"):
                     break
@@ -581,10 +625,7 @@ def _extract_comment_markers(
                     continuation_stripped = continuation.strip()
                     if not continuation_stripped:
                         break
-                    if any(
-                        continuation_stripped.startswith(prefix)
-                        for prefix in marker_prefixes
-                    ):
+                    if match_marker(continuation):
                         break
                     if continuation.lstrip().startswith("-"):
                         break
@@ -612,10 +653,7 @@ def _extract_comment_markers(
                     break
                 if not lines[search_index].strip():
                     break
-                if any(
-                    lines[search_index].strip().startswith(prefix)
-                    for prefix in marker_prefixes
-                ):
+                if match_marker(lines[search_index]):
                     break
                 if not lines[search_index].lstrip().startswith("-"):
                     break

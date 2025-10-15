@@ -77,6 +77,7 @@ Automated checks are critical for preventing failures in production. They enforc
 
 #### Linting & Formatting
 - Run ruff check and black (or equivalent) to enforce a consistent style and catch bugs like unused imports.
+- Install the shared pre-commit hooks (`pre-commit install`) so `ruff --fix`, `black`, and `mypy` run automatically before each commit.
 
 #### GitHub Actions CI
 On every PR/merge to main:
@@ -153,6 +154,7 @@ Note: CLI never supported `--until`; this was a workflow assumption.
 - Reduces reliance on Slack/Confluence by embedding durable traceability in Issues/PRs.
 
 ### Best Practices
-- Always include a **Decision** or **Action** marker when closing an Issue or PR.  
-- Use **Blocker** whenever CI, workflow, or environment issues stop progress.  
+- Always include a **Decision** or **Action** marker when closing an Issue or PR.
+- Use **Blocker** whenever CI, workflow, or environment issues stop progress.
 - Add **Note** when context may help future maintainers or onboarding.
+- Author PR descriptions with the canonical `Decision:`/`Note:`/`Action:` (`Blocker:` as needed) prefixes so reviewers and Historian exports stay aligned.
