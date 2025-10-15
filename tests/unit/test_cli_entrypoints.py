@@ -99,7 +99,9 @@ def test_entrypoints_produce_matching_outputs(
     assert exit_code_root == exit_code_cli == 0
     assert captured_root.out == captured_cli.out
 
-    summary_root = json.loads((root_output / "summary.json").read_text(encoding="utf-8"))
+    summary_root = json.loads(
+        (root_output / "summary.json").read_text(encoding="utf-8")
+    )
     summary_cli = json.loads((cli_output / "summary.json").read_text(encoding="utf-8"))
     assert summary_root == summary_cli == summary_payload
 

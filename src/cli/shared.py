@@ -32,7 +32,9 @@ def build_parser() -> argparse.ArgumentParser:
     """Return the canonical argument parser for ReleaseCopilot CLI entry points."""
 
     parser = argparse.ArgumentParser(description="ReleaseCopilot audit runner")
-    parser.add_argument("--fix-version", required=True, help="Jira fix version to audit")
+    parser.add_argument(
+        "--fix-version", required=True, help="Jira fix version to audit"
+    )
     parser.add_argument(
         "--repos", nargs="*", default=[], help="Bitbucket repositories to inspect"
     )
@@ -164,4 +166,3 @@ def finalize_run(
 
     summary_path = output_dir / "summary.json"
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
-
