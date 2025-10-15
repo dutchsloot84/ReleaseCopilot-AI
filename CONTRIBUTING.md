@@ -2,6 +2,10 @@
 
 Thank you for investing in Release Copilot! This guide captures contributor expectations that do not fit elsewhere in the docs set.
 
+## License and contribution terms
+
+Release Copilot is released under the [MIT License](LICENSE). By submitting a pull request, you agree that your contribution will be licensed under the same terms. We do not require a contributor license agreement or Developer Certificate of Origin sign-off.
+
 ## Notes & decision markers
 
 Release Copilot ingests structured markers from issues and pull requests (Decision, Note, Action, Blocker) when building the weekly history snapshots. To keep the noise level low and make PR review threads easy to scan, prefer **block style markers** when you have multiple follow-up items to record:
