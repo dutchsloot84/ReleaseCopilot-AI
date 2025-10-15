@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -30,6 +28,13 @@ from releasecopilot import uploader
 from releasecopilot.errors import ReleaseCopilotError
 from releasecopilot.logging_config import configure_logging, get_logger
 
+from src.cli.shared import (
+    AuditConfig,
+    finalize_run,
+    handle_dry_run,
+    parse_args,
+)
+
 
 def _load_local_dotenv() -> None:
     if load_dotenv is None:
@@ -50,70 +55,6 @@ _load_local_dotenv()
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 TEMP_DIR = BASE_DIR / "temp_data"
-
-
-@dataclass
-class AuditConfig:
-    fix_version: str
-    repos: List[str] = field(default_factory=list)
-    branches: Optional[List[str]] = None
-    window_days: int = 28
-    freeze_date: Optional[str] = None
-    develop_only: bool = False
-    use_cache: bool = False
-    s3_bucket: Optional[str] = None
-    s3_prefix: Optional[str] = None
-    output_prefix: str = "audit_results"
-
-
-def parse_args(
-    argv: Optional[Iterable[str]] = None,
-) -> tuple[argparse.Namespace, AuditConfig]:
-    parser = argparse.ArgumentParser(description="Releasecopilot AI")
-    parser.add_argument("--fix-version", required=True, help="Fix version to audit")
-    parser.add_argument(
-        "--repos", nargs="*", default=[], help="Bitbucket repositories to inspect"
-    )
-    parser.add_argument("--branches", nargs="*", help="Branches to include")
-    parser.add_argument(
-        "--develop-only",
-        action="store_true",
-        help="Shortcut for using the develop branch only",
-    )
-    parser.add_argument("--freeze-date", help="ISO formatted freeze date (YYYY-MM-DD)")
-    parser.add_argument(
-        "--window-days",
-        type=int,
-        default=28,
-        help="Days before freeze date to include commits",
-    )
-    parser.add_argument(
-        "--use-cache",
-        action="store_true",
-        help="Reuse cached API responses where available",
-    )
-    parser.add_argument("--s3-bucket", help="Override the default S3 bucket")
-    parser.add_argument("--s3-prefix", help="Override the default S3 prefix")
-    parser.add_argument(
-        "--output-prefix", default="audit_results", help="Basename for output files"
-    )
-    parser.add_argument("--log-level", default="INFO", help="Logging verbosity")
-
-    args = parser.parse_args(argv)
-
-    config = AuditConfig(
-        fix_version=args.fix_version,
-        repos=args.repos,
-        branches=args.branches,
-        window_days=args.window_days,
-        freeze_date=args.freeze_date,
-        develop_only=args.develop_only,
-        use_cache=args.use_cache,
-        s3_bucket=args.s3_bucket,
-        s3_prefix=args.s3_prefix,
-        output_prefix=args.output_prefix,
-    )
-    return args, config
 
 
 def run_audit(config: AuditConfig) -> Dict[str, Any]:
@@ -434,13 +375,27 @@ def _detect_git_sha() -> Optional[str]:
     return sha or None
 
 
-if __name__ == "__main__":
-    args, config = parse_args()
+def main(argv: Optional[Iterable[str]] = None) -> int:
+    args, config = parse_args(argv)
     configure_logging(args.log_level)
+    logger = get_logger(__name__)
+
+    if getattr(args, "dry_run", False):
+        logger.info("Dry run requested", extra={"fix_version": config.fix_version})
+        handle_dry_run(config)
+        return 0
+
     try:
-        run_audit(config)
+        result = run_audit(config)
     except ReleaseCopilotError as exc:
-        logger = get_logger(__name__)
         logger.error("Audit execution failed", extra=getattr(exc, "context", {}))
         print(f"ERROR: {exc}", file=sys.stderr)
-        sys.exit(1)
+        return 1
+
+    finalize_run(result, args)
+    logger.info("Audit completed", extra={"fix_version": config.fix_version})
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
