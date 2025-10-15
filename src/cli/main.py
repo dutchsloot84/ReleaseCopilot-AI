@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable
 
 try:
     from main import run_audit
@@ -32,7 +32,7 @@ from .shared import finalize_run, handle_dry_run, parse_args
 logger = get_logger(__name__)
 
 
-def main(argv: Optional[Iterable[str]] = None) -> int:
+def main(argv: Iterable[str] | None = None) -> int:
     args, config = parse_args(argv)
     configure_logging(args.log_level)
     logger.info(
