@@ -312,7 +312,9 @@ def test_run_audit_uses_injected_providers(
     monkeypatch.setattr(main, "build_bitbucket_client", fail_build_bitbucket)
 
     class DummyAuditProcessor:
-        def __init__(self, *, issues: list[dict[str, Any]], commits: list[dict[str, Any]]) -> None:
+        def __init__(
+            self, *, issues: list[dict[str, Any]], commits: list[dict[str, Any]]
+        ) -> None:
             self._issues = issues
             self._commits = commits
 
@@ -460,12 +462,16 @@ def test_run_audit_uses_provider_factories(
     monkeypatch.setattr(
         main,
         "build_jira_store",
-        lambda settings: (_ for _ in ()).throw(AssertionError("should not build store")),
+        lambda settings: (_ for _ in ()).throw(
+            AssertionError("should not build store")
+        ),
     )
     monkeypatch.setattr(
         main,
         "build_bitbucket_client",
-        lambda settings: (_ for _ in ()).throw(AssertionError("should not build client")),
+        lambda settings: (_ for _ in ()).throw(
+            AssertionError("should not build client")
+        ),
     )
 
     monkeypatch.setattr(

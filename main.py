@@ -11,7 +11,16 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Protocol, runtime_checkable
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Protocol,
+    runtime_checkable,
+)
 
 try:  # pragma: no cover - best effort optional dependency
     from dotenv import load_dotenv
@@ -75,8 +84,7 @@ class IssueProvider(Protocol):
         *,
         fix_version: str,
         use_cache: bool = False,
-    ) -> tuple[List[Dict[str, Any]], Optional[Path | str]]:
-        ...
+    ) -> tuple[List[Dict[str, Any]], Optional[Path | str]]: ...
 
 
 @runtime_checkable
@@ -91,11 +99,9 @@ class CommitProvider(Protocol):
         start: datetime,
         end: datetime,
         use_cache: bool = False,
-    ) -> tuple[List[Dict[str, Any]], List[str]]:
-        ...
+    ) -> tuple[List[Dict[str, Any]], List[str]]: ...
 
-    def get_last_cache_file(self, name: str) -> Optional[Path]:
-        ...
+    def get_last_cache_file(self, name: str) -> Optional[Path]: ...
 
 
 def parse_args(
