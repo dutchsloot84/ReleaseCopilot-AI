@@ -214,6 +214,7 @@ def test_extract_comment_markers_normalizes_markdown_variants() -> None:
     assert note.detail == "Bold note detail."
     assert action.detail == "Follow up during the next triage sync."
 
+
 def test_collect_artifacts_section_combines_sources(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

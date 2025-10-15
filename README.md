@@ -71,6 +71,28 @@ Optional helpers (such as loading a local `.env` file) live in
 pip install -r requirements-optional.txt
 ```
 
+## Local development workflow
+
+Install development dependencies (formatter, linters, type checker, and pre-commit integration):
+
+```bash
+pip install -r requirements.txt -r requirements-dev.txt
+```
+
+Set up the shared pre-commit hooks so formatting runs automatically before every commit:
+
+```bash
+pre-commit install
+```
+
+Run all hooks once to ensure your workspace matches the CI configuration:
+
+```bash
+pre-commit run --all-files
+```
+
+The pre-commit hooks run `ruff --fix`, `black`, and `mypy` locally, catching formatting drifts before `black --check .` executes in CI.
+
 ## Configuration
 
 1. Copy `.env.example` to `.env` for local development and populate the placeholders with test credentials. The file is `.gitignore`d—keep real secrets out of version control.

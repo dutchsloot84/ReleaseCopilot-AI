@@ -77,6 +77,7 @@ Automated checks are critical for preventing failures in production. They enforc
 
 #### Linting & Formatting
 - Run ruff check and black (or equivalent) to enforce a consistent style and catch bugs like unused imports.
+- Install the shared pre-commit hooks (`pre-commit install`) so `ruff --fix`, `black`, and `mypy` run automatically before each commit.
 
 #### GitHub Actions CI
 On every PR/merge to main:

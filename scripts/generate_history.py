@@ -544,6 +544,7 @@ def _extract_comment_markers(
                 remainder = remainder[1:].lstrip()
             return canonical, remainder
         return None
+
     for comment in comments:
         body = comment.get("body") or ""
         if not body:
