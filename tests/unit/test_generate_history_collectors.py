@@ -181,6 +181,39 @@ def test_extract_comment_markers_supports_block_style() -> None:
     assert notes[0].detail == "Inline reminder"
 
 
+def test_extract_comment_markers_normalizes_markdown_variants() -> None:
+    comments = [
+        {
+            "body": (
+                "## Decision\n"
+                "- Adopt the shared checklist for release prep.\n\n"
+                "**Note**: Bold note detail.\n\n"
+                "Action -\n"
+                "- Follow up during the next triage sync.\n"
+            ),
+            "updated_at": "2024-03-02T12:00:00Z",
+            "issue_url": "https://api.github.com/repos/org/repo/issues/99",
+            "html_url": "https://github.com/org/repo/issues/99#issuecomment-501",
+            "user": {"login": "octocat"},
+            "id": 501,
+        }
+    ]
+
+    markers = generate_history._extract_comment_markers(  # type: ignore[attr-defined]
+        comments=comments,
+        markers=["Decision:", "Note:", "Action:"],
+        status_lookup={("issue", 99): "In Progress"},
+        until=dt.datetime(2024, 3, 3, tzinfo=dt.timezone.utc),
+    )
+
+    decision = next(item for item in markers if item.marker == "Decision")
+    note = next(item for item in markers if item.marker == "Note")
+    action = next(item for item in markers if item.marker == "Action")
+
+    assert decision.detail == "Adopt the shared checklist for release prep."
+    assert note.detail == "Bold note detail."
+    assert action.detail == "Follow up during the next triage sync."
+
 def test_collect_artifacts_section_combines_sources(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

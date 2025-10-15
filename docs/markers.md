@@ -2,6 +2,10 @@
 
 Release Copilot recognizes four structured markers in GitHub issues and pull requests: **Decision**, **Note**, **Action**, and **Blocker**. The Git Historian job ingests these markers and mirrors them into weekly history snapshots so the team can scan highlights without trawling through every thread.
 
+## Supported formats
+
+Markers are matched case-insensitively and tolerate common Markdown wrappers. Headings such as `## Decision`, bold labels like `**Note**:`, or even shorthand forms such as `Action -` are all recognized. For clarity in shared threads, keep using the canonical `Decision:`/`Note:`/`Action:`/`Blocker:` prefixes — they remain the recommended style and appear in exported history. **When opening a pull request (either manually or via Codex automation), always author the description with the canonical prefixes so reviewers do not need to infer intent from alternate styles.**
+
 ## Preferred: block style for PR reviews
 
 Use a marker heading followed by one or more bullet points when recording multiple outcomes in a review comment. Each bullet is captured as a separate entry while staying visually compact for humans:

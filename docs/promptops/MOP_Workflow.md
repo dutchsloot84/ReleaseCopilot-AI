@@ -29,7 +29,7 @@ Wave prompts coordinate focus areas (for example Wave 1 Security/Cost/Storage or
 - Start from the MOP for your wave (for example `project/prompts/wave2/README.md` or `project/prompts/wave1/mop_wave1_security.md`) and craft or update a sub-prompt.
 - Create or refresh the Prompt Recipe using the template.
 - Record manual approvals or verifications in `actions/pending_actions.json` with Phoenix deadlines.
-- Submit a PR that references the recipe, includes the Decision/Note/Action markers in the description, and calls out the wave label.
+- Submit a PR that references the recipe, includes the Decision/Note/Action markers in the description, and calls out the wave label. Use the canonical `Decision:`/`Note:`/`Action:` prefixes (and `Blocker:` if applicable) so Codex and human-authored PRs stay consistent.
 - Monitor CI; resolve validator or action comment feedback before merging.
 
 ## Run Metadata Expectations

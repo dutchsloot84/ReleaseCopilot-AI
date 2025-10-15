@@ -153,6 +153,7 @@ Note: CLI never supported `--until`; this was a workflow assumption.
 - Reduces reliance on Slack/Confluence by embedding durable traceability in Issues/PRs.
 
 ### Best Practices
-- Always include a **Decision** or **Action** marker when closing an Issue or PR.  
-- Use **Blocker** whenever CI, workflow, or environment issues stop progress.  
+- Always include a **Decision** or **Action** marker when closing an Issue or PR.
+- Use **Blocker** whenever CI, workflow, or environment issues stop progress.
 - Add **Note** when context may help future maintainers or onboarding.
+- Author PR descriptions with the canonical `Decision:`/`Note:`/`Action:` (`Blocker:` as needed) prefixes so reviewers and Historian exports stay aligned.
