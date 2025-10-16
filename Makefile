@@ -3,7 +3,7 @@ PYTHON ?= python3
 .PHONY: gen-wave3 check-generated
 
 gen-wave3:
-	$(PYTHON) scripts/github/wave2_helper.py generate backlog/wave3.yaml
+	$(PYTHON) main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix
 
 check-generated:
-	git diff --exit-code docs/mop docs/sub-prompts artifacts || (echo "Regenerate: make gen-wave3" && exit 1)
+	./scripts/ci/check_generator_drift.sh

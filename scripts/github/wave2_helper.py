@@ -18,6 +18,8 @@ from jinja2 import Environment, FileSystemLoader
 from slugify import slugify
 import yaml
 
+from tools.generator.generator import TimezoneLabel, format_timezone_label
+
 try:
     from releasecopilot.logging_config import get_logger
 except (
@@ -500,12 +502,17 @@ def archive_previous_wave_mop(prev_wave: int) -> None:
     shutil.copy2(source, destination)
 
 
-def render_mop_from_yaml(spec: dict[str, Any], generated_at: str | None = None) -> Path:
+def render_mop_from_yaml(
+    spec: dict[str, Any],
+    generated_at: str | None = None,
+    timezone_label: TimezoneLabel | None = None,
+) -> Path:
     """Render the Mission Outline Plan from the YAML spec."""
 
     env = _jinja_environment()
     template = env.get_template("mop.md.j2")
     timestamp = generated_at or phoenix_now().isoformat()
+    label = timezone_label or format_timezone_label(PHOENIX_TZ)
     content = template.render(
         wave=spec["wave"],
         purpose=spec.get("purpose", ""),
@@ -513,6 +520,7 @@ def render_mop_from_yaml(spec: dict[str, Any], generated_at: str | None = None) 
         quality_bar=spec.get("quality_bar", []),
         sequenced_prs=spec.get("sequenced_prs", []),
         generated_at=timestamp,
+        timezone_parenthetical=label.parenthetical,
     )
     path = Path("docs/mop") / f"mop_wave{spec['wave']}.md"
     write_text(path, content)
@@ -520,7 +528,9 @@ def render_mop_from_yaml(spec: dict[str, Any], generated_at: str | None = None) 
 
 
 def render_subprompts_and_issues(
-    spec: dict[str, Any], generated_at: str | None = None
+    spec: dict[str, Any],
+    generated_at: str | None = None,
+    timezone_label: TimezoneLabel | None = None,
 ) -> list[dict[str, Any]]:
     """Render sub-prompts and issue bodies for each sequenced PR."""
 
@@ -529,6 +539,7 @@ def render_subprompts_and_issues(
     issue_template = env.get_template("issue_body.md.j2")
     wave = spec["wave"]
     timestamp = generated_at or phoenix_now().isoformat()
+    label = timezone_label or format_timezone_label(PHOENIX_TZ)
     subprompt_root = Path("docs/sub-prompts") / f"wave{wave}"
     issue_root = Path("artifacts/issues") / f"wave{wave}"
     items: list[dict[str, Any]] = []
@@ -546,18 +557,20 @@ def render_subprompts_and_issues(
             wave=wave,
             pr=normalized,
             generated_at=timestamp,
+            timezone_label=label.context,
         )
         lines = subprompt_content.splitlines()
         body_without_heading = "\n".join(lines[1:]).lstrip()
         summary_line = (
             "Generated automatically from backlog/wave"
-            f"{wave}.yaml on {timestamp} (America/Phoenix · no DST)."
+            f"{wave}.yaml on {timestamp} {label.parenthetical}."
         )
         issue_content = issue_template.render(
             wave=wave,
             pr=normalized,
             summary_line=summary_line,
             subprompt_body=body_without_heading,
+            timezone_label=label.summary,
         )
         subprompt_path = subprompt_root / f"{slug}.md"
         issue_path = issue_root / f"{slug}.md"
