@@ -7,7 +7,7 @@ from tests.github.test_ci_watchdog import freeze_utc_now, load_fixture, mock_ses
 
 def test_cli_generates_artifacts(monkeypatch, tmp_path):
     mapping = {
-        "https://api.github.com/repos/example/repo/pulls?{\"direction\": \"desc\", \"per_page\": \"50\", \"sort\": \"updated\", \"state\": \"open\"}": load_fixture(
+        'https://api.github.com/repos/example/repo/pulls?{"direction": "desc", "per_page": "50", "sort": "updated", "state": "open"}': load_fixture(
             "pulls.json"
         ),
         "https://api.github.com/repos/example/repo/commits/abc123/check-runs": load_fixture(
@@ -17,7 +17,9 @@ def test_cli_generates_artifacts(monkeypatch, tmp_path):
 
     freeze_utc_now(
         monkeypatch,
-        ci_watchdog._dt.datetime(2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc),
+        ci_watchdog._dt.datetime(
+            2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc
+        ),
     )
     mock_session(monkeypatch, mapping)
 
@@ -46,4 +48,4 @@ def test_cli_generates_artifacts(monkeypatch, tmp_path):
     metrics = metrics_path.read_text(encoding="utf-8")
     assert "failures_scanned" in metrics
     status = status_path.read_text(encoding="utf-8")
-    assert "\"number\": 42" in status
+    assert '"number": 42' in status

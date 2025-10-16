@@ -59,14 +59,19 @@ def freeze_utc_now(monkeypatch: pytest.MonkeyPatch, when):
 
 def test_collect_failures_filters_and_sorts(monkeypatch):
     mapping = {
-        "https://api.github.com/repos/example/repo/pulls?{\"direction\": \"desc\", \"per_page\": \"50\", \"sort\": \"updated\", \"state\": \"open\"}": load_fixture(
+        'https://api.github.com/repos/example/repo/pulls?{"direction": "desc", "per_page": "50", "sort": "updated", "state": "open"}': load_fixture(
             "pulls.json"
         ),
         "https://api.github.com/repos/example/repo/commits/abc123/check-runs": load_fixture(
             "check_runs_abc123.json"
         ),
     }
-    freeze_utc_now(monkeypatch, ci_watchdog._dt.datetime(2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc))
+    freeze_utc_now(
+        monkeypatch,
+        ci_watchdog._dt.datetime(
+            2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc
+        ),
+    )
     mock_session(monkeypatch, mapping)
 
     failures = ci_watchdog.collect_failures("example/repo", max_age_hours=72)
@@ -78,14 +83,19 @@ def test_collect_failures_filters_and_sorts(monkeypatch):
 
 def test_collect_failures_skips_stale(monkeypatch):
     mapping = {
-        "https://api.github.com/repos/example/repo/pulls?{\"direction\": \"desc\", \"per_page\": \"50\", \"sort\": \"updated\", \"state\": \"open\"}": load_fixture(
+        'https://api.github.com/repos/example/repo/pulls?{"direction": "desc", "per_page": "50", "sort": "updated", "state": "open"}': load_fixture(
             "pulls.json"
         ),
         "https://api.github.com/repos/example/repo/commits/abc123/check-runs": load_fixture(
             "check_runs_stale.json"
         ),
     }
-    freeze_utc_now(monkeypatch, ci_watchdog._dt.datetime(2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc))
+    freeze_utc_now(
+        monkeypatch,
+        ci_watchdog._dt.datetime(
+            2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc
+        ),
+    )
     mock_session(monkeypatch, mapping)
 
     failures = ci_watchdog.collect_failures("example/repo", max_age_hours=24)
@@ -95,7 +105,9 @@ def test_collect_failures_skips_stale(monkeypatch):
 def test_render_report_matches_golden(monkeypatch, tmp_path):
     freeze_utc_now(
         monkeypatch,
-        ci_watchdog._dt.datetime(2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc),
+        ci_watchdog._dt.datetime(
+            2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc
+        ),
     )
 
     failure = ci_watchdog.PullRequestFailure(
@@ -115,9 +127,9 @@ def test_render_report_matches_golden(monkeypatch, tmp_path):
     )
 
     report = ci_watchdog.render_report([failure])
-    golden = (Path(__file__).parent.parent / "golden" / "watchdog" / "report.md").read_text(
-        encoding="utf-8"
-    )
+    golden = (
+        Path(__file__).parent.parent / "golden" / "watchdog" / "report.md"
+    ).read_text(encoding="utf-8")
     assert report == golden
 
 

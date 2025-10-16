@@ -29,7 +29,9 @@ class WatchdogError(RuntimeError):
 def _auth_headers() -> Dict[str, str]:
     token = os.environ.get("ORCHESTRATOR_BOT_TOKEN")
     if not token:
-        raise WatchdogError("ORCHESTRATOR_BOT_TOKEN is required for watchdog operations")
+        raise WatchdogError(
+            "ORCHESTRATOR_BOT_TOKEN is required for watchdog operations"
+        )
     return {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
@@ -37,12 +39,16 @@ def _auth_headers() -> Dict[str, str]:
     }
 
 
-def _paginate(url: str, session: requests.Session, params: Dict[str, str] | None = None) -> Iterable[dict]:
+def _paginate(
+    url: str, session: requests.Session, params: Dict[str, str] | None = None
+) -> Iterable[dict]:
     next_url = url
     while next_url:
         response = session.get(next_url, params=params)
         if response.status_code >= 400:
-            raise WatchdogError(f"GitHub API error {response.status_code}: {response.text}")
+            raise WatchdogError(
+                f"GitHub API error {response.status_code}: {response.text}"
+            )
         payload = response.json()
         if isinstance(payload, dict) and "items" in payload:
             items = payload["items"]
@@ -89,7 +95,12 @@ def collect_failures(repo: str, max_age_hours: int) -> List[PullRequestFailure]:
     session.headers.update(_auth_headers())
 
     pulls_url = f"https://api.github.com/repos/{repo}/pulls"
-    pulls_params = {"state": "open", "per_page": "50", "sort": "updated", "direction": "desc"}
+    pulls_params = {
+        "state": "open",
+        "per_page": "50",
+        "sort": "updated",
+        "direction": "desc",
+    }
 
     failures: List[PullRequestFailure] = []
     for pull in _paginate(pulls_url, session, pulls_params):
@@ -97,7 +108,9 @@ def collect_failures(repo: str, max_age_hours: int) -> List[PullRequestFailure]:
             continue
 
         head_sha = pull["head"]["sha"]
-        check_runs_url = f"https://api.github.com/repos/{repo}/commits/{head_sha}/check-runs"
+        check_runs_url = (
+            f"https://api.github.com/repos/{repo}/commits/{head_sha}/check-runs"
+        )
         failing_checks: List[FailingCheck] = []
         latest_failure_at: _dt.datetime | None = None
 
@@ -106,10 +119,17 @@ def collect_failures(repo: str, max_age_hours: int) -> List[PullRequestFailure]:
             completed_at_raw = check.get("completed_at")
             if not completed_at_raw:
                 continue
-            completed_at = _dt.datetime.fromisoformat(completed_at_raw.replace("Z", "+00:00"))
+            completed_at = _dt.datetime.fromisoformat(
+                completed_at_raw.replace("Z", "+00:00")
+            )
             if completed_at < max_age:
                 continue
-            if conclusion not in {"failure", "timed_out", "action_required", "cancelled"}:
+            if conclusion not in {
+                "failure",
+                "timed_out",
+                "action_required",
+                "cancelled",
+            }:
                 continue
 
             latest_failure_at = max(latest_failure_at or completed_at, completed_at)
@@ -127,7 +147,11 @@ def collect_failures(repo: str, max_age_hours: int) -> List[PullRequestFailure]:
 
         failing_checks.sort(key=lambda c: (c.name.lower(), c.completed_at))
 
-        latest_str = latest_failure_at.isoformat().replace("+00:00", "Z") if latest_failure_at else ""
+        latest_str = (
+            latest_failure_at.isoformat().replace("+00:00", "Z")
+            if latest_failure_at
+            else ""
+        )
 
         failures.append(
             PullRequestFailure(
@@ -153,7 +177,11 @@ def render_report(failures: Sequence[PullRequestFailure]) -> str:
     if not failures:
         return header + "\nNo failing checks detected. ✅\n"
 
-    lines = [header, "\n| PR | Title | Check | Completed (UTC) |", "| --- | --- | --- | --- |"]
+    lines = [
+        header,
+        "\n| PR | Title | Check | Completed (UTC) |",
+        "| --- | --- | --- | --- |",
+    ]
     for failure in failures:
         pr_link = f"[{failure.number}]({failure.html_url})"
         for check in failure.failing_checks:
@@ -190,7 +218,9 @@ def should_autofix(event: Dict) -> bool:
         approvals = int(pull_request["approved_review_count"])
     else:
         reviews = pull_request.get("reviews", [])
-        approvals = sum(1 for review in reviews if review.get("state", "").upper() == "APPROVED")
+        approvals = sum(
+            1 for review in reviews if review.get("state", "").upper() == "APPROVED"
+        )
 
     return approvals > 0
 
@@ -201,11 +231,17 @@ def serialize_failures(failures: Sequence[PullRequestFailure]) -> List[dict]:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="CI Watchdog helper CLI")
-    parser.add_argument("--repo", required=True, help="GitHub repository in owner/name form")
+    parser.add_argument(
+        "--repo", required=True, help="GitHub repository in owner/name form"
+    )
     parser.add_argument("--max-age-hours", type=int, default=24)
-    parser.add_argument("--render", action="store_true", help="Render the markdown report")
+    parser.add_argument(
+        "--render", action="store_true", help="Render the markdown report"
+    )
     parser.add_argument("--output", type=Path, help="Optional path to write the report")
-    parser.add_argument("--metrics", type=Path, help="Optional path to write metrics JSON")
+    parser.add_argument(
+        "--metrics", type=Path, help="Optional path to write metrics JSON"
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     failures = collect_failures(args.repo, args.max_age_hours)
@@ -230,7 +266,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     status_output = os.environ.get("WATCHDOG_STATUS_OUTPUT")
     if status_output:
         Path(status_output).parent.mkdir(parents=True, exist_ok=True)
-        Path(status_output).write_text(json.dumps(serialize_failures(failures), indent=2), encoding="utf-8")
+        Path(status_output).write_text(
+            json.dumps(serialize_failures(failures), indent=2), encoding="utf-8"
+        )
 
     return 0
 
@@ -248,4 +286,3 @@ __all__ = [
     "should_autofix",
     "WatchdogError",
 ]
-
