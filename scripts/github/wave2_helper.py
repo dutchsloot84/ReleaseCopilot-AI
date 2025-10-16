@@ -436,6 +436,7 @@ def load_spec(path: Path | str) -> dict[str, Any]:
         wave = int(raw_spec["wave"])
     except KeyError as exc:  # pragma: no cover - validation guard
         raise ValueError("Missing required 'wave' field in spec") from exc
+
     def _stringify_list(values: Iterable[Any]) -> list[str]:
         result: list[str] = []
         for entry in values:

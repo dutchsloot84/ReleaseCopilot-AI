@@ -113,10 +113,17 @@ def test_idempotent_outputs(sample_spec: dict) -> None:
     second_items = generator.render_subprompts_and_issues(sample_spec)
     second_manifest = generator.write_manifest(sample_spec["wave"], second_items)
     assert first_items == second_items
-    assert hashlib.sha256(
-        generator.render_mop_from_yaml(sample_spec).read_bytes()
-    ).hexdigest() == first_hashes["mop"]
-    assert hashlib.sha256(
-        Path(second_items[0]["subprompt_path"]).read_bytes()
-    ).hexdigest() == first_hashes["subprompt"]
-    assert hashlib.sha256(second_manifest.read_bytes()).hexdigest() == first_hashes["manifest"]
+    assert (
+        hashlib.sha256(
+            generator.render_mop_from_yaml(sample_spec).read_bytes()
+        ).hexdigest()
+        == first_hashes["mop"]
+    )
+    assert (
+        hashlib.sha256(Path(second_items[0]["subprompt_path"]).read_bytes()).hexdigest()
+        == first_hashes["subprompt"]
+    )
+    assert (
+        hashlib.sha256(second_manifest.read_bytes()).hexdigest()
+        == first_hashes["manifest"]
+    )
