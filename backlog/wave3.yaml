@@ -1,36 +1,198 @@
 wave: 3
 purpose: >-
-  Deliver a repeatable Wave 3 launch process that can be re-run from a single YAML
-  specification while keeping artifacts deterministic for Phoenix (America/Phoenix, no DST).
+  Deliver MVP surface: Streamlit dashboard, webhook-grade Jira/Bitbucket ingest,
+  core correlation/gaps, QA heuristics, and export artifacts — with
+  Phoenix-anchored timestamps and deterministic generator outputs.
 constraints:
-  - Phoenix timezone (America/Phoenix, no DST) is authoritative for scheduling, timestamps, and archival suffixes.
-  - Preserve least-privilege IAM and avoid leaking secrets in generated outputs or logs.
-  - Make every artifact idempotent: re-running the generator on the same YAML must yield identical files.
+  - Least-privilege IAM.
+  - No secrets in logs.
+  - Phoenix time handling in schedulers/timestamps.
+  - No live network in tests (use cached payloads/fixtures).
+  - Reproducible artifacts (args/git_sha/generated_at captured).
 quality_bar:
-  - Ruff and Black must pass with no diffs.
-  - mypy succeeds with the repository type hints.
-  - pytest runs locally with coverage ≥ 70% on touched modules (no live network).
+  - ruff + black clean, mypy passes.
+  - pytest with ≥70% coverage on touched code.
+  - Docs updated (README/runbooks), CHANGELOG updated.
+  - Artifacts: JSON/Excel with run_id, git_sha, generated_at.
 sequenced_prs:
-  - title: "Wave 3 – YAML-driven generator rollout"
-    acceptance:
-      - Generate the MOP, sub-prompts, issue bodies, and manifest from this spec.
-      - Archive the previous wave MOP exactly once per day when present.
-      - Provide a Make/CI/pre-commit guard that detects drift.
-    notes:
-      - Ensure all generated docs call out America/Phoenix (no DST).
-      - Reference Decision/Note/Action markers wherever contributors edit outputs.
+  - id: pr-001
+    title: Streamlit MVP Dashboard v1 (Nov ’25 lane)
+    area: UI
+    priority: High
     labels:
       - wave:wave3
-      - automation
-      - promptops
-  - title: "Wave 3 – onboarding and validation"
-    acceptance:
-      - Document the generator workflow for contributors in README.md.
-      - Update CHANGELOG and PR template markers for Decision/Note/Action.
-      - Add pytest coverage for archiving, manifests, and idempotency.
+      - mvp
+      - area:UI
+      - priority:high
+    acceptance_criteria:
+      - Tabs: Audit, Gaps, QA Focus, Artifacts.
+      - Header shows Nov ’25 stats (stories, commits, linked %, gaps).
+      - Actions: Re-sync Jira, Re-scan Repos, Recompute Correlation.
+      - Download buttons: Release Notes, Validation Doc, JSON, Excel.
     notes:
-      - Tests must not hit GitHub APIs; rely on offline fixtures.
+      - Keep components minimal (tables/cards); no vendor lock-in.
+  - id: pr-002
+    title: Jira Webhook-based Sync (Prod-grade)
+    area: Ingest
+    priority: High
     labels:
       - wave:wave3
-      - documentation
-      - testing
+      - mvp
+      - area:ingest
+      - priority:high
+    acceptance_criteria:
+      - HMAC/signature validation; normalized payload schema.
+      - Idempotent upsert; structured logs; retries/backoff.
+      - Recompute correlation for touched issues.
+      - Docs: setup, troubleshooting, Phoenix timestamps.
+    notes: []
+  - id: pr-003
+    title: Bitbucket Ingest (scan + webhooks)
+    area: Ingest
+    priority: High
+    labels:
+      - wave:wave3
+      - mvp
+      - area:ingest
+      - priority:high
+    acceptance_criteria:
+      - Time-window commit scan across configured repos.
+      - Webhooks: push/PR created/updated/fulfilled.
+      - Store files_changed and authorship; idempotent upsert.
+      - Key extraction from message/branch/PR title.
+    notes: []
+  - id: pr-004
+    title: Correlation & Gaps Engine
+    area: Core
+    priority: High
+    labels:
+      - wave:wave3
+      - mvp
+      - area:core
+      - priority:high
+    acceptance_criteria:
+      - Link rules: message > branch > PR title.
+      - Gaps endpoints: stories-without-commits, commits-without-story.
+      - Persist run metadata (args, git_sha, generated_at).
+      - Unit tests for edge cases/collisions.
+    notes: []
+  - id: pr-005
+    title: QA Focus & Regression Heuristics (YAML-driven)
+    area: Analysis
+    priority: High
+    labels:
+      - wave:wave3
+      - mvp
+      - area:analysis
+      - priority:high
+    acceptance_criteria:
+      - risk.yaml with critical_paths + label_weights.
+      - Score per story/module with reasons; top N endpoint.
+      - UI list with reason tooltips; JSON export section.
+      - Artifacts: Release Notes + Validation Doc + Exports.
+    notes: []
+  - id: pr-006
+    title: Artifacts: Release Notes + Validation Doc + Exports
+    area: Artifacts
+    priority: High
+    labels:
+      - wave:wave3
+      - mvp
+      - area:artifacts
+      - priority:high
+    acceptance_criteria:
+      - Release Notes grouped by type; links to issues.
+      - Validation Doc uses Deployment Notes field (configurable ID).
+      - JSON/Excel include run_id, git_sha, generated_at.
+      - UI download buttons wired.
+    notes: []
+  - id: pr-007
+    title: Agents (Optional): LangGraph minimal path
+    area: Agents
+    priority: Medium
+    labels:
+      - wave:wave3
+      - mvp
+      - area:agents
+      - priority:medium
+    acceptance_criteria:
+      - requirements-agents.txt; src/agents/langgraph/ with AuditAgentGraph.
+      - Wrap deterministic nodes; add LLM summary/risk narrative node.
+      - Phoenix-stamped JSON in artifacts/orchestrator/.
+      - Orchestrator dispatch supports ‘langgraph-runner’; UI shows narrative.
+    notes:
+      - Pin temperature/seed; redact secrets; document opt-in install.
+  - id: pr-008
+    title: CSV Fallback for Failed Jira JQL
+    area: Resilience
+    priority: Medium
+    labels:
+      - wave:wave3
+      - mvp
+      - area:resilience
+      - priority:medium
+    acceptance_criteria:
+      - On JQL failure (after retries), prompt for CSV path and continue.
+      - Clear CLI messaging; graceful errors for bad paths/CSV.
+      - Tests for success/failure paths.
+    notes: []
+  - id: pr-009
+    title: "[Tests] Mocked Jira/Bitbucket + E2E with cached payloads"
+    area: Quality
+    priority: High
+    labels:
+      - wave:wave3
+      - mvp
+      - area:quality
+      - priority:high
+    acceptance_criteria:
+      - Clients covered for pagination, errors, retries (no network).
+      - E2E audit using cached fixtures verifies schema + content.
+      - Contract tests guard JSON/Excel schema (jsonschema + column checks).
+    notes: []
+  - id: pr-010
+    title: "[CI] Coverage Gate + PR Summary Comment"
+    area: CI
+    priority: Medium
+    labels:
+      - wave:wave3
+      - mvp
+      - area:ci
+      - priority:medium
+    acceptance_criteria:
+      - pytest-cov ≥70% on touched code; build fails otherwise.
+      - PR comment posts coverage summary.
+    notes: []
+  - id: pr-011
+    title: PR Template + Orchestration Docs (slash-commands, Phoenix TZ)
+    area: Docs
+    priority: Medium
+    labels:
+      - wave:wave3
+      - mvp
+      - area:docs
+      - priority:medium
+    acceptance_criteria:
+      - Template enforces Decision/Note/Action markers.
+      - Notes quality bar, ≥70% coverage, ruff/black/mypy gates.
+      - Docs page explains orchestrator plan/dispatch and Phoenix TZ.
+    notes: []
+  - id: pr-012
+    title: "[Pre-commit] ruff, black, mypy"
+    area: DX
+    priority: Medium
+    labels:
+      - wave:wave3
+      - mvp
+      - area:dx
+      - priority:medium
+    acceptance_criteria:
+      - .pre-commit-config.yaml lands; README has install steps.
+      - pre-commit run --all-files passes in CI.
+    notes: []
+metadata:
+  archived_from_wave: 2
+  phoenix_date: 2025-10-15
+  generator_behavior:
+    - Wave 3 spec is authoritative for Step 1; run make gen-wave3 after merge.
+    - Generators must stamp Phoenix timestamps and capture args/git_sha/generated_at.
