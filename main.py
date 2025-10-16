@@ -16,12 +16,6 @@ try:  # pragma: no cover - best effort optional dependency
 except Exception:  # pragma: no cover - ignore missing dependency
     load_dotenv = None
 
-
-BASE_DIR = Path(__file__).resolve().parent
-SRC_DIR = BASE_DIR / "src"
-if SRC_DIR.exists():
-    sys.path.append(str(SRC_DIR))
-
 from clients.bitbucket_client import BitbucketClient
 from clients.jira_client import JiraClient, compute_fix_version_window
 from clients.jira_store import JiraIssueStore
