@@ -16,7 +16,7 @@ All commands emit structured logs via `releasecopilot.logging_config` and append
 
 ## Configuration
 
-`config/wave2_helper.yml` describes the label weights, helper maintainers, target labels, and artifact directories. Tests may override the configuration file, but production usage should rely on the checked-in defaults. Update the configuration if new helper labels or maintainers are introduced.
+`config/wave2_helper.yml` describes the label weights, helper maintainers, target labels, and artifact directories. The `artifact_dirs.base` value anchors the remaining relative paths so every helper artifact stays under `artifacts/helpers/` by default. Tests may override the configuration file, but production usage should rely on the checked-in defaults. Update the configuration if new helper labels or maintainers are introduced.
 
 ## Phoenix Timezone Rationale
 

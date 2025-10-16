@@ -72,7 +72,16 @@ class Wave2HelperConfig:
             value = self.artifact_dirs[key]
         except KeyError as exc:  # pragma: no cover - defensive guard
             raise KeyError(f"Missing artifact directory for '{key}'") from exc
-        return Path(value)
+
+        path = Path(value)
+        if key == "base":
+            return path
+
+        if not path.is_absolute():
+            base_dir = self.artifact_dirs.get("base")
+            if base_dir:
+                path = Path(base_dir) / path
+        return path
 
     @property
     def timezone(self) -> str:
