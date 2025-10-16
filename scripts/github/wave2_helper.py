@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import uuid
@@ -13,6 +14,8 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
 import click
+from jinja2 import Environment, FileSystemLoader
+from slugify import slugify
 import yaml
 
 try:
@@ -24,6 +27,8 @@ except (
     from releasecopilot.logging_config import get_logger
 
 PHOENIX_TZ = "America/Phoenix"
+TEMPLATES_DIR = Path("templates")
+MANIFEST_SCHEMA_VERSION = "1.0"
 
 
 logger = get_logger(__name__)
@@ -400,6 +405,197 @@ def _gh_issue_list(labels: list[str]) -> list[Issue]:
     return [Issue.from_raw(item) for item in payload]
 
 
+def _jinja_environment() -> Environment:
+    return Environment(
+        loader=FileSystemLoader(str(TEMPLATES_DIR)),
+        autoescape=False,
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+
+
+def write_text(path: Path, content: str) -> Path:
+    """Write text to ``path`` only when the content differs."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        existing = path.read_text(encoding="utf-8")
+        if existing == content:
+            return path
+    path.write_text(content, encoding="utf-8")
+    return path
+
+
+def load_spec(path: Path | str) -> dict[str, Any]:
+    """Load a wave specification from YAML."""
+
+    spec_path = Path(path)
+    with spec_path.open("r", encoding="utf-8") as handle:
+        raw_spec = yaml.safe_load(handle) or {}
+    try:
+        wave = int(raw_spec["wave"])
+    except KeyError as exc:  # pragma: no cover - validation guard
+        raise ValueError("Missing required 'wave' field in spec") from exc
+
+    def _stringify_list(values: Iterable[Any]) -> list[str]:
+        result: list[str] = []
+        for entry in values:
+            if isinstance(entry, dict):
+                result.append(
+                    ", ".join(f"{key}: {value}" for key, value in entry.items())
+                )
+            else:
+                result.append(str(entry))
+        return result
+
+    spec = {
+        "wave": wave,
+        "purpose": str(raw_spec.get("purpose", "")).strip(),
+        "constraints": _stringify_list(raw_spec.get("constraints") or []),
+        "quality_bar": _stringify_list(raw_spec.get("quality_bar") or []),
+    }
+    sequenced: list[dict[str, Any]] = []
+    for pr in raw_spec.get("sequenced_prs", []) or []:
+        sequenced.append(
+            {
+                "title": str(pr.get("title", "")).strip(),
+                "acceptance": _stringify_list(pr.get("acceptance") or []),
+                "notes": _stringify_list(pr.get("notes") or []),
+                "labels": _stringify_list(pr.get("labels") or []),
+            }
+        )
+    spec["sequenced_prs"] = sequenced
+    return spec
+
+
+def archive_previous_wave_mop(prev_wave: int) -> None:
+    """Archive the prior wave's MOP once per Phoenix day."""
+
+    if prev_wave <= 0:
+        return
+    source = Path("docs/mop") / f"mop_wave{prev_wave}.md"
+    if not source.exists():
+        return
+    archive_dir = Path("docs/mop/archive")
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = phoenix_now().date().isoformat()
+    destination = archive_dir / f"mop_wave{prev_wave}_{timestamp}.md"
+    if destination.exists():
+        return
+    shutil.copy2(source, destination)
+
+
+def render_mop_from_yaml(spec: dict[str, Any], generated_at: str | None = None) -> Path:
+    """Render the Mission Outline Plan from the YAML spec."""
+
+    env = _jinja_environment()
+    template = env.get_template("mop.md.j2")
+    timestamp = generated_at or phoenix_now().isoformat()
+    content = template.render(
+        wave=spec["wave"],
+        purpose=spec.get("purpose", ""),
+        constraints=spec.get("constraints", []),
+        quality_bar=spec.get("quality_bar", []),
+        sequenced_prs=spec.get("sequenced_prs", []),
+        generated_at=timestamp,
+    )
+    path = Path("docs/mop") / f"mop_wave{spec['wave']}.md"
+    write_text(path, content)
+    return path
+
+
+def render_subprompts_and_issues(
+    spec: dict[str, Any], generated_at: str | None = None
+) -> list[dict[str, Any]]:
+    """Render sub-prompts and issue bodies for each sequenced PR."""
+
+    env = _jinja_environment()
+    sub_template = env.get_template("subprompt.md.j2")
+    issue_template = env.get_template("issue_body.md.j2")
+    wave = spec["wave"]
+    timestamp = generated_at or phoenix_now().isoformat()
+    subprompt_root = Path("docs/sub-prompts") / f"wave{wave}"
+    issue_root = Path("artifacts/issues") / f"wave{wave}"
+    items: list[dict[str, Any]] = []
+    for pr in spec.get("sequenced_prs", []):
+        title = pr.get("title", "")
+        slug = slugify(title) or f"wave{wave}-item"
+        normalized = {
+            "title": title,
+            "acceptance": list(pr.get("acceptance") or []),
+            "notes": list(pr.get("notes") or []),
+            "labels": list(pr.get("labels") or []),
+        }
+        subprompt_content = sub_template.render(
+            wave=wave,
+            pr=normalized,
+            generated_at=timestamp,
+        )
+        lines = subprompt_content.splitlines()
+        body_without_heading = "\n".join(lines[1:]).lstrip()
+        summary_line = (
+            "Generated automatically from backlog/wave"
+            f"{wave}.yaml on {timestamp} (America/Phoenix · no DST)."
+        )
+        issue_content = issue_template.render(
+            wave=wave,
+            pr=normalized,
+            summary_line=summary_line,
+            subprompt_body=body_without_heading,
+        )
+        subprompt_path = subprompt_root / f"{slug}.md"
+        issue_path = issue_root / f"{slug}.md"
+        write_text(subprompt_path, subprompt_content)
+        write_text(issue_path, issue_content)
+        items.append(
+            {
+                "title": normalized["title"],
+                "slug": slug,
+                "labels": normalized["labels"],
+                "acceptance": normalized["acceptance"],
+                "subprompt_path": subprompt_path.as_posix(),
+                "issue_path": issue_path.as_posix(),
+            }
+        )
+    return items
+
+
+def write_manifest(
+    wave: int, items: list[dict[str, Any]], generated_at: str | None = None
+) -> Path:
+    """Write the manifest describing generated sub-prompts."""
+
+    manifest_path = Path("artifacts/manifests") / f"wave{wave}_subprompts.json"
+    timestamp = generated_at or phoenix_now().isoformat()
+    payload = {
+        "schema_version": MANIFEST_SCHEMA_VERSION,
+        "generated_at": timestamp,
+        "timezone": PHOENIX_TZ,
+        "git_sha": os.getenv("GIT_SHA", "GIT_SHA_HERE"),
+        "items": sorted(items, key=lambda item: item["slug"]),
+    }
+    write_text(
+        manifest_path,
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+    )
+    return manifest_path
+
+
+def resolve_generated_at(wave: int) -> str:
+    """Return a deterministic Phoenix timestamp for the given wave."""
+
+    manifest_path = Path("artifacts/manifests") / f"wave{wave}_subprompts.json"
+    if manifest_path.exists():
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:  # pragma: no cover - defensive guard
+            payload = {}
+        existing = payload.get("generated_at")
+        if isinstance(existing, str) and existing.strip():
+            return existing
+    return phoenix_now().isoformat()
+
+
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
     "--config",
@@ -521,6 +717,29 @@ def open_pr(ctx: click.Context, issues_json: Path | None) -> None:
     helper.scaffold_pr_template(issues)
 
 
+@cli.command(name="generate")
+@click.argument("spec", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option(
+    "--archive/--no-archive",
+    "archive_previous",
+    default=True,
+    show_default=True,
+    help="Archive the previous wave MOP before rendering the new one.",
+)
+def generate(spec: Path, archive_previous: bool) -> None:
+    """Generate wave artifacts from the YAML specification."""
+
+    payload = load_spec(spec)
+    if archive_previous:
+        archive_previous_wave_mop(payload["wave"] - 1)
+    timestamp = resolve_generated_at(payload["wave"])
+    mop_path = render_mop_from_yaml(payload, generated_at=timestamp)
+    items = render_subprompts_and_issues(payload, generated_at=timestamp)
+    manifest_path = write_manifest(payload["wave"], items, generated_at=timestamp)
+    click.echo(str(mop_path))
+    click.echo(str(manifest_path))
+
+
 def _resolve_issues_for_artifacts(
     config: Wave2HelperConfig, issues_json: Path | None
 ) -> list[Issue]:  # pragma: no cover - convenience wrapper
@@ -535,5 +754,9 @@ def _resolve_issues_for_artifacts(
     return [Issue.from_raw(item) for item in payload.get("issues", [])]
 
 
-if __name__ == "__main__":  # pragma: no cover
+def main() -> None:  # pragma: no cover - CLI shim
     cli()
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()

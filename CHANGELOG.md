@@ -1,5 +1,11 @@
 ## [Unreleased]
 ### Added
+- YAML-driven Wave 3 generator (`scripts/github/wave2_helper.py generate`) emitting the MOP,
+  sub-prompts, issue bodies, and manifest with Phoenix timestamps.
+- Templated artifacts (`templates/*.j2`) plus backlog spec (`backlog/wave3.yaml`) and
+  generated outputs guarded by Make/CI/pre-commit integration.
+- Test suite covering archiving, manifest schema, idempotency, and template rendering for
+  the new wave generator.
 - Wave 2 helper automation CLI for backlog collection, deterministic prioritization,
   prompt seeding, Phoenix-local comment drafts, and PR scaffolding.
 - Wave 2 orchestrator CLI with slash-command planning, Phoenix-stamped artifacts,

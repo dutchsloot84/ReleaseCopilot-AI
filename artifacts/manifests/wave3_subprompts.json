@@ -1,0 +1,40 @@
+{
+  "generated_at": "2025-10-15T23:23:09-07:00",
+  "git_sha": "GIT_SHA_HERE",
+  "items": [
+    {
+      "acceptance": [
+        "Document the generator workflow for contributors in README.md.",
+        "Update CHANGELOG and PR template markers for Decision/Note/Action.",
+        "Add pytest coverage for archiving, manifests, and idempotency."
+      ],
+      "issue_path": "artifacts/issues/wave3/wave-3-onboarding-and-validation.md",
+      "labels": [
+        "wave:wave3",
+        "documentation",
+        "testing"
+      ],
+      "slug": "wave-3-onboarding-and-validation",
+      "subprompt_path": "docs/sub-prompts/wave3/wave-3-onboarding-and-validation.md",
+      "title": "Wave 3 \u2013 onboarding and validation"
+    },
+    {
+      "acceptance": [
+        "Generate the MOP, sub-prompts, issue bodies, and manifest from this spec.",
+        "Archive the previous wave MOP exactly once per day when present.",
+        "Provide a Make/CI/pre-commit guard that detects drift."
+      ],
+      "issue_path": "artifacts/issues/wave3/wave-3-yaml-driven-generator-rollout.md",
+      "labels": [
+        "wave:wave3",
+        "automation",
+        "promptops"
+      ],
+      "slug": "wave-3-yaml-driven-generator-rollout",
+      "subprompt_path": "docs/sub-prompts/wave3/wave-3-yaml-driven-generator-rollout.md",
+      "title": "Wave 3 \u2013 YAML-driven generator rollout"
+    }
+  ],
+  "schema_version": "1.0",
+  "timezone": "America/Phoenix"
+}
