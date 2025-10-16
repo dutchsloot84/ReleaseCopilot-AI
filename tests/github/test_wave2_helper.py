@@ -72,6 +72,16 @@ def test_seeded_prompt_includes_constraints(
     assert f"issue #{prioritized[0].number}" in content
 
 
+def test_artifact_path_joins_base(tmp_path: Path) -> None:
+    config = Wave2HelperConfig.load(Path("config/wave2_helper.yml"))
+    base_dir = tmp_path / "artifacts/helpers"
+    config.artifact_dirs["base"] = str(base_dir)
+    config.artifact_dirs["collected_issues"] = "issues.json"
+
+    resolved = config.artifact_path("collected_issues")
+    assert resolved == base_dir / "issues.json"
+
+
 def test_collect_uses_gh_without_leaking_token(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
