@@ -98,6 +98,26 @@ pre-commit run --all-files
 
 The pre-commit hooks run `ruff --fix`, `black`, and `mypy` locally, catching formatting drifts before `black --check .` executes in CI.
 
+## Generating Waves (YAML → MOP/Sub-Prompts/Issues)
+
+Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CLI renders the Mission Outline Plan (MOP), sub-prompts, issue bodies, and a JSON manifest directly from that spec.
+
+1. Update `backlog/wave3.yaml` with the new wave metadata, constraints, and sequenced PRs.
+2. Run `make gen-wave3` to execute `scripts/github/wave2_helper.py generate backlog/wave3.yaml`.
+3. Inspect regenerated files under:
+   - `docs/mop/mop_wave3.md`
+   - `docs/sub-prompts/wave3/`
+   - `artifacts/issues/wave3/`
+   - `artifacts/manifests/wave3_subprompts.json`
+4. Phoenix time (America/Phoenix, no DST) is stamped into every artifact. Verify schedules and archives respect that timezone.
+5. Commit the changes or rerun the command until `git status` is clean. Outputs are idempotent—no drift should appear on repeated runs.
+
+### Troubleshooting
+
+- **CI failure “Regenerate: make gen-wave3”** – Run `make gen-wave3` locally and commit the resulting diffs. The `.github/workflows/gen-guard.yml` workflow enforces this guard on pull requests.
+- **Archive skipped** – The generator only archives the previous wave MOP once per Phoenix day. Confirm `docs/mop/mop_wave2.md` exists before running the command.
+- **Need issue metadata** – Use the existing Wave 2 helper subcommands (for example `python scripts/github/wave2_helper.py collect`) to download issues, then stitch them into the generated sub-prompts manually.
+
 ## Configuration
 
 1. Copy `.env.example` to `.env` for local development and populate the placeholders with test credentials. The file is `.gitignore`d—keep real secrets out of version control.

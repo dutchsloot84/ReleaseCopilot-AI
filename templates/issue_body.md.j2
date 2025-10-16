@@ -1,0 +1,7 @@
+## {{ pr.title }}
+
+{{ summary_line }}
+
+{{ subprompt_body }}
+
+**Labels:** {{ pr.labels | join(', ') if pr.labels else 'wave:wave{{ wave }}' }}

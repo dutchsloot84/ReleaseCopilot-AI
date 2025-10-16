@@ -1,0 +1,44 @@
+# Wave {{ wave }} Mission Outline Plan
+
+_Generated at {{ generated_at }} (America/Phoenix · no DST)_
+
+## Purpose
+{{ purpose | trim }}
+
+## Global Constraints
+{% for item in constraints %}- {{ item }}
+{% endfor %}
+
+## Quality Bar
+{% for item in quality_bar %}- {{ item }}
+{% endfor %}
+
+## Sequenced PRs
+{% for pr in sequenced_prs %}- **{{ pr.title }}** — {{ pr.acceptance|length }} acceptance checks
+  {% if pr.acceptance %}
+  {% for check in pr.acceptance %}  - {{ check }}
+  {% endfor %}
+  {% endif %}
+  {% if pr.notes %}
+  _Notes:_
+  {% for note in pr.notes %}  - {{ note }}
+  {% endfor %}
+  {% endif %}
+{% endfor %}
+
+## Artifacts & Traceability
+- MOP source: `backlog/wave{{ wave }}.yaml`
+- Rendered MOP: `docs/mop/mop_wave{{ wave }}.md`
+- Sub-prompts: `docs/sub-prompts/wave{{ wave }}/`
+- Issue bodies: `artifacts/issues/wave{{ wave }}/`
+- Manifest: `artifacts/manifests/wave{{ wave }}_subprompts.json`
+- Generated via `make gen-wave{{ wave }}` with Phoenix timestamps.
+
+## Notes & Decisions Policy
+- Capture contributor annotations with **Decision:**/**Note:**/**Action:** markers.
+- America/Phoenix (no DST) timestamps must accompany status updates.
+- Store generated artifacts in Git with deterministic ordering.
+
+## Acceptance Gate
+- Validate linting, typing, and tests before marking this wave complete.
+- Ensure the manifest SHA (`git_sha`) matches the release commit used for generation.
