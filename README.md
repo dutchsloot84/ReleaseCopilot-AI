@@ -16,6 +16,11 @@ Releasecopilot AI automates release audits by correlating Jira stories with Bitb
 
 See `docs/promptops/MOP_Workflow.md` and `docs/promptops/Prompt_Recipe_Guide.md` for end-to-end guidance.
 
+Wave 2 human-action orchestration is covered in `docs/promptops/human_actions.md` with
+manual procedures in `docs/runbooks/wave2_human_actions.md`. Phoenix operates on
+Mountain Standard Time (UTC-7) year-round—no daylight saving adjustments are needed
+when scheduling helper or orchestrator checkpoints.
+
 ## Features
 
 - Fetch Jira issues for a given fix version using OAuth 3LO tokens.
