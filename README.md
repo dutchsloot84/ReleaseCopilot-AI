@@ -90,13 +90,13 @@ Set up the shared pre-commit hooks so formatting runs automatically before every
 pre-commit install
 ```
 
-Run all hooks once to ensure your workspace matches the CI configuration:
+Run all hooks once to ensure your workspace matches the CI configuration and that Phoenix-stamped logs from the hooks look correct:
 
 ```bash
 pre-commit run --all-files
 ```
 
-The pre-commit hooks run `ruff --fix`, `black`, and `mypy` locally, catching formatting drifts before `black --check .` executes in CI.
+The pre-commit hooks run `ruff --fix`, `black`, and `mypy` locally, catching formatting drifts before CI. Wave 3 automation expects hook output timestamps in America/Phoenix (no DST), matching the Mission Outline Plan.
 
 ## Generating Waves (YAML → MOP/Sub-Prompts/Issues)
 
