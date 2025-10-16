@@ -1,4 +1,8 @@
 ## [Unreleased]
+### Wave 3 Onboarding and Validation
+**Decision:** Document Wave 3 generator onboarding so contributors can translate `backlog/wave3.yaml` into sub-prompts deterministically.
+**Note:** America/Phoenix (UTC-7, no DST) remains the required timezone for manifests, archives, and coverage checks.
+**Action:** Added README/runbook guidance, expanded pytest coverage under `tests/generator/`, and aligned PR template markers referencing `artifacts/manifests/wave3_subprompts.json`.
 ### Added
 - YAML-driven Wave 3 generator (`scripts/github/wave2_helper.py generate`) emitting the MOP,
   sub-prompts, issue bodies, and manifest with Phoenix timestamps.
