@@ -98,6 +98,14 @@ pre-commit run --all-files
 
 The pre-commit hooks run `ruff --fix`, `black`, and `mypy` locally, catching formatting drifts before `black --check .` executes in CI.
 
+## Contributing & Quality Gates
+
+- Pull request descriptions must begin with **Decision:**, **Note:**, and **Action:** summaries that align with the generated manifest entry and reference Phoenix (America/Phoenix) scheduling where applicable.
+- Confirm ≥70% test coverage on touched code by running `pytest --cov` (or an equivalent target) and link to the report when requesting review.
+- Acknowledge the lint/type gates explicitly by running `ruff`, `black`, and `mypy` before submitting the PR template checklist.
+- Document updates belong alongside code changes; orchestrator-related pull requests should cross-reference [`docs/runbooks/orchestrator.md`](docs/runbooks/orchestrator.md) so reviewers can validate Phoenix-aware plan and dispatch flows.
+- Phoenix time (America/Phoenix, UTC-7 year-round) is the canonical timezone for orchestration—include Phoenix-local timestamps in new artifacts and note deviations in the **Note:** section of the PR template.
+
 ## Generating Waves (YAML → MOP/Sub-Prompts/Issues)
 
 Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CLI renders the Mission Outline Plan (MOP), sub-prompts, issue bodies, and a JSON manifest directly from that spec.
