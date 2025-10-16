@@ -1,0 +1,11 @@
+{
+  "ical": "BEGIN:VCALENDAR\nPRODID:-//ReleaseCopilot//Wave2 Human Actions//EN\nVERSION:2.0\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\nX-WR-TIMEZONE:America/Phoenix\nBEGIN:VTIMEZONE\nTZID:America/Phoenix\nTZURL:https://www.iana.org/time-zones\nX-LIC-LOCATION:America/Phoenix\nBEGIN:STANDARD\nTZOFFSETFROM:-0700\nTZOFFSETTO:-0700\nTZNAME:MST\nDTSTART:19700101T000000\nEND:STANDARD\nEND:VTIMEZONE\nBEGIN:VEVENT\nUID:94ddd371506798b1-276@releasecopilot\nSUMMARY:Wave 2 review - Add Orchestrator workflow (slash-commands + dispatch)\nDTSTAMP:20251015T160000Z\nDTSTART;TZID=America/Phoenix:20251015T090000\nDTEND;TZID=America/Phoenix:20251015T094500\nDESCRIPTION:Review issue #276 (https://example.test/issues/276) with Phoenix helpers.\nEND:VEVENT\nBEGIN:VEVENT\nUID:94ddd371506798b1-278@releasecopilot\nSUMMARY:Wave 2 review - Helpers: backlog, prioritize, seed, post sub-prompts, open impl PRs\nDTSTAMP:20251015T160000Z\nDTSTART;TZID=America/Phoenix:20251016T090000\nDTEND;TZID=America/Phoenix:20251016T094500\nDESCRIPTION:Review issue #278 (https://example.test/issues/278) with Phoenix helpers.\nEND:VEVENT\nBEGIN:VEVENT\nUID:94ddd371506798b1-279@releasecopilot\nSUMMARY:Wave 2 review - Generate Human Actions checklist + Runbook\nDTSTAMP:20251015T160000Z\nDTSTART;TZID=America/Phoenix:20251017T090000\nDTEND;TZID=America/Phoenix:20251017T094500\nDESCRIPTION:Review issue #279 (https://example.test/issues/279) with Phoenix helpers.\nEND:VEVENT\nEND:VCALENDAR\n",
+  "metadata": {
+    "author": "Unit Test Harness",
+    "git_sha": "abc123def4567890",
+    "issues_source": "top_issues.json",
+    "mop_source": "wave2_mop.md",
+    "phoenix_timestamp": "2025-10-15T09:00:00-07:00 America/Phoenix (UTC-7)",
+    "run_hash": "94ddd371506798b1"
+  }
+}

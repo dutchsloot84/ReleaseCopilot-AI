@@ -13,6 +13,8 @@
 - Active MOP index in docs; README quickstart.
 - Wave 1 prompt recipe catalog, human-in-the-loop tracking JSON, and CI validation/comment automation.
 - Monthly AWS Budgets cost guardrail with SNS/email alerts and manual verification runbook.
+- Human actions generator for Wave 2 producing Phoenix-local checklists, calendar stubs,
+  activity logging, and updated runbook guidance.
 
 ### Chore
 - Remove placeholderless f-strings flagged by ruff F541.

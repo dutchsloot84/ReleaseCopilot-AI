@@ -1,0 +1,1 @@
+{"author": "Unit Test Harness", "git_sha": "abc123def4567890", "issue_numbers": [276, 278, 279], "issues_source": "top_issues.json", "mop_source": "wave2_mop.md", "output_dir": "artifacts", "phoenix_timestamp": "2025-10-15T09:00:00-07:00 America/Phoenix (UTC-7)", "run_hash": "94ddd371506798b1", "timestamp": "2025-10-15T09:00:00-07:00"}
