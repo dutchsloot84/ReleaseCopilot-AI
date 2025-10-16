@@ -12,9 +12,12 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-pytest.importorskip("jinja2")
-
-from scripts.github import wave2_helper as generator
+try:
+    from scripts.github import wave2_helper as generator
+except ModuleNotFoundError as exc:  # pragma: no cover - dependency guard
+    if exc.name == "jinja2":
+        pytest.skip("jinja2 is required for generator tests", allow_module_level=True)
+    raise
 
 FIXED_NOW = datetime(2024, 1, 1, 12, 0, tzinfo=ZoneInfo(generator.PHOENIX_TZ))
 

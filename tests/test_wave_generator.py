@@ -6,7 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from scripts.github import wave2_helper as generator
+try:
+    from scripts.github import wave2_helper as generator
+except ModuleNotFoundError as exc:  # pragma: no cover - dependency guard
+    if exc.name == "jinja2":
+        pytest.skip("jinja2 is required for generator tests", allow_module_level=True)
+    raise
 
 def test_archive_once_per_day(generator_env: Path) -> None:
     mop_root = generator_env / "docs/mop"
