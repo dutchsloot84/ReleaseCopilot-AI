@@ -66,6 +66,7 @@ Update `docs/runbooks/contributing.md`:
 - Rollback: remove `.pre-commit-config.yaml`, revert CI script, and prune documentation references.
 - No data migrations; dependencies limited to dev tooling.
 
+
 ## Critic Check
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.

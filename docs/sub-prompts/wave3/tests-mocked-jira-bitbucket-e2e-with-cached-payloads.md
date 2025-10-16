@@ -76,6 +76,7 @@ Update `README.md` testing section:
 - Rollback: revert new tests/helpers, remove cached fixture references, and restore prior pytest config.
 - No data migrations; fixtures remain local files.
 
+
 ## Critic Check
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.

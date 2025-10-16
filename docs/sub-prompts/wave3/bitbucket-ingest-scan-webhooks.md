@@ -22,7 +22,7 @@ This task originates from the Wave 3 Mission Outline Plan generated from YAML. H
 - Introduce a webhook handler module `src/releasecopilot/ingest/bitbucket_webhooks.py` processing push and PR events (created/updated/fulfilled) and extracting keys from commit messages, branch names, and PR titles using existing matcher utilities.
 - Update CLI entry (e.g., `rc ingest bitbucket-scan`) in `src/releasecopilot/cli.py` to trigger scheduled scans and register FastAPI/Flask webhook route under `services/webhooks/bitbucket.py` if present.
 - Ensure artifacts/logging under `artifacts/issues/wave3/bitbucket/` capture Phoenix timestamps plus run metadata without secrets.
-- Sequence: client pagination updates → scanner service writing idempotent storage → webhook processor → CLI/route wiring → artifact/log validation → tests/docs.
+- Sequence: client pagination updates → scanner service writing idempotent storage → webhook processor → CLI/route wiring → artifact/log validation → documentation/tests.
 
 ### Key code snippets
 ```python
@@ -109,6 +109,7 @@ Update `README.md` integration timeline section:
 - Risks: API rate limits causing partial scans, webhook retries creating duplicates, timezone misalignment leading to missed commits.
 - Rollback: disable webhook route, revert `src/releasecopilot/ingest/` modules, and remove CLI entry; clear generated artifacts if they reference the new runner.
 - No data migrations are performed; existing storage tables remain unchanged.
+
 
 ## Critic Check
 - Re-read the acceptance criteria.

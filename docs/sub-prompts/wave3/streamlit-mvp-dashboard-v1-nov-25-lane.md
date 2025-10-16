@@ -79,6 +79,7 @@ Update `README.md` UI section:
 - Rollback: revert UI component modules, remove new tabs, and restore prior layout; no backend data changes.
 - No migrations; artifacts remain file-based.
 
+
 ## Critic Check
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.

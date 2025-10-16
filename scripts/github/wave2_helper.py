@@ -448,6 +448,20 @@ def load_spec(path: Path | str) -> dict[str, Any]:
                 result.append(str(entry))
         return result
 
+    def _normalize_guidance(payload: Any) -> dict[str, str]:
+        guidance: dict[str, str] = {}
+        if not isinstance(payload, dict):
+            return guidance
+        for key, value in payload.items():
+            if value is None:
+                continue
+            if isinstance(value, list):
+                text = "\n".join(str(item) for item in value if item is not None)
+            else:
+                text = str(value)
+            guidance[key] = text
+        return guidance
+
     spec = {
         "wave": wave,
         "purpose": str(raw_spec.get("purpose", "")).strip(),
@@ -462,6 +476,7 @@ def load_spec(path: Path | str) -> dict[str, Any]:
                 "acceptance": _stringify_list(pr.get("acceptance") or []),
                 "notes": _stringify_list(pr.get("notes") or []),
                 "labels": _stringify_list(pr.get("labels") or []),
+                "guidance": _normalize_guidance(pr.get("guidance")),
             }
         )
     spec["sequenced_prs"] = sequenced
@@ -525,6 +540,7 @@ def render_subprompts_and_issues(
             "acceptance": list(pr.get("acceptance") or []),
             "notes": list(pr.get("notes") or []),
             "labels": list(pr.get("labels") or []),
+            "guidance": dict(pr.get("guidance") or {}),
         }
         subprompt_content = sub_template.render(
             wave=wave,

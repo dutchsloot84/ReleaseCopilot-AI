@@ -87,6 +87,7 @@ Update `README.md` contributing section:
 - Rollback: remove `tools/coverage_gate.py`, revert CI script and PR commenter wiring; disable comment command invocation.
 - No data migrations or dependency updates involved.
 
+
 ## Critic Check
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.

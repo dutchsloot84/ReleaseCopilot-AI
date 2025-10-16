@@ -31,6 +31,73 @@ sequenced_prs:
       - Download buttons: Release Notes, Validation Doc, JSON, Excel.
     notes:
       - Keep components minimal (tables/cards); no vendor lock-in.
+    guidance:
+      implementation_plan: |
+        - Update Streamlit entry `ui/app.py` to include tabs (`st.tabs`) for Audit, Gaps, QA Focus, and Artifacts.
+        - Build header stats component in `ui/components/header_stats.py` that aggregates November 2025 data from cached datasets under `data/` or orchestrator API.
+        - Add action buttons invoking backend commands via existing CLI wrappers (e.g., `rc orchestrator resync-jira`) with Phoenix timestamp logs.
+        - Wire download buttons pointing to `artifacts/release_notes/`, `artifacts/validation/`, and JSON/Excel exports; ensure deterministic filenames and check existence.
+        - Sequence: create header component → add tabs layout → implement action callbacks → attach downloaders → update docs/tests.
+      code_snippets: |
+        ```python
+        # ui/components/header_stats.py
+        def render_header(stats: Mapping[str, int]) -> None:
+            """Render November 2025 summary stats without exposing secrets."""
+
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Stories (Nov '25)", stats["stories"])
+            col2.metric("Commits", stats["commits"])
+            col3.metric("Linked %", f"{stats['linked_pct']:.1f}%")
+            col4.metric("Gaps", stats["gaps"])
+        ```
+
+        ```python
+        # ui/app.py excerpt
+        tabs = st.tabs(["Audit", "Gaps", "QA Focus", "Artifacts"])
+        with tabs[0]:
+            render_audit_tab()
+        with tabs[1]:
+            render_gaps_tab()
+        with tabs[2]:
+            render_qa_focus_tab()
+        with tabs[3]:
+            render_artifacts_tab(download_dir=Path("artifacts"))
+        ```
+
+        ```python
+        # ui/components/actions.py
+        def render_actions() -> None:
+            phoenix_now = datetime.now(tz=ZoneInfo("America/Phoenix")).strftime("%Y-%m-%d %H:%M")
+            if st.button("Re-sync Jira"):
+                run_command(["rc", "orchestrator", "resync-jira"])
+                st.success(f"Jira sync started at {phoenix_now}")
+        ```
+      tests: |
+        - `tests/ui/test_app_tabs.py::test_tabs_render` ensures all tabs appear with correct labels.
+        - `tests/ui/test_header_stats.py::test_render_header_formats_metrics` uses Streamlit testing utilities.
+        - `tests/ui/test_actions.py::test_buttons_trigger_commands` patches subprocess runner to verify CLI calls and Phoenix timestamp messaging.
+        - Edge cases: missing artifacts, offline mode (disable buttons), dataset absence.
+        - Maintain deterministic fixtures for November 2025 stats under `tests/fixtures/ui/nov25_stats.json`.
+      docs_excerpt: |
+        Add to `docs/runbooks/dashboard.md`:
+
+        > The Streamlit MVP dashboard now provides tabs for Audit, Gaps, QA Focus, and Artifacts. Header metrics reflect the November 2025 lane and surface Phoenix-aware timestamps when actions are triggered (e.g., Re-sync Jira). Download buttons pull from the latest artifacts directory.
+
+        Update `README.md` UI section:
+
+        > Launch via `streamlit run ui/app.py`. Ensure `artifacts/release_notes/` and `artifacts/validation/` exist to enable download buttons; otherwise the UI displays disabled states.
+      risk: |
+        - Risks: Streamlit callbacks invoking long-running commands without feedback, missing artifacts causing exceptions, incorrect Nov ’25 filtering.
+        - Rollback: revert UI component modules, remove new tabs, and restore prior layout; no backend data changes.
+        - No migrations; artifacts remain file-based.
+      critic_check: |
+        - Manually verify buttons do not log secrets and Phoenix timestamps show in UI notifications.
+        - Run Streamlit component tests and ruff/black formatting.
+        - Confirm download paths reference deterministic filenames.
+      pr_markers: |
+        - **Decision:** Ship Streamlit dashboard tabs with Nov ’25 header and Phoenix-stamped actions.
+        - **Note:** Requires artifacts to be generated beforehand for downloads to enable.
+        - **Action:** Update `ui/app.py`, add header/actions components, and document dashboard usage.
   - id: pr-002
     title: Jira Webhook-based Sync (Prod-grade)
     area: Ingest
@@ -46,6 +113,83 @@ sequenced_prs:
       - Recompute correlation for touched issues.
       - Docs: setup, troubleshooting, Phoenix timestamps.
     notes: []
+    guidance:
+      implementation_plan: |
+        - Implement webhook endpoint in `services/webhooks/jira.py` validating HMAC signatures using shared secret stored via `clients/secrets_manager.py`.
+        - Normalize payload schema with a serializer in `src/releasecopilot/jira/webhook_parser.py` that extracts issue keys, fields, and updated timestamps.
+        - Persist payloads using idempotent upsert via `processors/audit_processor.py` or new `src/releasecopilot/jira/sync.py`, ensuring retries/backoff around Jira follow-up fetches.
+        - Trigger correlation recomputation by calling `src/matcher/engine.match` for touched issues and storing results in `artifacts/issues/wave3/jira_webhook/` with Phoenix timestamps.
+        - Update logging configuration to ensure structured JSON logs (with `run_id`, `event_id`, `generated_at` in America/Phoenix).
+        - Sequence: secret retrieval + signature validation → payload normalization → persistence/upsert logic → correlation recompute hook → artifact/log wiring → documentation/tests.
+      code_snippets: |
+        ```python
+        # services/webhooks/jira.py
+        from fastapi import APIRouter, Header, HTTPException
+        from zoneinfo import ZoneInfo
+
+
+        @router.post("/webhooks/jira")
+        async def jira_webhook(payload: dict[str, Any], x_atlassian_signature: str = Header(...)) -> dict[str, str]:
+            if not verify_signature(secret=secrets.get("jira_webhook"), body=payload, signature=x_atlassian_signature):
+                raise HTTPException(status_code=401, detail="invalid signature")
+            normalized = normalize_payload(payload)
+            upsert_issue(normalized)
+            recompute_correlation(issue_keys=normalized.issue_keys)
+            phoenix_now = datetime.now(tz=ZoneInfo("America/Phoenix")).isoformat(timespec="seconds")
+            return {"status": "ok", "received_at": phoenix_now}
+        ```
+
+        ```python
+        # src/releasecopilot/jira/webhook_parser.py
+        def normalize_payload(event: Mapping[str, Any]) -> JiraWebhook:
+            """Return deterministic Jira webhook model from raw Atlassian payload."""
+
+            issue = event["issue"]
+            return JiraWebhook(
+                issue_key=issue["key"],
+                changelog=event.get("changelog", {}),
+                updated_at=parse_datetime(issue["fields"]["updated"]),
+            )
+        ```
+
+        ```json
+        // artifacts/issues/wave3/jira_webhook/run.schema.json (excerpt)
+        {
+          "type": "object",
+          "required": ["run_id", "git_sha", "generated_at", "timezone", "issues"],
+          "properties": {
+            "timezone": {"const": "America/Phoenix"},
+            "issues": {"type": "array", "items": {"type": "object", "required": ["issue_key", "updated_at"]}}
+          }
+        }
+        ```
+      tests: |
+        - `tests/webhooks/test_jira_signature.py::test_verify_signature_accepts_valid_payload` covers HMAC validation.
+        - `tests/webhooks/test_jira_signature.py::test_verify_signature_rejects_invalid_payload` ensures 401 behavior.
+        - `tests/jira/test_webhook_parser.py::test_normalize_payload_extracts_required_fields` uses cached fixtures.
+        - `tests/jira/test_sync.py::test_recompute_correlation_called_for_touched_issues` patches matcher engine.
+        - Edge cases: missing changelog, repeated webhook deliveries, retries/backoff using `tenacity` mocks.
+        - Maintain coverage by running `pytest tests/webhooks tests/jira --cov=src/releasecopilot/jira --cov=services/webhooks`.
+      docs_excerpt: |
+        Add to `docs/runbooks/jira-webhooks.md`:
+
+        > Configure the Jira webhook secret via AWS Secrets Manager and set `JIRA_WEBHOOK_SECRET_ARN` in `config/secrets.yml`. The `/webhooks/jira` endpoint validates Atlassian signatures and logs Phoenix timestamps (America/Phoenix) for each received event. Correlation is recomputed automatically for touched issues.
+
+        Troubleshooting section:
+
+        > If webhooks fail signature validation, confirm the secret matches the Atlassian configuration. Check `artifacts/issues/wave3/jira_webhook/` for the latest Phoenix-stamped run metadata and review structured logs for retries/backoff attempts.
+      risk: |
+        - Risks: signature validation bugs causing dropped events, correlation recompute loops, schema drift in webhook payloads.
+        - Rollback: disable `/webhooks/jira` route, revert parser/upsert modules, and remove artifact updates; clear stored secrets if necessary.
+        - No data migrations introduced; existing correlation engine remains intact if webhook flow rolled back.
+      critic_check: |
+        - Run ruff/black/mypy across webhook modules; execute pytest with coverage to ensure retry/backoff paths exercised.
+        - Verify structured logs omit tokens/secrets while including run metadata.
+        - Confirm documentation references Phoenix timestamps and setup steps.
+      pr_markers: |
+        - **Decision:** Deploy production-grade Jira webhook sync with signature verification and correlation recompute.
+        - **Note:** Secrets are retrieved from AWS; document rotation and local overrides.
+        - **Action:** Implement webhook endpoint, normalize payloads, persist Phoenix-stamped artifacts, and update runbooks.
   - id: pr-003
     title: Bitbucket Ingest (scan + webhooks)
     area: Ingest
@@ -61,6 +205,104 @@ sequenced_prs:
       - Store files_changed and authorship; idempotent upsert.
       - Key extraction from message/branch/PR title.
     notes: []
+    guidance:
+      implementation_plan: |
+        - Add a `src/clients/bitbucket_client.py` enhancement to expose time-window commit scans leveraging the REST API with pagination and `modified_on` filters; respect `ZoneInfo("America/Phoenix")` when translating schedule windows.
+        - Create `src/releasecopilot/ingest/bitbucket_scanner.py` handling repository iteration, storing `files_changed` and authorship into persistence (e.g., `data/bitbucket/commits.db` via existing storage helpers) with idempotent upsert keyed by commit hash.
+        - Introduce a webhook handler module `src/releasecopilot/ingest/bitbucket_webhooks.py` processing push and PR events (created/updated/fulfilled) and extracting keys from commit messages, branch names, and PR titles using existing matcher utilities.
+        - Update CLI entry (e.g., `rc ingest bitbucket-scan`) in `src/releasecopilot/cli.py` to trigger scheduled scans and register FastAPI/Flask webhook route under `services/webhooks/bitbucket.py` if present.
+        - Ensure artifacts/logging under `artifacts/issues/wave3/bitbucket/` capture Phoenix timestamps plus run metadata without secrets.
+        - Sequence: client pagination updates → scanner service writing idempotent storage → webhook processor → CLI/route wiring → artifact/log validation → documentation/tests.
+      code_snippets: |
+        ```python
+        # src/releasecopilot/ingest/bitbucket_scanner.py
+        from __future__ import annotations
+
+        from datetime import datetime, timedelta
+        from zoneinfo import ZoneInfo
+
+
+        def scan_commits(*, client: BitbucketClient, repos: list[str], hours: int = 24, tz: ZoneInfo | None = None) -> list[dict[str, str]]:
+            """Return commits modified within the Phoenix-aware window.
+
+            Uses deterministic pagination (page size 50) and logs only commit hashes/metadata.
+            """
+
+            timezone = tz or ZoneInfo("America/Phoenix")
+            window_start = datetime.now(tz=timezone) - timedelta(hours=hours)
+            collected: list[dict[str, str]] = []
+            for repo in repos:
+                for commit in client.iter_commits(repo=repo, since=window_start):
+                    collected.append(
+                        {
+                            "hash": commit["hash"],
+                            "author": commit["author"]["raw"],
+                            "files_changed": [file["path"] for file in commit.get("files", [])],
+                            "repository": repo,
+                        }
+                    )
+            return collected
+        ```
+
+        ```diff
+        # src/releasecopilot/ingest/bitbucket_webhooks.py
+        @@
+        def handle_push(event: Mapping[str, Any]) -> list[CommitUpsert]:
+            """Normalize Bitbucket push payloads for idempotent storage."""
+            commits: list[CommitUpsert] = []
+            for change in event.get("push", {}).get("changes", []):
+                branch = change.get("new", {}).get("name")
+                for commit in change.get("commits", []):
+                    keys = extract_story_keys(commit.get("message", ""), branch)
+                    commits.append(
+                        CommitUpsert(
+                            hash=commit["hash"],
+                            repository=event["repository"]["full_name"],
+                            files_changed=[entry["path"] for entry in commit.get("files", [])],
+                            authorship=commit["author"].get("raw"),
+                            story_keys=keys,
+                        )
+                    )
+            return commits
+        ```
+
+        ```json
+        // artifacts/issues/wave3/bitbucket/run.schema.json (excerpt)
+        {
+          "type": "object",
+          "required": ["run_id", "git_sha", "generated_at", "timezone", "payload"],
+          "properties": {
+            "timezone": {"const": "America/Phoenix"},
+            "payload": {"type": "array", "items": {"type": "object", "required": ["hash", "repository"]}}
+          }
+        }
+        ```
+      tests: |
+        - `tests/ingest/test_bitbucket_scanner.py::test_scan_commits_with_pagination` mocks the client iterator to ensure pagination stops deterministically and Phoenix window filtering works.
+        - `tests/ingest/test_bitbucket_webhooks.py::test_handle_push_extracts_story_keys` covers key extraction from message/branch.
+        - `tests/ingest/test_bitbucket_webhooks.py::test_pr_events_idempotent_upsert` verifies PR created/updated/fulfilled payload deduplication.
+        - Edge cases: empty files arrays, missing authorship, duplicate commits, timezone boundary at midnight Phoenix.
+        - Use cached webhook fixtures under `tests/fixtures/bitbucket/` to maintain determinism and achieve ≥70% coverage on new modules.
+      docs_excerpt: |
+        Add to `docs/runbooks/ingest-bitbucket.md`:
+
+        > Configure Bitbucket ingest by setting workspace, repositories, and webhook secret in `config/bitbucket.yml`. Scheduled scans respect America/Phoenix windows; run `rc ingest bitbucket-scan --hours 4` for ad-hoc backfills. Webhooks (push, PR created/updated/fulfilled) post to `/webhooks/bitbucket` and populate idempotent commit stores with `files_changed` and authorship metadata.
+
+        Update `README.md` integration timeline section:
+
+        > Wave 3 Bitbucket ingest combines periodic scans with webhook deltas. All artifacts log `run_id`, `git_sha`, and Phoenix timestamps for compliance.
+      risk: |
+        - Risks: API rate limits causing partial scans, webhook retries creating duplicates, timezone misalignment leading to missed commits.
+        - Rollback: disable webhook route, revert `src/releasecopilot/ingest/` modules, and remove CLI entry; clear generated artifacts if they reference the new runner.
+        - No data migrations are performed; existing storage tables remain unchanged.
+      critic_check: |
+        - Validate signature verification for webhooks (if configured) and confirm retries handled safely.
+        - Run ruff/black/mypy and pytest with coverage on ingest modules.
+        - Inspect artifacts/logs for run metadata only; redact commit messages if secrets detected.
+      pr_markers: |
+        - **Decision:** Enable Bitbucket scans and webhooks with Phoenix-aware windows and idempotent storage.
+        - **Note:** Webhook secrets should remain in AWS Secrets Manager; document local `.env` usage for development.
+        - **Action:** Implement scanner/webhook handlers, wire CLI/route, and validate artifacts/logging.
   - id: pr-004
     title: Correlation & Gaps Engine
     area: Core
@@ -76,6 +318,95 @@ sequenced_prs:
       - Persist run metadata (args, git_sha, generated_at).
       - Unit tests for edge cases/collisions.
     notes: []
+    guidance:
+      implementation_plan: |
+        - Extend `src/matcher/engine.py` to prioritize link resolution in the order: commit message → branch name → PR title, using helper functions located in `src/matcher/link_rules.py`.
+        - Add `src/releasecopilot/gaps/api.py` exposing endpoints for `stories_without_commits` and `commits_without_story`, returning Phoenix-aware metadata (run args, git_sha, generated_at) serialized via `ZoneInfo("America/Phoenix")`.
+        - Persist run metadata alongside correlation outputs in `artifacts/issues/wave3/correlation/` via updates to `src/tracking/artifacts.py` or new module `src/tracking/correlation.py`.
+        - Ensure CLI `rc matcher correlate` (if present) or orchestrator step writes the artifacts and updates existing summary caches.
+        - Sequence: implement link rules → update engine → create gaps API → persist metadata → update CLI → tests/docs.
+      code_snippets: |
+        ```python
+        # src/matcher/link_rules.py
+        from __future__ import annotations
+
+        from typing import Iterable
+
+
+        def extract_story_keys(*, message: str, branch: str | None, pr_title: str | None) -> list[str]:
+            """Return unique story keys preferring message > branch > PR title."""
+
+            seen: set[str] = set()
+            for source in (message, branch, pr_title):
+                if not source:
+                    continue
+                for key in parse_keys(source):
+                    if key not in seen:
+                        seen.add(key)
+            return sorted(seen)
+        ```
+
+        ```python
+        # src/releasecopilot/gaps/api.py
+        from dataclasses import asdict, dataclass
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+
+        @dataclass(slots=True)
+        class GapResponse:
+            """Serializable response for gaps endpoints with Phoenix metadata."""
+
+            run_id: str
+            git_sha: str
+            generated_at: str
+            timezone: str
+            payload: list[dict[str, str]]
+
+
+        def stories_without_commits(data: list[dict[str, str]], *, tz: ZoneInfo | None = None) -> GapResponse:
+            zone = tz or ZoneInfo("America/Phoenix")
+            now = datetime.now(tz=zone).isoformat(timespec="seconds")
+            return GapResponse(run_id=data[0]["run_id"], git_sha=data[0]["git_sha"], generated_at=now, timezone=zone.key, payload=data)
+        ```
+
+        ```json
+        // artifacts/issues/wave3/correlation/run.schema.json (excerpt)
+        {
+          "type": "object",
+          "required": ["args", "git_sha", "generated_at", "timezone", "stories_without_commits", "commits_without_story"],
+          "properties": {
+            "timezone": {"const": "America/Phoenix"},
+            "args": {"type": "object", "properties": {"window_hours": {"type": "integer"}}}
+          }
+        }
+        ```
+      tests: |
+        - `tests/matcher/test_link_rules.py::test_extract_story_keys_order` ensures message precedence over branch and PR title.
+        - `tests/matcher/test_engine.py::test_match_returns_expected_structures` adds collision scenarios and verifies deterministic outputs.
+        - `tests/gaps/test_api.py::test_stories_without_commits_includes_metadata` asserts Phoenix timestamps and metadata.
+        - Edge cases: overlapping keys across sources, empty payloads, collisions with differing case, missing run metadata.
+        - Maintain cached fixtures under `tests/fixtures/correlation/` for deterministic inputs and ensure ≥70% coverage for new code.
+      docs_excerpt: |
+        Add to `docs/runbooks/correlation.md`:
+
+        > The Wave 3 correlation engine now resolves story keys by prioritizing commit messages before branch names and PR titles. Gap endpoints (`/api/gaps/stories-without-commits`, `/api/gaps/commits-without-story`) include run metadata stamped in America/Phoenix for downstream auditors.
+
+        Update `README.md` API table:
+
+        > **Correlation & Gaps** – Provides Phoenix-aware artifacts at `artifacts/issues/wave3/correlation/` with `args`, `git_sha`, and `generated_at` metadata for each run.
+      risk: |
+        - Risks: incorrect precedence causing missing links, schema drift in API responses, timezone misconfigurations.
+        - Rollback: revert `src/matcher/` and `src/releasecopilot/gaps/` changes; remove artifact schema updates if unused.
+        - No data migrations required; prior correlation logic can be restored from git history.
+      critic_check: |
+        - Run ruff/black/mypy on matcher/gaps modules and execute pytest coverage.
+        - Validate schema fixtures align with docs; update jsonschema tests accordingly.
+        - Confirm artifacts embed run metadata and Phoenix timezone before release.
+      pr_markers: |
+        - **Decision:** Update link precedence and expose Phoenix-stamped gaps endpoints.
+        - **Note:** Artifacts now include input args; document expected payload for consumers.
+        - **Action:** Ship matcher updates, persist metadata, and document new endpoints.
   - id: pr-005
     title: QA Focus & Regression Heuristics (YAML-driven)
     area: Analysis
@@ -91,6 +422,83 @@ sequenced_prs:
       - UI list with reason tooltips; JSON export section.
       - Artifacts: Release Notes + Validation Doc + Exports.
     notes: []
+    guidance:
+      implementation_plan: |
+        - Create `config/risk.yaml` defining `critical_paths` and `label_weights` per acceptance criteria.
+        - Implement scoring engine `src/releasecopilot/qa/risk_scorer.py` that ingests YAML config, computes per-story/module scores with justification text.
+        - Add API endpoint `src/releasecopilot/qa/api.py` exposing `/qa/top` to return top N stories with reasons, defaulting to Phoenix timezone metadata on responses.
+        - Update UI (`ui/pages/qa_focus.py`) to render a list with tooltip details and reference JSON export links in `artifacts/qa/`.
+        - Ensure orchestrator pipeline writes Release Notes/Validation/Exports artifacts as dependencies; link new QA artifacts to them.
+        - Sequence: config file → scoring engine → API endpoint → UI updates → artifact wiring → docs/tests.
+      code_snippets: |
+        ```yaml
+        # config/risk.yaml
+        critical_paths:
+          - path: src/releasecopilot/
+            weight: 3
+        label_weights:
+          regression: 2
+          performance: 1
+        ```
+
+        ```python
+        # src/releasecopilot/qa/risk_scorer.py
+        def score_items(items: list[dict[str, Any]], config: RiskConfig, *, tz: ZoneInfo | None = None) -> list[RiskScore]:
+            """Return sorted risk scores with reasons; deterministic ordering."""
+
+            zone = tz or ZoneInfo("America/Phoenix")
+            scored = []
+            for item in items:
+                reasons = []
+                score = 0
+                for label in item.get("labels", []):
+                    if label in config.label_weights:
+                        score += config.label_weights[label]
+                        reasons.append(f"label:{label}")
+                if item.get("module") in config.critical_paths:
+                    score += config.critical_paths[item["module"]]
+                    reasons.append("critical-path")
+                scored.append(RiskScore(key=item["key"], score=score, reasons=reasons, generated_at=datetime.now(tz=zone)))
+            return sorted(scored, key=lambda r: (-r.score, r.key))
+        ```
+
+        ```json
+        // artifacts/qa/risk_scores.schema.json (excerpt)
+        {
+          "type": "object",
+          "required": ["run_id", "git_sha", "generated_at", "timezone", "scores"],
+          "properties": {
+            "timezone": {"const": "America/Phoenix"},
+            "scores": {"type": "array", "items": {"type": "object", "required": ["key", "score", "reasons"]}}
+          }
+        }
+        ```
+      tests: |
+        - `tests/qa/test_risk_scorer.py::test_score_items_orders_by_weight` ensures deterministic ordering and reason list.
+        - `tests/qa/test_risk_scorer.py::test_score_items_handles_missing_labels` covers edge cases.
+        - `tests/qa/test_api.py::test_top_endpoint_limits_results` verifies Phoenix metadata in response.
+        - UI component test `tests/ui/test_qa_focus_page.py::test_tooltips_render_reasons` using Streamlit testing harness.
+        - Confirm coverage ≥70% on new QA modules and maintain fixture determinism via `tests/fixtures/qa/risk_config.yaml`.
+      docs_excerpt: |
+        Add to `docs/runbooks/qa.md`:
+
+        > Risk scoring uses `config/risk.yaml` to weight critical paths and labels. The `/qa/top?limit=N` endpoint returns Phoenix-stamped (`America/Phoenix`) scores with justification text for audit trails. UI pages surface the same data with hover tooltips explaining each reason.
+
+        Update `README.md` analytics section:
+
+        > QA Focus metrics feed Release Notes, Validation Docs, and Export bundles. JSON exports are available under `artifacts/qa/` with run metadata (`run_id`, `git_sha`, `generated_at`).
+      risk: |
+        - Risks: YAML misconfiguration causing zero scores, tooltip rendering errors, inconsistent artifacts with release documents.
+        - Rollback: revert `config/risk.yaml`, QA scorer modules, API/ UI updates, and remove artifacts if necessary.
+        - No data migrations; artifacts regenerate from orchestrator runs.
+      critic_check: |
+        - Validate YAML parsing errors surface clearly; include schema validation tests.
+        - Run ruff/black/mypy on QA modules and ensure pytest coverage threshold met.
+        - Confirm artifacts list includes Release Notes + Validation Doc + Exports cross-reference.
+      pr_markers: |
+        - **Decision:** Introduce YAML-driven QA risk scoring with Phoenix-aware exports.
+        - **Note:** Config weights require coordination with QA leads before changes.
+        - **Action:** Add `risk.yaml`, implement scoring engine/API/UI updates, and document artifact linkage.
   - id: pr-006
     title: "Artifacts: Release Notes + Validation Doc + Exports"
     area: Artifacts
@@ -106,6 +514,105 @@ sequenced_prs:
       - JSON/Excel include run_id, git_sha, generated_at.
       - UI download buttons wired.
     notes: []
+    guidance:
+      implementation_plan: |
+        - Extend `src/export/exporter.py` helpers or add `src/export/release_notes.py` to build grouped release notes (by change type) with issue hyperlinks sourced from existing manifest payloads.
+        - Introduce `src/releasecopilot/orchestrator/validation_doc.py` that reads the configurable Deployment Notes field ID from config and renders the validation document payload.
+        - Create Phoenix-stamped artifact writers under `src/tracking/artifacts.py` (e.g., `write_release_notes_artifact`) to emit JSON and Excel with `run_id`, `git_sha`, `generated_at` keyed in `America/Phoenix`.
+        - Wire UI download buttons in `ui/components/releases.py` (or current release artifacts component) to call new orchestrator endpoints.
+        - Update orchestrator CLI/handlers (e.g., `src/releasecopilot/orchestrator/run_release_exports.py`) to pipe outputs into `artifacts/release_notes/` and `artifacts/validation/` directories.
+        - Sequence: schema review → payload builders → artifact writers → orchestrator integration → UI buttons → documentation/tests.
+      code_snippets: |
+        ```python
+        # src/export/release_notes.py
+        from __future__ import annotations
+
+        from dataclasses import dataclass
+        from zoneinfo import ZoneInfo
+
+
+        @dataclass(slots=True)
+        class ReleaseNote:
+            """Immutable release note entry grouped by type.
+
+            Each entry carries deterministic `issue_key`, `type`, and `summary` fields.
+            Secrets must never be logged; timestamps default to America/Phoenix.
+            """
+
+            issue_key: str
+            type: str
+            summary: str
+            url: str
+
+
+        def build_grouped_notes(items: list[dict[str, str]]) -> dict[str, list[ReleaseNote]]:
+            groups: dict[str, list[ReleaseNote]] = {}
+            for item in items:
+                note = ReleaseNote(
+                    issue_key=item["issue_key"],
+                    type=item.get("type", "unspecified"),
+                    summary=item.get("summary", ""),
+                    url=item["url"],
+                )
+                groups.setdefault(note.type, []).append(note)
+            return groups
+        ```
+
+        ```python
+        # src/tracking/artifacts.py excerpt
+        def write_release_artifacts(*, payload: Mapping[str, Any], out_dir: Path, tz: ZoneInfo | None = None) -> Path:
+            """Persist release-note exports with Phoenix-aware metadata.
+
+            `payload` must already contain run metadata. The writer appends
+            `generated_at` in America/Phoenix and ensures deterministic filenames.
+            """
+
+            zone = tz or ZoneInfo("America/Phoenix")
+            stamped = {
+                **payload,
+                "generated_at": datetime.now(tz=zone).isoformat(timespec="seconds"),
+                "timezone": zone.key,
+            }
+            return write_json(out_dir / "release_notes.json", stamped)
+        ```
+
+        ```json
+        // artifacts/release_notes/run.schema.json (excerpt)
+        {
+          "type": "object",
+          "required": ["run_id", "git_sha", "generated_at", "timezone", "notes"],
+          "properties": {
+            "timezone": {"const": "America/Phoenix"},
+            "notes": {"type": "array", "items": {"$ref": "#/definitions/note"}}
+          }
+        }
+        ```
+      tests: |
+        - `tests/export/test_release_notes.py::test_build_grouped_notes_orders_entries` confirms deterministic grouping and hyperlink formatting.
+        - `tests/orchestrator/test_validation_doc_payload.py::test_uses_deployment_notes_field` mocks config to validate the Deployment Notes field ID lookup.
+        - `tests/ui/test_release_download_buttons.py::test_buttons_trigger_artifact_download` leverages Streamlit component harness to assert endpoints.
+        - Edge cases: missing issue URLs, empty change lists, multiple export formats, Excel writer exceptions retried.
+        - Use fixtures to mock time via `freeze_time("2024-05-01T12:00:00", tz_offset="-07:00")` or `ZoneInfo("America/Phoenix")` ensuring deterministic timestamps; maintain ≥70% coverage across touched modules.
+      docs_excerpt: |
+        Add to `docs/runbooks/release-artifacts.md`:
+
+        > Wave 3 introduces automated Release Notes grouped by change type with direct issue hyperlinks. After running `rc orchestrator release-export`, download Phoenix-stamped (`America/Phoenix`) JSON/Excel bundles from `artifacts/releases/`. Each bundle includes `run_id`, `git_sha`, and `generated_at` metadata for traceability.
+
+        Update `README.md` exports section:
+
+        > Validation docs derive the Deployment Notes field (configurable via `config/deployments.yml`) and are saved alongside release exports. UI download buttons surface the latest `artifacts/release_notes/` outputs once optional artifacts are generated.
+      risk: |
+        - Risks: schema drift between JSON/Excel outputs and consumers; incorrect Deployment Notes field IDs; Phoenix timezone misapplied causing compliance gaps.
+        - Rollback: revert changes in `src/export/`, `src/releasecopilot/orchestrator/`, UI button wiring, and artifact schema files; remove generated docs in `docs/runbooks/` if needed.
+        - No data migrations occur; deleting the artifacts reverts to previous manual export flow.
+      critic_check: |
+        - Validate release-note schema matches issue tracker expectations and that Excel/JSON parity tests pass.
+        - Run ruff/black/mypy plus pytest with coverage enforcement (≥70%) before merging.
+        - Inspect logs for run metadata only (run_id/git_sha/generated_at) to prevent leaking sensitive payloads.
+      pr_markers: |
+        - **Decision:** Automate release-note and validation-doc exports with Phoenix-stamped metadata.
+        - **Note:** Deployment Notes field IDs remain configurable; document updates explain how to adjust per environment.
+        - **Action:** Wire UI download buttons, ensure JSON/Excel include run metadata, and update artifacts documentation.
   - id: pr-007
     title: "Agents (Optional): LangGraph minimal path"
     area: Agents
@@ -122,6 +629,89 @@ sequenced_prs:
       - Orchestrator dispatch supports ‘langgraph-runner’; UI shows narrative.
     notes:
       - Pin temperature/seed; redact secrets; document opt-in install.
+    guidance:
+      implementation_plan: |
+        - Touch `requirements-agents.txt` only to append the minimal LangGraph extra (no pin drift); confirm the lockstep with existing optional agent deps.
+        - Add a new `src/agents/langgraph/__init__.py` and `src/agents/langgraph/graph.py` exporting an `AuditAgentGraph` factory that wires deterministic nodes plus an LLM summary/risk narration node.
+        - Update or create orchestrator wiring under `src/releasecopilot/orchestrator/langgraph_runner.py` (or equivalent orchestrator registry module) so `rc orchestrator --runner langgraph-runner` dispatches to the new graph.
+        - Extend UI narrative rendering within `ui/pages/orchestrator.py` (or existing orchestrator status component) so the LLM output is surfaced without altering layout contracts.
+        - Emit Phoenix-aware JSON artifacts by adding an `artifacts/orchestrator/langgraph/` writer in `src/tracking/artifacts.py`, using `ZoneInfo("America/Phoenix")` and existing run metadata (run_id/git_sha/generated_at).
+        - Sequence: dependency check → graph module scaffold → orchestrator integration → artifact serialization → UI update → documentation/test updates.
+      code_snippets: |
+        ```python
+        # src/agents/langgraph/graph.py
+        from zoneinfo import ZoneInfo
+        from langgraph.graph import StateGraph
+
+
+        def AuditAgentGraph(*, timezone: ZoneInfo | None = None) -> StateGraph:
+            """Return the deterministic LangGraph audit workflow.
+
+            The graph must avoid nondeterministic branching, accept a run payload dict,
+            and emit structured summaries without logging secrets. Phoenix (America/Phoenix)
+            is the default timezone for timestamped nodes to honor scheduling rules.
+            """
+
+            tz = timezone or ZoneInfo("America/Phoenix")
+            # add nodes: load -> enrich -> summarize -> risk
+            graph = StateGraph()
+            graph.add_node("load_context", load_context_node(tz=tz))
+            graph.add_node("summarize", llm_summary_node())
+            graph.add_node("risk", risk_narrative_node())
+            graph.add_edge("load_context", "summarize")
+            graph.add_edge("summarize", "risk")
+            graph.set_entry_point("load_context")
+            graph.set_finish_point("risk")
+            return graph
+        ```
+
+        ```diff
+        # src/releasecopilot/orchestrator/registry.py
+        @@
+         RUNNERS = {
+             "default": DefaultRunner(),
+        +    "langgraph-runner": LangGraphRunner(factory=AuditAgentGraph),
+         }
+        ```
+
+        ```python
+        # artifacts/orchestrator/langgraph/run.json schema excerpt
+        {
+            "$id": "artifacts/orchestrator/langgraph/run.json",
+            "type": "object",
+            "required": ["run_id", "git_sha", "generated_at", "timezone", "summary", "risk"],
+            "properties": {
+                "generated_at": {"type": "string", "format": "date-time"},
+                "timezone": {"const": "America/Phoenix"},
+            },
+        }
+        ```
+      tests: |
+        - `tests/agents/langgraph/test_audit_agent_graph.py::test_graph_execution_deterministic` ensures node order and outputs are stable when seeded fixtures are reused.
+        - `tests/agents/langgraph/test_audit_agent_graph.py::test_risk_node_uses_summary` mocks the LLM layer to verify risk narrative captures summary data without secrets.
+        - `tests/orchestrator/test_langgraph_runner.py::test_dispatch_and_artifact_written` uses `tmp_path` to assert Phoenix timestamps and JSON schema compliance.
+        - Edge cases: missing optional dependencies raises clear `ImportError`; artifact writer handles retries/pagination stubs from orchestrator payloads.
+        - Add coverage measurement via existing `pytest --cov=src/agents/langgraph --cov=src/releasecopilot/orchestrator` target to remain ≥70%.
+      docs_excerpt: |
+        Add to `docs/runbooks/orchestrator.md` under the optional agents section:
+
+        > The LangGraph audit path is opt-in via `rc orchestrator --runner langgraph-runner`. When enabled, the runner emits Phoenix-aware (`America/Phoenix`) summaries and risk narratives to `artifacts/orchestrator/langgraph/`. Ensure optional agents extras from `requirements-agents.txt` are installed before execution.
+
+        Update `README.md` integrations table:
+
+        > **LangGraph Audit (optional)** – Provides deterministic audit summaries with Phoenix timezone timestamps. Run `pip install -r requirements-agents.txt` to enable, then trigger via the orchestrator CLI.
+      risk: |
+        - Risks: schema drift between orchestrator payloads and LangGraph nodes; nondeterministic LLM prompts altering tests; artifact path mismatches causing UI regressions.
+        - Rollback: revert `src/agents/langgraph/`, orchestrator registry updates, UI narrative changes, and artifact writer adjustments; remove added extras from `requirements-agents.txt` if needed.
+        - No data migrations are introduced; disabling the runner restores prior behavior.
+      critic_check: |
+        - Verify deterministic node ordering and stable artifact schema in tests.
+        - Run ruff/black/mypy and ensure coverage gate ≥70% before submission.
+        - Confirm artifacts embed `run_id`, `git_sha`, and `generated_at` in America/Phoenix.
+      pr_markers: |
+        - **Decision:** Adopt LangGraph-based audit runner with deterministic Phoenix-stamped outputs.
+        - **Note:** Optional dependency footprint lives in `requirements-agents.txt`; installation is opt-in for agent workflows.
+        - **Action:** Update orchestrator registry, emit Phoenix JSON artifacts, and surface the new risk narrative in the UI.
   - id: pr-008
     title: CSV Fallback for Failed Jira JQL
     area: Resilience
@@ -136,6 +726,80 @@ sequenced_prs:
       - Clear CLI messaging; graceful errors for bad paths/CSV.
       - Tests for success/failure paths.
     notes: []
+    guidance:
+      implementation_plan: |
+        - Update `clients/jira_client.py` retry logic to raise a typed `JiraJQLFailed` exception after exhausting retries.
+        - In `src/releasecopilot/cli.py` (audit command), catch `JiraJQLFailed` and prompt via `click.prompt` for a CSV fallback path, validating existence and schema.
+        - Add CSV loader helper `src/releasecopilot/utils/jira_csv_loader.py` to parse issues deterministically (UTF-8, no network) and integrate with downstream processors.
+        - Ensure Phoenix-aware logging when reporting fallback usage (include `datetime.now(ZoneInfo("America/Phoenix"))` in status message if timestamped).
+        - Sequence: define exception → update CLI prompt → implement CSV loader → integrate with processors → add tests/docs.
+      code_snippets: |
+        ```python
+        # clients/jira_client.py excerpt
+        class JiraJQLFailed(RuntimeError):
+            """Raised when Jira JQL queries fail after configured retries."""
+
+
+        def search(self, jql: str) -> list[dict[str, Any]]:
+            try:
+                return self._do_search(jql)
+            except HTTPError as error:
+                if self._retries_exhausted(error):
+                    raise JiraJQLFailed(f"JQL failed after retries: {jql}") from error
+                raise
+        ```
+
+        ```python
+        # src/releasecopilot/cli.py excerpt
+        from zoneinfo import ZoneInfo
+
+
+        @cli.command()
+        def audit(...):
+            try:
+                issues = jira_client.search(jql)
+            except JiraJQLFailed:
+                csv_path = Path(click.prompt("JQL failed. Provide CSV export path", type=click.Path()))
+                phoenix_now = datetime.now(tz=ZoneInfo("America/Phoenix")).isoformat(timespec="seconds")
+                click.echo(f"[{phoenix_now}] Loading issues from CSV fallback: {csv_path}")
+                issues = load_issues_from_csv(csv_path)
+        ```
+
+        ```python
+        # src/releasecopilot/utils/jira_csv_loader.py
+        def load_issues_from_csv(path: Path) -> list[dict[str, Any]]:
+            """Read Jira issues from CSV export deterministically."""
+
+            with path.open("r", encoding="utf-8") as handle:
+                reader = csv.DictReader(handle)
+                return [row for row in reader]
+        ```
+      tests: |
+        - `tests/clients/test_jira_client.py::test_search_raises_after_retries` to confirm `JiraJQLFailed` is raised.
+        - `tests/cli/test_audit_csv_fallback.py::test_audit_prompts_for_csv_on_failure` uses `CliRunner` with monkeypatched prompt.
+        - `tests/utils/test_jira_csv_loader.py::test_load_issues_from_csv_handles_missing_columns` ensures graceful error messaging.
+        - Edge cases: nonexistent file path, invalid CSV headers, partial data, Phoenix timestamp formatting.
+        - Achieve ≥70% coverage across new CLI branch via targeted tests and fixtures under `tests/fixtures/jira/`.
+      docs_excerpt: |
+        Add to `docs/runbooks/jira.md`:
+
+        > If Jira JQL queries fail after retries, the CLI prompts for a local CSV export. Provide the path to a Jira export generated with the standard column set; the fallback is logged with an America/Phoenix timestamp for traceability.
+
+        Update `README.md` troubleshooting section:
+
+        > Use `rc audit --jira-csv path/to/export.csv` to bypass JQL failures locally. CSV files must be UTF-8 encoded and match the default Jira export headers.
+      risk: |
+        - Risks: CSV schema drift causing processor errors, confusing prompts, timezone formatting inconsistencies.
+        - Rollback: revert exception/prompt changes in Jira client and CLI; remove CSV loader module.
+        - No data migrations or dependency updates introduced.
+      critic_check: |
+        - Run ruff/black/mypy after adding the new helper; execute pytest CLI and utils suites.
+        - Confirm prompts avoid echoing sensitive JQL/credentials.
+        - Validate fallback logging includes Phoenix timestamp.
+      pr_markers: |
+        - **Decision:** Provide CSV fallback flow when Jira JQL retries fail.
+        - **Note:** CSV exports must include the default Jira columns for ingestion.
+        - **Action:** Raise typed exception, prompt user for CSV path, and document fallback usage.
   - id: pr-009
     title: "[Tests] Mocked Jira/Bitbucket + E2E with cached payloads"
     area: Quality
@@ -150,6 +814,71 @@ sequenced_prs:
       - E2E audit using cached fixtures verifies schema + content.
       - Contract tests guard JSON/Excel schema (jsonschema + column checks).
     notes: []
+    guidance:
+      implementation_plan: |
+        - Expand `tests/clients/test_jira_client.py` and `tests/clients/test_bitbucket_client.py` to cover pagination, error handling, and retry paths using cached fixtures in `tests/fixtures/jira/` and `tests/fixtures/bitbucket/`.
+        - Build E2E audit test `tests/e2e/test_audit_cached_payloads.py` orchestrating CLI commands with cached data (no network) and verifying outputs.
+        - Add JSON Schema validation helper in `tests/helpers/schema_validation.py` referencing artifact schemas for JSON/Excel exports.
+        - Ensure Phoenix timestamp assertions in E2E artifacts match expected timezone and metadata fields.
+        - Sequence: update fixtures → expand client tests → implement schema helpers → write E2E test → update docs.
+      code_snippets: |
+        ```python
+        # tests/helpers/schema_validation.py
+        def assert_json_schema(path: Path, schema_path: Path) -> None:
+            """Validate JSON file against schema using jsonschema Draft7."""
+
+            data = json.loads(path.read_text())
+            schema = json.loads(schema_path.read_text())
+            jsonschema.validate(instance=data, schema=schema)
+        ```
+
+        ```python
+        # tests/e2e/test_audit_cached_payloads.py
+        def test_audit_cli_uses_cached_payloads(tmp_path, monkeypatch):
+            """Run audit CLI end-to-end with cached Jira/Bitbucket fixtures."""
+
+            monkeypatch.setenv("RC_CACHED_PAYLOAD_DIR", str(Path("tests/fixtures/cached")))
+            result = CliRunner().invoke(cli.audit, ["--use-cached-payloads"])
+            assert result.exit_code == 0
+            artifact = tmp_path / "artifacts" / "audit_results.json"
+            assert artifact.exists()
+            assert "America/Phoenix" in artifact.read_text()
+        ```
+
+        ```python
+        # tests/clients/test_bitbucket_client.py excerpt
+        def test_iter_commits_handles_pagination(bitbucket_client, mocker):
+            pages = [{"values": [...]}, {"values": [...], "next": None}]
+            mocker.patch.object(bitbucket_client, "_request", side_effect=pages)
+            commits = list(bitbucket_client.iter_commits(repo="org/repo", since=window_start))
+            assert len(commits) == sum(len(page["values"]) for page in pages)
+        ```
+      tests: |
+        - Run `pytest tests/clients/test_jira_client.py::test_paginated_results` and similar coverage for retries/errors.
+        - Execute `pytest tests/e2e/test_audit_cached_payloads.py::test_audit_cli_uses_cached_payloads` verifying artifact schema and Phoenix metadata.
+        - Schema contract tests: `tests/contracts/test_artifact_schemas.py::test_json_export_schema` and `test_excel_columns` ensure column names and order.
+        - Edge cases: missing pagination `next`, HTTP errors with retries, corrupted cached fixture, Excel column mismatch.
+        - Ensure coverage >70% for affected modules via `pytest --cov=clients --cov=src/releasecopilot`.
+      docs_excerpt: |
+        Add to `docs/runbooks/testing.md`:
+
+        > Cached Jira/Bitbucket fixtures live under `tests/fixtures/cached/`. Run `pytest tests/e2e/test_audit_cached_payloads.py --cov` to validate audit flows without network calls. Artifact schema checks rely on JSON Schema files stored alongside artifacts.
+
+        Update `README.md` testing section:
+
+        > Use `RC_CACHED_PAYLOAD_DIR` to point CLI commands at deterministic fixtures. Phoenix timestamps are validated during E2E runs to maintain timezone consistency.
+      risk: |
+        - Risks: fixture drift causing brittle tests, schema updates breaking contract tests, longer CI durations.
+        - Rollback: revert new tests/helpers, remove cached fixture references, and restore prior pytest config.
+        - No data migrations; fixtures remain local files.
+      critic_check: |
+        - Verify fixtures scrub sensitive data before committing.
+        - Run ruff/black on new test helpers and ensure pytest coverage threshold met.
+        - Validate Excel tests use cached files without network.
+      pr_markers: |
+        - **Decision:** Strengthen Jira/Bitbucket tests using cached payloads and schema contracts.
+        - **Note:** Cached fixtures must be updated alongside API changes to prevent drift.
+        - **Action:** Add pagination/retry tests, E2E audit, and contract validators.
   - id: pr-010
     title: "[CI] Coverage Gate + PR Summary Comment"
     area: CI
@@ -163,6 +892,83 @@ sequenced_prs:
       - pytest-cov ≥70% on touched code; build fails otherwise.
       - PR comment posts coverage summary.
     notes: []
+    guidance:
+      implementation_plan: |
+        - Introduce a reusable coverage gate script under `tools/coverage_gate.py` that parses `.coverage` or `coverage.xml` generated by pytest-cov.
+        - Update `pyproject.toml` or `pytest.ini` to enforce `--cov` defaults, ensuring touched files reach ≥70%; add invocation within existing CI pipeline scripts (e.g., `scripts/ci/run_pytest.sh`).
+        - Extend GitHub PR automation (likely `actions/pr_commenter/`) to call a new helper `src/releasecopilot/utils/coverage_comment.py` that formats a Markdown summary for posting to PR threads.
+        - Ensure Phoenix timestamp metadata is included if the comment references build times (use `ZoneInfo("America/Phoenix")`).
+        - Sequence: add coverage gate script → wire pytest config → implement PR comment helper → update CI script to call helper and fail on threshold → document/test.
+      code_snippets: |
+        ```python
+        # tools/coverage_gate.py
+        from __future__ import annotations
+
+        import json
+        from pathlib import Path
+
+
+        def enforce_threshold(report: Path, minimum: float = 70.0) -> float:
+            """Return total coverage percentage and raise if below the minimum.
+
+            The report must be generated deterministically (`coverage xml`). The
+            function logs only aggregate stats—never file contents or secrets.
+            """
+
+            data = json.loads(report.read_text())
+            percent = float(data["totals"]["percent_covered_display"])
+            if percent < minimum:
+                raise SystemExit(f"Coverage {percent:.1f}% is below required {minimum:.1f}%")
+            return percent
+        ```
+
+        ```python
+        # src/releasecopilot/utils/coverage_comment.py
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+
+        def build_comment(coverage: float, *, tz: ZoneInfo | None = None) -> str:
+            """Create the deterministic PR summary comment for coverage results."""
+
+            zone = tz or ZoneInfo("America/Phoenix")
+            timestamp = datetime.now(tz=zone).strftime("%Y-%m-%d %H:%M:%S %Z")
+            return f"Coverage: {coverage:.1f}% (threshold 70%). Checked at {timestamp}."
+        ```
+
+        ```diff
+        # scripts/ci/run_pytest.sh
+        @@
+        pytest --cov=src --cov=clients --cov-report=json:coverage.json "$@"
+        python tools/coverage_gate.py coverage.json
+        python -m releasecopilot.cli pr-comment coverage --file coverage.json
+        ```
+      tests: |
+        - `tests/utils/test_coverage_gate.py::test_enforce_threshold_passes_and_returns_value` uses temp JSON fixtures.
+        - `tests/utils/test_coverage_gate.py::test_enforce_threshold_raises_below_threshold` asserts `SystemExit`.
+        - `tests/utils/test_coverage_comment.py::test_build_comment_uses_phoenix_timezone` patches datetime to ensure deterministic output.
+        - Mock PR commenter integration in `tests/cli/test_pr_comment.py::test_coverage_comment_command_posts_markdown` verifying comment body.
+        - Ensure coverage for new utils >90% and overall touched modules ≥70% when running `pytest --cov` locally.
+      docs_excerpt: |
+        Add to `docs/runbooks/ci.md`:
+
+        > Pytest now produces `coverage.json` and enforces a ≥70% threshold using `tools/coverage_gate.py`. The gate runs in CI and locally via `make test`. Coverage summaries post to PR threads stamped in America/Phoenix to align with release schedules.
+
+        Update `README.md` contributing section:
+
+        > Before opening a PR, run `pytest --cov --cov-report=json:coverage.json` followed by `python tools/coverage_gate.py coverage.json` to mimic CI gating and avoid failures.
+      risk: |
+        - Risks: coverage parsing incompatibilities when report schema changes; CI secrets accidentally logged in comments; timezone mismatch causing ambiguous timestamps.
+        - Rollback: remove `tools/coverage_gate.py`, revert CI script and PR commenter wiring; disable comment command invocation.
+        - No data migrations or dependency updates involved.
+      critic_check: |
+        - Verify pytest-cov produces deterministic JSON; run ruff/black/mypy after wiring the gate.
+        - Confirm PR commenter posts only aggregate metrics and redacts repo paths if needed.
+        - Ensure coverage gate fails locally when threshold unmet.
+      pr_markers: |
+        - **Decision:** Enforce ≥70% pytest-cov threshold and publish Phoenix-stamped PR summaries.
+        - **Note:** Contributors must run the gate locally to prevent CI failures.
+        - **Action:** Add coverage gate script, update CI runner, and integrate PR coverage comment command.
   - id: pr-011
     title: PR Template + Orchestration Docs (slash-commands, Phoenix TZ)
     area: Docs
@@ -177,6 +983,52 @@ sequenced_prs:
       - Notes quality bar, ≥70% coverage, ruff/black/mypy gates.
       - Docs page explains orchestrator plan/dispatch and Phoenix TZ.
     notes: []
+    guidance:
+      implementation_plan: |
+        - Update `.github/pull_request_template.md` to require **Decision/Note/Action** sections with checkboxes for coverage (≥70%), `ruff`, `black`, and `mypy` confirmations.
+        - Add slash-command documentation to `docs/runbooks/orchestrator.md` describing `rc orchestrator plan` and `rc orchestrator dispatch` flows with Phoenix timezone context.
+        - Ensure README references the quality bar and timezone requirements in the contributing section.
+        - Sequence: adjust PR template → expand docs with orchestrator commands and Phoenix scheduling notes → crosslink README.
+      code_snippets: |
+        ```markdown
+        <!-- .github/pull_request_template.md excerpt -->
+        **Decision:** <!-- summarize go/no-go -->
+        **Note:** <!-- context or caveats -->
+        **Action:** <!-- follow-up tasks -->
+
+        - [ ] Tests updated and ≥70% coverage on touched code (`pytest --cov`).
+        - [ ] Formatting & linting: `ruff`, `black`, `mypy`.
+        ```
+
+        ```markdown
+        # docs/runbooks/orchestrator.md excerpt
+        ## Slash Commands
+
+        Use `rc orchestrator plan --timezone America/Phoenix` to generate schedules without DST adjustments. Dispatch runs via `rc orchestrator dispatch --plan artifacts/orchestrator/plan.json` to execute Phoenix-aware workflows.
+        ```
+      tests: |
+        - No code changes, but validate documentation references existing CLI tests such as `tests/cli/test_orchestrator.py::test_plan_command_uses_timezone` for accuracy.
+        - Ensure markdown lint (if configured) passes and docstrings reference Phoenix timezone consistently.
+      docs_excerpt: |
+        Add to `README.md` contributing section:
+
+        > Pull requests must include **Decision/Note/Action** summaries and confirm lint/format/type gates (ruff, black, mypy) plus ≥70% coverage on touched code. Orchestrator commands assume America/Phoenix for scheduling; override via `--timezone` only when necessary.
+
+        Update `docs/runbooks/orchestrator.md` introduction:
+
+        > Phoenix (America/Phoenix) remains the canonical timezone for planning and dispatching workflows. Slash-commands from ChatOps should default to this timezone to ensure predictable execution windows.
+      risk: |
+        - Risks: PR template enforcing unchecked boxes might block merges unexpectedly; documentation drift if CLI flags change.
+        - Rollback: revert `.github/pull_request_template.md` and doc updates; no runtime impact.
+        - No data migrations or dependency changes.
+      critic_check: |
+        - Verify PR template renders correctly on GitHub and does not leak internal links.
+        - Confirm docs mention lint/format/type gates and Phoenix timezone.
+        - Run markdown lint if available.
+      pr_markers: |
+        - **Decision:** Enforce Decision/Note/Action template and document Phoenix-aware orchestrator commands.
+        - **Note:** Contributors must acknowledge coverage and lint gates explicitly in PRs.
+        - **Action:** Update PR template, README, and orchestrator runbook.
   - id: pr-012
     title: "[Pre-commit] ruff, black, mypy"
     area: DX
@@ -190,6 +1042,62 @@ sequenced_prs:
       - .pre-commit-config.yaml lands; README has install steps.
       - pre-commit run --all-files passes in CI.
     notes: []
+    guidance:
+      implementation_plan: |
+        - Add `.pre-commit-config.yaml` at repo root configuring `ruff`, `black`, and `mypy` hooks pinned to existing versions from `requirements-dev.txt`.
+        - Update `requirements-dev.txt` to include `pre-commit` if absent (no other dependency changes).
+        - Modify CI script (e.g., `scripts/ci/run_precommit.sh`) to execute `pre-commit run --all-files` prior to pytest and ensure gating.
+        - Document installation and usage in `README.md` and `docs/runbooks/contributing.md`, mentioning Phoenix timezone expectations for logs if hooks emit timestamps.
+        - Sequence: add config → ensure dev requirements include pre-commit → update CI script → document setup/tests.
+      code_snippets: |
+        ```yaml
+        # .pre-commit-config.yaml
+        repos:
+          - repo: https://github.com/astral-sh/ruff-pre-commit
+            rev: v0.4.0
+            hooks:
+              - id: ruff
+                args: ["--fix"]
+          - repo: https://github.com/psf/black
+            rev: 23.12.1
+            hooks:
+              - id: black
+          - repo: https://github.com/pre-commit/mirrors-mypy
+            rev: v1.9.0
+            hooks:
+              - id: mypy
+                additional_dependencies: ["types-requests"]
+        ```
+
+        ```bash
+        # scripts/ci/run_precommit.sh
+        #!/usr/bin/env bash
+        set -euo pipefail
+        pre-commit run --all-files --show-diff-on-failure
+        ```
+      tests: |
+        - Not applicable for runtime, but run `pre-commit run --all-files` locally to ensure hooks succeed.
+        - Add automation in CI to fail when hooks fail; optionally add `tests/ci/test_precommit_config.py::test_config_loads` to ensure YAML schema validity.
+      docs_excerpt: |
+        Add to `README.md` development setup:
+
+        > Install pre-commit hooks via `pip install -r requirements-dev.txt` followed by `pre-commit install`. Run `pre-commit run --all-files` before pushing to mirror CI. Hooks use America/Phoenix timestamps when logging durations.
+
+        Update `docs/runbooks/contributing.md`:
+
+        > Pre-commit enforces `ruff`, `black`, and `mypy` across Python sources. CI executes `pre-commit run --all-files` ahead of pytest; failures must be resolved locally.
+      risk: |
+        - Risks: version pin conflicts with existing formatting tools; CI time increase; hooks misconfigured for Windows paths.
+        - Rollback: remove `.pre-commit-config.yaml`, revert CI script, and prune documentation references.
+        - No data migrations; dependencies limited to dev tooling.
+      critic_check: |
+        - Run `pre-commit run --all-files` after configuration; ensure hooks do not log secrets.
+        - Verify CI includes the pre-commit step with gating.
+        - Keep versions aligned with `requirements-dev.txt` pins.
+      pr_markers: |
+        - **Decision:** Adopt pre-commit hooks for ruff, black, and mypy.
+        - **Note:** Developers must install hooks via requirements-dev instructions.
+        - **Action:** Add pre-commit config, update CI invocation, and document setup.
 metadata:
   archived_from_wave: 2
   phoenix_date: 2025-10-15

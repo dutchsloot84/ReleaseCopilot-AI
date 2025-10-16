@@ -14,11 +14,43 @@ This task originates from the Wave {{ wave }} Mission Outline Plan generated fro
 4. Documentation updates referencing this wave's artifacts.
 5. Risk assessment noting fallbacks and rollback steps.
 
+{% if pr.guidance.implementation_plan %}
+### Diff-oriented implementation plan
+{{ pr.guidance.implementation_plan | trim }}
+
+{% endif %}
+{% if pr.guidance.code_snippets %}
+### Key code snippets
+{{ pr.guidance.code_snippets | trim }}
+
+{% endif %}
+{% if pr.guidance.tests %}
+### Tests (pytest; no live network)
+{{ pr.guidance.tests | trim }}
+
+{% endif %}
+{% if pr.guidance.docs_excerpt %}
+### Docs excerpt (README/runbook)
+{{ pr.guidance.docs_excerpt | trim }}
+
+{% endif %}
+{% if pr.guidance.risk %}
+### Risk & rollback
+{{ pr.guidance.risk | trim }}
+
+{% endif %}
+
 ## Critic Check
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.
 - Ensure no secrets or credentials are exposed.
+{% if pr.guidance.critic_check %}
+{{ pr.guidance.critic_check | trim }}
+{% endif %}
 
 ## PR Markers
 - Begin change logs with **Decision:**/**Note:**/**Action:** blocks.
 - Link back to the generated manifest entry for traceability.
+{% if pr.guidance.pr_markers %}
+{{ pr.guidance.pr_markers | trim }}
+{% endif %}
