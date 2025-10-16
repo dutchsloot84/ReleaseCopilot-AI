@@ -1,0 +1,18 @@
+[
+  {
+    "number": 42,
+    "title": "Fix failing tests",
+    "html_url": "https://github.com/example/repo/pull/42",
+    "draft": false,
+    "updated_at": "2024-05-01T12:00:00Z",
+    "head": {"sha": "abc123"}
+  },
+  {
+    "number": 7,
+    "title": "WIP Draft",
+    "html_url": "https://github.com/example/repo/pull/7",
+    "draft": true,
+    "updated_at": "2024-05-01T11:00:00Z",
+    "head": {"sha": "def456"}
+  }
+]

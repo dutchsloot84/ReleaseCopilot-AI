@@ -26,6 +26,22 @@ Wave 2 automation coordinates follow-ups with Phoenix-based maintainers. Each ar
 
 Each command writes an entry to `artifacts/helpers/activity-log.ndjson` with a deterministic UUID (namespace UUID5 of command + timestamp). Artifacts are JSON-encoded with stable sorting to ensure diffs remain predictable. Prompt files repeat the Decision / Note / Action expectations from the active MOP so downstream contributors follow the required reporting format.
 
+## CI Watchdog Autofix Safeguards
+
+The CI Watchdog workflow introduces an optional `/watchdog autofix` command.
+Safeguards include:
+
+- Only members, owners, or collaborators can issue the command; everyone
+  else is ignored.
+- The target pull request must carry the `automation` label so manual PRs
+  are never modified accidentally.
+- At least one approval must be on record before automation runs. This
+  preserves human oversight and aligns with Wave 2 guidelines.
+- The guard script runs `ruff --fix`, `black`, and a targeted `pytest`
+  invocation via `scripts/github/run_watchdog_autofix.sh`. All commands
+  execute locally without network access to keep the Phoenix-time 07:00
+  schedule predictable and reproducible.
+
 ## Rollback
 
 To undo the helper automation:

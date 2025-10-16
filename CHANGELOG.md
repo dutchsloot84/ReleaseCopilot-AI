@@ -15,6 +15,8 @@
 - Monthly AWS Budgets cost guardrail with SNS/email alerts and manual verification runbook.
 - Human actions generator for Wave 2 producing Phoenix-local checklists, calendar stubs,
   activity logging, and updated runbook guidance.
+- CI Watchdog workflow with Phoenix-scheduled scans, comment reporting, and
+  command-gated autofix safeguards.
 
 ### Chore
 - Remove placeholderless f-strings flagged by ruff F541.

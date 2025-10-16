@@ -1,0 +1,14 @@
+[
+  {
+    "name": "pytest",
+    "conclusion": "failure",
+    "completed_at": "2024-05-01T13:00:00Z",
+    "html_url": "https://github.com/example/repo/runs/1"
+  },
+  {
+    "name": "lint",
+    "conclusion": "success",
+    "completed_at": "2024-05-01T13:05:00Z",
+    "html_url": "https://github.com/example/repo/runs/2"
+  }
+]
