@@ -9,7 +9,18 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Protocol, runtime_checkable
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Protocol,
+    runtime_checkable,
+)
+
+import releasecopilot_bootstrap  # noqa: F401  # ensures src/ is on sys.path
 
 try:  # pragma: no cover - best effort optional dependency
     from dotenv import load_dotenv
