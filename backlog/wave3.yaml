@@ -92,7 +92,7 @@ sequenced_prs:
       - Artifacts: Release Notes + Validation Doc + Exports.
     notes: []
   - id: pr-006
-    title: Artifacts: Release Notes + Validation Doc + Exports
+    title: "Artifacts: Release Notes + Validation Doc + Exports"
     area: Artifacts
     priority: High
     labels:
@@ -107,7 +107,7 @@ sequenced_prs:
       - UI download buttons wired.
     notes: []
   - id: pr-007
-    title: Agents (Optional): LangGraph minimal path
+    title: "Agents (Optional): LangGraph minimal path"
     area: Agents
     priority: Medium
     labels:
@@ -196,3 +196,10 @@ metadata:
   generator_behavior:
     - Wave 3 spec is authoritative for Step 1; run make gen-wave3 after merge.
     - Generators must stamp Phoenix timestamps and capture args/git_sha/generated_at.
+markers:
+  decision: Establish Wave 3 spec as the authoritative pre-generation source of truth before running any automation.
+  note: Phoenix timezone governs schedules and timestamps; maintain schema/key ordering consistent with prior waves.
+  action:
+    owner: "@dutchsloot84"
+    summary: >-
+      After merge, run `make gen-wave3` followed by `make check-generated`, then open a follow-up PR with the regenerated artifacts.
