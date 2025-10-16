@@ -1,4 +1,5 @@
 """Generate Wave 2 human action artifacts from the active MOP and prioritized issues."""
+
 from __future__ import annotations
 
 import argparse
@@ -99,7 +100,10 @@ def parse_prioritized_candidates(mop_text: str) -> dict[int, str]:
             capture = True
             continue
         if capture:
-            if line.startswith("##") and line.strip().lower() != "## prioritized candidates for wave 2":
+            if (
+                line.startswith("##")
+                and line.strip().lower() != "## prioritized candidates for wave 2"
+            ):
                 break
             stripped = line.strip()
             if not stripped:
@@ -122,7 +126,10 @@ def parse_global_constraints(mop_text: str) -> List[str]:
             capture = True
             continue
         if capture:
-            if line.startswith("##") and line.strip().lower() != "## global constraints":
+            if (
+                line.startswith("##")
+                and line.strip().lower() != "## global constraints"
+            ):
                 break
             stripped = line.strip()
             if stripped.startswith("-"):
@@ -145,7 +152,9 @@ def extract_issue_number(text: str) -> int | None:
 
 def format_phoenix_timestamp(dt: datetime) -> str:
     if dt.tzinfo is None:
-        raise ValueError("Naive datetime values are not supported; provide an explicit timezone.")
+        raise ValueError(
+            "Naive datetime values are not supported; provide an explicit timezone."
+        )
     phoenix_dt = dt.astimezone(PHOENIX_ZONE)
     offset = phoenix_dt.utcoffset() or timedelta(0)
     offset_hours = int(offset.total_seconds() // 3600)
@@ -158,7 +167,11 @@ def format_issue_timestamp(issue: Issue) -> str:
 
 
 def compute_run_hash(
-    mop_text: str, issues: Sequence[Issue], author: str, timestamp: datetime, git_sha: str
+    mop_text: str,
+    issues: Sequence[Issue],
+    author: str,
+    timestamp: datetime,
+    git_sha: str,
 ) -> str:
     hasher = hashlib.sha256()
     hasher.update(mop_text.encode("utf-8"))
@@ -195,10 +208,17 @@ def build_checklist(
     for required in ("Orchestrator Workflow", "Helpers Workflow"):
         if required not in ordered_section_names:
             ordered_section_names.append(required)
-    ordered_section_names = sorted(set(ordered_section_names), key=lambda name: (
-        0 if name == "Orchestrator Workflow" else 1 if name == "Helpers Workflow" else 2,
-        name,
-    ))
+    ordered_section_names = sorted(
+        set(ordered_section_names),
+        key=lambda name: (
+            (
+                0
+                if name == "Orchestrator Workflow"
+                else 1 if name == "Helpers Workflow" else 2
+            ),
+            name,
+        ),
+    )
 
     lines: List[str] = [metadata.to_header(), "# Wave 2 Human Actions Checklist", ""]
 
@@ -234,8 +254,12 @@ def build_checklist(
     lines.append(
         "- Confirm artifact timestamps reflect America/Phoenix with no DST shifts (UTC-7 year-round)."
     )
-    lines.append("- Escalate blockers to the orchestrator DRI using the runbook contacts.")
-    lines.append("- Ensure no secrets or credentials were embedded in generated artifacts.")
+    lines.append(
+        "- Escalate blockers to the orchestrator DRI using the runbook contacts."
+    )
+    lines.append(
+        "- Ensure no secrets or credentials were embedded in generated artifacts."
+    )
     lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
@@ -246,7 +270,9 @@ def build_calendar(metadata: GenerationMetadata, issues: Sequence[Issue]) -> dic
     dtstamp = metadata.timestamp.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
     events: List[str] = []
     for idx, issue in enumerate(issues):
-        start_date = datetime.combine(base_date, time(hour=9), tzinfo=PHOENIX_ZONE) + timedelta(days=idx)
+        start_date = datetime.combine(
+            base_date, time(hour=9), tzinfo=PHOENIX_ZONE
+        ) + timedelta(days=idx)
         end_date = start_date + timedelta(minutes=45)
         uid = f"{metadata.run_hash}-{issue.number}@releasecopilot"
         events.extend(
@@ -312,10 +338,14 @@ def write_text(path: Path, content: str) -> None:
 
 def write_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
-def log_activity(metadata: GenerationMetadata, output_dir: Path, issue_numbers: Iterable[int]) -> None:
+def log_activity(
+    metadata: GenerationMetadata, output_dir: Path, issue_numbers: Iterable[int]
+) -> None:
     entry = {
         **metadata.to_json(),
         "timestamp": metadata.timestamp.astimezone(PHOENIX_ZONE).isoformat(),
@@ -333,12 +363,19 @@ def log_activity(metadata: GenerationMetadata, output_dir: Path, issue_numbers: 
             existing[existing_key] = record
     entry_key = f"{entry['timestamp']}|{metadata.run_hash}"
     existing[entry_key] = entry
-    sorted_records = sorted(existing.values(), key=lambda rec: (rec["timestamp"], rec.get("run_hash", "")))
-    log_path.write_text("\n".join(json.dumps(rec, sort_keys=True) for rec in sorted_records) + "\n", encoding="utf-8")
+    sorted_records = sorted(
+        existing.values(), key=lambda rec: (rec["timestamp"], rec.get("run_hash", ""))
+    )
+    log_path.write_text(
+        "\n".join(json.dumps(rec, sort_keys=True) for rec in sorted_records) + "\n",
+        encoding="utf-8",
+    )
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate Wave 2 human action artifacts.")
+    parser = argparse.ArgumentParser(
+        description="Generate Wave 2 human action artifacts."
+    )
     parser.add_argument(
         "--mop-path",
         type=Path,
@@ -357,12 +394,18 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=Path("artifacts/human-actions"),
         help="Directory where generated artifacts are written.",
     )
-    parser.add_argument("--author", default="PromptOps Automation", help="Author metadata for the artifacts.")
+    parser.add_argument(
+        "--author",
+        default="PromptOps Automation",
+        help="Author metadata for the artifacts.",
+    )
     parser.add_argument(
         "--timestamp",
         help="ISO8601 timestamp to use for metadata (defaults to current Phoenix time).",
     )
-    parser.add_argument("--git-sha", default="unknown", help="Git SHA to embed in artifact metadata.")
+    parser.add_argument(
+        "--git-sha", default="unknown", help="Git SHA to embed in artifact metadata."
+    )
     return parser.parse_args(argv)
 
 
