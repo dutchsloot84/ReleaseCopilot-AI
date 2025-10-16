@@ -24,7 +24,7 @@ sequenced_prs:
       - mvp
       - area:UI
       - priority:high
-    acceptance_criteria:
+    acceptance:
       - Tabs: Audit, Gaps, QA Focus, Artifacts.
       - Header shows Nov ’25 stats (stories, commits, linked %, gaps).
       - Actions: Re-sync Jira, Re-scan Repos, Recompute Correlation.
@@ -40,7 +40,7 @@ sequenced_prs:
       - mvp
       - area:ingest
       - priority:high
-    acceptance_criteria:
+    acceptance:
       - HMAC/signature validation; normalized payload schema.
       - Idempotent upsert; structured logs; retries/backoff.
       - Recompute correlation for touched issues.
@@ -55,7 +55,7 @@ sequenced_prs:
       - mvp
       - area:ingest
       - priority:high
-    acceptance_criteria:
+    acceptance:
       - Time-window commit scan across configured repos.
       - Webhooks: push/PR created/updated/fulfilled.
       - Store files_changed and authorship; idempotent upsert.
@@ -70,7 +70,7 @@ sequenced_prs:
       - mvp
       - area:core
       - priority:high
-    acceptance_criteria:
+    acceptance:
       - Link rules: message > branch > PR title.
       - Gaps endpoints: stories-without-commits, commits-without-story.
       - Persist run metadata (args, git_sha, generated_at).
@@ -85,7 +85,7 @@ sequenced_prs:
       - mvp
       - area:analysis
       - priority:high
-    acceptance_criteria:
+    acceptance:
       - risk.yaml with critical_paths + label_weights.
       - Score per story/module with reasons; top N endpoint.
       - UI list with reason tooltips; JSON export section.
@@ -100,7 +100,7 @@ sequenced_prs:
       - mvp
       - area:artifacts
       - priority:high
-    acceptance_criteria:
+    acceptance:
       - Release Notes grouped by type; links to issues.
       - Validation Doc uses Deployment Notes field (configurable ID).
       - JSON/Excel include run_id, git_sha, generated_at.
@@ -115,7 +115,7 @@ sequenced_prs:
       - mvp
       - area:agents
       - priority:medium
-    acceptance_criteria:
+    acceptance:
       - requirements-agents.txt; src/agents/langgraph/ with AuditAgentGraph.
       - Wrap deterministic nodes; add LLM summary/risk narrative node.
       - Phoenix-stamped JSON in artifacts/orchestrator/.
@@ -131,7 +131,7 @@ sequenced_prs:
       - mvp
       - area:resilience
       - priority:medium
-    acceptance_criteria:
+    acceptance:
       - On JQL failure (after retries), prompt for CSV path and continue.
       - Clear CLI messaging; graceful errors for bad paths/CSV.
       - Tests for success/failure paths.
@@ -145,7 +145,7 @@ sequenced_prs:
       - mvp
       - area:quality
       - priority:high
-    acceptance_criteria:
+    acceptance:
       - Clients covered for pagination, errors, retries (no network).
       - E2E audit using cached fixtures verifies schema + content.
       - Contract tests guard JSON/Excel schema (jsonschema + column checks).
@@ -159,7 +159,7 @@ sequenced_prs:
       - mvp
       - area:ci
       - priority:medium
-    acceptance_criteria:
+    acceptance:
       - pytest-cov ≥70% on touched code; build fails otherwise.
       - PR comment posts coverage summary.
     notes: []
@@ -172,7 +172,7 @@ sequenced_prs:
       - mvp
       - area:docs
       - priority:medium
-    acceptance_criteria:
+    acceptance:
       - Template enforces Decision/Note/Action markers.
       - Notes quality bar, ≥70% coverage, ruff/black/mypy gates.
       - Docs page explains orchestrator plan/dispatch and Phoenix TZ.
@@ -186,7 +186,7 @@ sequenced_prs:
       - mvp
       - area:dx
       - priority:medium
-    acceptance_criteria:
+    acceptance:
       - .pre-commit-config.yaml lands; README has install steps.
       - pre-commit run --all-files passes in CI.
     notes: []

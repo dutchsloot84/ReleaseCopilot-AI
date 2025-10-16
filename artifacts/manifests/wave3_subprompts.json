@@ -4,35 +4,212 @@
   "items": [
     {
       "acceptance": [
-        "Document the generator workflow for contributors in README.md.",
-        "Update CHANGELOG and PR template markers for Decision/Note/Action.",
-        "Add pytest coverage for archiving, manifests, and idempotency."
+        "requirements-agents.txt; src/agents/langgraph/ with AuditAgentGraph.",
+        "Wrap deterministic nodes; add LLM summary/risk narrative node.",
+        "Phoenix-stamped JSON in artifacts/orchestrator/.",
+        "Orchestrator dispatch supports \u2018langgraph-runner\u2019; UI shows narrative."
       ],
-      "issue_path": "artifacts/issues/wave3/wave-3-onboarding-and-validation.md",
+      "issue_path": "artifacts/issues/wave3/agents-optional-langgraph-minimal-path.md",
       "labels": [
         "wave:wave3",
-        "documentation",
-        "testing"
+        "mvp",
+        "area:agents",
+        "priority:medium"
       ],
-      "slug": "wave-3-onboarding-and-validation",
-      "subprompt_path": "docs/sub-prompts/wave3/wave-3-onboarding-and-validation.md",
-      "title": "Wave 3 \u2013 onboarding and validation"
+      "slug": "agents-optional-langgraph-minimal-path",
+      "subprompt_path": "docs/sub-prompts/wave3/agents-optional-langgraph-minimal-path.md",
+      "title": "Agents (Optional): LangGraph minimal path"
     },
     {
       "acceptance": [
-        "Generate the MOP, sub-prompts, issue bodies, and manifest from this spec.",
-        "Archive the previous wave MOP exactly once per day when present.",
-        "Provide a Make/CI/pre-commit guard that detects drift."
+        "Release Notes grouped by type; links to issues.",
+        "Validation Doc uses Deployment Notes field (configurable ID).",
+        "JSON/Excel include run_id, git_sha, generated_at.",
+        "UI download buttons wired."
       ],
-      "issue_path": "artifacts/issues/wave3/wave-3-yaml-driven-generator-rollout.md",
+      "issue_path": "artifacts/issues/wave3/artifacts-release-notes-validation-doc-exports.md",
       "labels": [
         "wave:wave3",
-        "automation",
-        "promptops"
+        "mvp",
+        "area:artifacts",
+        "priority:high"
       ],
-      "slug": "wave-3-yaml-driven-generator-rollout",
-      "subprompt_path": "docs/sub-prompts/wave3/wave-3-yaml-driven-generator-rollout.md",
-      "title": "Wave 3 \u2013 YAML-driven generator rollout"
+      "slug": "artifacts-release-notes-validation-doc-exports",
+      "subprompt_path": "docs/sub-prompts/wave3/artifacts-release-notes-validation-doc-exports.md",
+      "title": "Artifacts: Release Notes + Validation Doc + Exports"
+    },
+    {
+      "acceptance": [
+        "Time-window commit scan across configured repos.",
+        "Webhooks: push/PR created/updated/fulfilled.",
+        "Store files_changed and authorship; idempotent upsert.",
+        "Key extraction from message/branch/PR title."
+      ],
+      "issue_path": "artifacts/issues/wave3/bitbucket-ingest-scan-webhooks.md",
+      "labels": [
+        "wave:wave3",
+        "mvp",
+        "area:ingest",
+        "priority:high"
+      ],
+      "slug": "bitbucket-ingest-scan-webhooks",
+      "subprompt_path": "docs/sub-prompts/wave3/bitbucket-ingest-scan-webhooks.md",
+      "title": "Bitbucket Ingest (scan + webhooks)"
+    },
+    {
+      "acceptance": [
+        "pytest-cov \u226570% on touched code; build fails otherwise.",
+        "PR comment posts coverage summary."
+      ],
+      "issue_path": "artifacts/issues/wave3/ci-coverage-gate-pr-summary-comment.md",
+      "labels": [
+        "wave:wave3",
+        "mvp",
+        "area:ci",
+        "priority:medium"
+      ],
+      "slug": "ci-coverage-gate-pr-summary-comment",
+      "subprompt_path": "docs/sub-prompts/wave3/ci-coverage-gate-pr-summary-comment.md",
+      "title": "[CI] Coverage Gate + PR Summary Comment"
+    },
+    {
+      "acceptance": [
+        "Link rules: message > branch > PR title.",
+        "Gaps endpoints: stories-without-commits, commits-without-story.",
+        "Persist run metadata (args, git_sha, generated_at).",
+        "Unit tests for edge cases/collisions."
+      ],
+      "issue_path": "artifacts/issues/wave3/correlation-gaps-engine.md",
+      "labels": [
+        "wave:wave3",
+        "mvp",
+        "area:core",
+        "priority:high"
+      ],
+      "slug": "correlation-gaps-engine",
+      "subprompt_path": "docs/sub-prompts/wave3/correlation-gaps-engine.md",
+      "title": "Correlation & Gaps Engine"
+    },
+    {
+      "acceptance": [
+        "On JQL failure (after retries), prompt for CSV path and continue.",
+        "Clear CLI messaging; graceful errors for bad paths/CSV.",
+        "Tests for success/failure paths."
+      ],
+      "issue_path": "artifacts/issues/wave3/csv-fallback-for-failed-jira-jql.md",
+      "labels": [
+        "wave:wave3",
+        "mvp",
+        "area:resilience",
+        "priority:medium"
+      ],
+      "slug": "csv-fallback-for-failed-jira-jql",
+      "subprompt_path": "docs/sub-prompts/wave3/csv-fallback-for-failed-jira-jql.md",
+      "title": "CSV Fallback for Failed Jira JQL"
+    },
+    {
+      "acceptance": [
+        "HMAC/signature validation; normalized payload schema.",
+        "Idempotent upsert; structured logs; retries/backoff.",
+        "Recompute correlation for touched issues.",
+        "Docs: setup, troubleshooting, Phoenix timestamps."
+      ],
+      "issue_path": "artifacts/issues/wave3/jira-webhook-based-sync-prod-grade.md",
+      "labels": [
+        "wave:wave3",
+        "mvp",
+        "area:ingest",
+        "priority:high"
+      ],
+      "slug": "jira-webhook-based-sync-prod-grade",
+      "subprompt_path": "docs/sub-prompts/wave3/jira-webhook-based-sync-prod-grade.md",
+      "title": "Jira Webhook-based Sync (Prod-grade)"
+    },
+    {
+      "acceptance": [
+        "Template enforces Decision/Note/Action markers.",
+        "Notes quality bar, \u226570% coverage, ruff/black/mypy gates.",
+        "Docs page explains orchestrator plan/dispatch and Phoenix TZ."
+      ],
+      "issue_path": "artifacts/issues/wave3/pr-template-orchestration-docs-slash-commands-phoenix-tz.md",
+      "labels": [
+        "wave:wave3",
+        "mvp",
+        "area:docs",
+        "priority:medium"
+      ],
+      "slug": "pr-template-orchestration-docs-slash-commands-phoenix-tz",
+      "subprompt_path": "docs/sub-prompts/wave3/pr-template-orchestration-docs-slash-commands-phoenix-tz.md",
+      "title": "PR Template + Orchestration Docs (slash-commands, Phoenix TZ)"
+    },
+    {
+      "acceptance": [
+        ".pre-commit-config.yaml lands; README has install steps.",
+        "pre-commit run --all-files passes in CI."
+      ],
+      "issue_path": "artifacts/issues/wave3/pre-commit-ruff-black-mypy.md",
+      "labels": [
+        "wave:wave3",
+        "mvp",
+        "area:dx",
+        "priority:medium"
+      ],
+      "slug": "pre-commit-ruff-black-mypy",
+      "subprompt_path": "docs/sub-prompts/wave3/pre-commit-ruff-black-mypy.md",
+      "title": "[Pre-commit] ruff, black, mypy"
+    },
+    {
+      "acceptance": [
+        "risk.yaml with critical_paths + label_weights.",
+        "Score per story/module with reasons; top N endpoint.",
+        "UI list with reason tooltips; JSON export section.",
+        "Artifacts: Release Notes + Validation Doc + Exports."
+      ],
+      "issue_path": "artifacts/issues/wave3/qa-focus-regression-heuristics-yaml-driven.md",
+      "labels": [
+        "wave:wave3",
+        "mvp",
+        "area:analysis",
+        "priority:high"
+      ],
+      "slug": "qa-focus-regression-heuristics-yaml-driven",
+      "subprompt_path": "docs/sub-prompts/wave3/qa-focus-regression-heuristics-yaml-driven.md",
+      "title": "QA Focus & Regression Heuristics (YAML-driven)"
+    },
+    {
+      "acceptance": [
+        "Tabs: Audit, Gaps, QA Focus, Artifacts.",
+        "Header shows Nov \u201925 stats (stories, commits, linked %, gaps).",
+        "Actions: Re-sync Jira, Re-scan Repos, Recompute Correlation.",
+        "Download buttons: Release Notes, Validation Doc, JSON, Excel."
+      ],
+      "issue_path": "artifacts/issues/wave3/streamlit-mvp-dashboard-v1-nov-25-lane.md",
+      "labels": [
+        "wave:wave3",
+        "mvp",
+        "area:UI",
+        "priority:high"
+      ],
+      "slug": "streamlit-mvp-dashboard-v1-nov-25-lane",
+      "subprompt_path": "docs/sub-prompts/wave3/streamlit-mvp-dashboard-v1-nov-25-lane.md",
+      "title": "Streamlit MVP Dashboard v1 (Nov \u201925 lane)"
+    },
+    {
+      "acceptance": [
+        "Clients covered for pagination, errors, retries (no network).",
+        "E2E audit using cached fixtures verifies schema + content.",
+        "Contract tests guard JSON/Excel schema (jsonschema + column checks)."
+      ],
+      "issue_path": "artifacts/issues/wave3/tests-mocked-jira-bitbucket-e2e-with-cached-payloads.md",
+      "labels": [
+        "wave:wave3",
+        "mvp",
+        "area:quality",
+        "priority:high"
+      ],
+      "slug": "tests-mocked-jira-bitbucket-e2e-with-cached-payloads",
+      "subprompt_path": "docs/sub-prompts/wave3/tests-mocked-jira-bitbucket-e2e-with-cached-payloads.md",
+      "title": "[Tests] Mocked Jira/Bitbucket + E2E with cached payloads"
     }
   ],
   "schema_version": "1.0",
