@@ -96,6 +96,22 @@ Run all hooks once to ensure your workspace matches the CI configuration and tha
 pre-commit run --all-files
 ```
 
+Quick spot checks without the hook wrapper mirror the CI workflow:
+
+```bash
+ruff check . && \
+black --check . && \
+mypy --config-file mypy.ini -p releasecopilot && \
+pytest --cov=src --cov-report=term
+```
+
+### Import hygiene & test isolation
+
+- `tests/conftest.py` seeds a `config.settings` stub with the Phoenix timezone and disables network access by patching `socket.socket` and `socket.create_connection` for the entire session.
+- Individual tests must not manipulate `sys.path`, inject modules into `sys.modules`, or import `releasecopilot_bootstrap`; rely on standard imports at the top of the file.
+- Any test that needs custom configuration should patch helpers on the imported module (for example `main.load_settings`) rather than performing ad-hoc bootstrapping.
+- Attempts to open outbound sockets raise a `RuntimeError` so network regressions fail fast both locally and in CI.
+
 The pre-commit hooks run `ruff --fix`, `black`, and `mypy` locally, catching formatting drifts before CI. Wave 3 automation expects hook output timestamps in America/Phoenix (no DST), matching the Mission Outline Plan.
 
 ## Contributing & Quality Gates

@@ -12,7 +12,6 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any, Iterable
 
-
 _CONFIG_LOCK = threading.Lock()
 _CONFIGURED = False
 _CORRELATION_ID = os.getenv("RC_CORR_ID") or str(uuid.uuid4())
@@ -149,9 +148,7 @@ def configure_logging(level_override: str | None = None) -> None:
             use_json = os.getenv("RC_LOG_JSON", "false").lower() == "true"
             handler.addFilter(_CorrelationIdFilter())
             handler.addFilter(_RedactionFilter())
-            handler.setFormatter(
-                _JsonFormatter() if use_json else _StructuredFormatter()
-            )
+            handler.setFormatter(_JsonFormatter() if use_json else _StructuredFormatter())
             root.handlers = [handler]
             root.propagate = False
             _CONFIGURED = True

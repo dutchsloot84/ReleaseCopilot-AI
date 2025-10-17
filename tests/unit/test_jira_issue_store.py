@@ -13,9 +13,7 @@ class FakeTable:
         self.pages = list(pages)
         self.calls: List[Dict[str, Any]] = []
 
-    def query(
-        self, **kwargs: Any
-    ) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
+    def query(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
         self.calls.append(kwargs)
         if not self.pages:
             return {"Items": []}
@@ -88,9 +86,7 @@ def test_fetch_issues_retries_on_throttle(monkeypatch: pytest.MonkeyPatch) -> No
             super().__init__([{"Items": []}])
             self.failures = 0
 
-        def query(
-            self, **kwargs: Any
-        ) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
+        def query(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
             self.calls.append(kwargs)
             if self.failures < 2:
                 self.failures += 1
@@ -119,9 +115,7 @@ def test_fetch_issues_raises_on_non_retryable_error(
     )
 
     class BrokenTable(FakeTable):
-        def query(
-            self, **kwargs: Any
-        ) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
+        def query(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised in tests
             self.calls.append(kwargs)
             raise error
 

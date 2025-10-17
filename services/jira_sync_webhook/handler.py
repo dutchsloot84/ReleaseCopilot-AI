@@ -12,8 +12,8 @@ from typing import Any, Dict, Optional
 import boto3
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
-from releasecopilot.logging_config import configure_logging, get_logger
 
+from releasecopilot.logging_config import configure_logging, get_logger
 
 configure_logging()
 LOGGER = get_logger(__name__)
@@ -68,9 +68,7 @@ def handler(
 
     event_type = payload.get("webhookEvent")
     if event_type not in ALLOWED_EVENTS:
-        LOGGER.info(
-            "Ignoring unsupported webhook event", extra={"event_type": event_type}
-        )
+        LOGGER.info("Ignoring unsupported webhook event", extra={"event_type": event_type})
         return _response(202, {"ignored": True})
 
     if event_type == "jira:issue_deleted":
@@ -150,18 +148,14 @@ def _handle_upsert(payload: Dict[str, Any]) -> Dict[str, Any]:
     issue = payload.get("issue") or {}
     issue_key = issue.get("key") or issue.get("id")
     if not issue_key:
-        LOGGER.error(
-            "Webhook payload missing issue identifier", extra={"payload": payload}
-        )
+        LOGGER.error("Webhook payload missing issue identifier", extra={"payload": payload})
         return {"success": False, "status": 400, "message": "Missing issue identifier"}
 
     issue_id = str(issue.get("id") or issue_key)
     issue_fields = issue.get("fields") or {}
     updated_at = (
         _normalize_timestamp(
-            issue_fields.get("updated")
-            or issue_fields.get("created")
-            or payload.get("timestamp")
+            issue_fields.get("updated") or issue_fields.get("created") or payload.get("timestamp")
         )
         or _now_iso()
     )
@@ -231,9 +225,7 @@ def _handle_delete(payload: Dict[str, Any]) -> Dict[str, Any]:
         )
         return {"success": False, "status": 500, "message": "Failed to delete issue"}
 
-    LOGGER.info(
-        "Deleted Jira issue", extra={"issue_key": issue_key, "tombstoned": tombstoned}
-    )
+    LOGGER.info("Deleted Jira issue", extra={"issue_key": issue_key, "tombstoned": tombstoned})
     return {"success": True, "issue_key": issue_key, "deleted": True}
 
 
@@ -314,9 +306,7 @@ def _fetch_latest_issue_item(issue_key: str) -> Optional[Dict[str, Any]]:
     return items[0]
 
 
-def _compute_idempotency_key(
-    payload: Dict[str, Any], issue_key: str, updated_at: str
-) -> str:
+def _compute_idempotency_key(payload: Dict[str, Any], issue_key: str, updated_at: str) -> str:
     for key in ("deliveryId", "delivery_id", "eventId", "event_id"):
         value = payload.get(key)
         if value:
@@ -364,9 +354,7 @@ def _normalize_timestamp(raw: Any) -> Optional[str]:
         return None
     if isinstance(raw, (int, float)):
         return (
-            datetime.fromtimestamp(raw / 1000.0, tz=timezone.utc)
-            .isoformat()
-            .replace("+00:00", "Z")
+            datetime.fromtimestamp(raw / 1000.0, tz=timezone.utc).isoformat().replace("+00:00", "Z")
         )
     text = str(raw)
     for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z"):
@@ -379,12 +367,7 @@ def _normalize_timestamp(raw: Any) -> Optional[str]:
 
 
 def _now_iso() -> str:
-    return (
-        datetime.utcnow()
-        .replace(tzinfo=timezone.utc)
-        .isoformat()
-        .replace("+00:00", "Z")
-    )
+    return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:

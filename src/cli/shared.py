@@ -32,31 +32,19 @@ def build_parser() -> argparse.ArgumentParser:
     """Return the canonical argument parser for ReleaseCopilot CLI entry points."""
 
     parser = argparse.ArgumentParser(description="ReleaseCopilot audit runner")
-    parser.add_argument(
-        "--fix-version", required=True, help="Jira fix version to audit"
-    )
-    parser.add_argument(
-        "--repos", nargs="*", default=[], help="Bitbucket repositories to inspect"
-    )
+    parser.add_argument("--fix-version", required=True, help="Jira fix version to audit")
+    parser.add_argument("--repos", nargs="*", default=[], help="Bitbucket repositories to inspect")
     parser.add_argument("--branches", nargs="*", help="Optional branches to include")
-    parser.add_argument(
-        "--develop-only", action="store_true", help="Use the develop branch only"
-    )
+    parser.add_argument("--develop-only", action="store_true", help="Use the develop branch only")
     parser.add_argument("--freeze-date", help="ISO freeze date override")
-    parser.add_argument(
-        "--window-days", type=int, default=28, help="Lookback window in days"
-    )
-    parser.add_argument(
-        "--use-cache", action="store_true", help="Reuse cached payloads"
-    )
+    parser.add_argument("--window-days", type=int, default=28, help="Lookback window in days")
+    parser.add_argument("--use-cache", action="store_true", help="Reuse cached payloads")
     parser.add_argument("--s3-bucket", help="Override destination S3 bucket")
     parser.add_argument("--s3-prefix", help="Override destination S3 prefix")
     parser.add_argument(
         "--output-prefix", default="audit_results", help="Basename for generated files"
     )
-    parser.add_argument(
-        "--output", help="Optional directory to copy generated artifacts into"
-    )
+    parser.add_argument("--output", help="Optional directory to copy generated artifacts into")
     parser.add_argument(
         "--format",
         choices=["json", "excel", "both"],
@@ -94,9 +82,7 @@ def parse_args(
     return args, config
 
 
-def _select_artifacts(
-    artifacts: Mapping[str, str], format_preference: str
-) -> dict[str, str]:
+def _select_artifacts(artifacts: Mapping[str, str], format_preference: str) -> dict[str, str]:
     """Filter artifacts according to the requested ``--format`` value."""
 
     if format_preference == "both":

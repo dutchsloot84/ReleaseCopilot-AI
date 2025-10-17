@@ -1,44 +1,17 @@
 from __future__ import annotations
 
 import importlib
-import importlib.util
 import json
-import sys
 from pathlib import Path
 
 import pytest
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-
 @pytest.fixture()
-def main_module(monkeypatch: pytest.MonkeyPatch):
-    root = PROJECT_ROOT
-    root_str = str(root)
-    if root_str in sys.path:
-        sys.path.remove(root_str)
-    sys.path.insert(0, root_str)
+def main_module():
+    import main
 
-    src_path = root / "src"
-    src_str = str(src_path)
-    if src_str in sys.path:
-        sys.path.remove(src_str)
-    sys.path.insert(1, src_str)
-
-    for name in ("config", "config.settings", "main"):
-        monkeypatch.delitem(sys.modules, name, raising=False)
-
-    config_module = importlib.import_module("config.settings")
-    sys.modules["config.settings"] = config_module
-
-    spec = importlib.util.spec_from_file_location("main", root / "main.py")
-    if spec is None or spec.loader is None:  # pragma: no cover - defensive guard
-        raise RuntimeError("Unable to load main module")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["main"] = module
-    spec.loader.exec_module(module)
-    return module
+    return importlib.reload(main)
 
 
 @pytest.fixture()
@@ -85,23 +58,17 @@ def test_entrypoints_produce_matching_outputs(
     monkeypatch.setattr(cli_module, "run_audit", stub_run_audit)
 
     root_output = tmp_path / "root"
-    exit_code_root = main_module.main(
-        ["--fix-version", "1.2.3", "--output", str(root_output)]
-    )
+    exit_code_root = main_module.main(["--fix-version", "1.2.3", "--output", str(root_output)])
     captured_root = capsys.readouterr()
 
     cli_output = tmp_path / "cli"
-    exit_code_cli = cli_module.main(
-        ["--fix-version", "1.2.3", "--output", str(cli_output)]
-    )
+    exit_code_cli = cli_module.main(["--fix-version", "1.2.3", "--output", str(cli_output)])
     captured_cli = capsys.readouterr()
 
     assert exit_code_root == exit_code_cli == 0
     assert captured_root.out == captured_cli.out
 
-    summary_root = json.loads(
-        (root_output / "summary.json").read_text(encoding="utf-8")
-    )
+    summary_root = json.loads((root_output / "summary.json").read_text(encoding="utf-8"))
     summary_cli = json.loads((cli_output / "summary.json").read_text(encoding="utf-8"))
     assert summary_root == summary_cli == summary_payload
 

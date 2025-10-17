@@ -208,8 +208,6 @@ def build_config(cli_args: argparse.Namespace) -> dict:
     required_fields = ("fix_version", "jira_base", "bitbucket_base")
     missing = [field for field in required_fields if not merged.get(field)]
     if missing:
-        raise ConfigError(
-            "Missing required configuration values: " + ", ".join(sorted(missing))
-        )
+        raise ConfigError("Missing required configuration values: " + ", ".join(sorted(missing)))
 
     return merged

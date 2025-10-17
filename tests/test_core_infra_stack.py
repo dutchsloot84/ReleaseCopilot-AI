@@ -7,7 +7,6 @@ from aws_cdk.assertions import Match, Template
 
 from infra.cdk.core_stack import CoreStack
 
-
 ACCOUNT = "123456789012"
 REGION = "us-west-2"
 ASSET_DIR = str(Path(__file__).resolve().parents[1] / "dist")
@@ -167,9 +166,7 @@ def test_eventbridge_rule_targets_lambda_when_enabled() -> None:
             "JiraReconciliationLambda"
         )
     )
-    assert (
-        reconciliation_rule["Properties"]["ScheduleExpression"] == "cron(15 7 * * ? *)"
-    )
+    assert reconciliation_rule["Properties"]["ScheduleExpression"] == "cron(15 7 * * ? *)"
 
 
 def test_eventbridge_rule_not_created_when_disabled() -> None:

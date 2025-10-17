@@ -14,17 +14,15 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
 import click
+import yaml
 from jinja2 import Environment, FileSystemLoader
 from slugify import slugify
-import yaml
 
 from tools.generator.generator import TimezoneLabel, format_timezone_label
 
 try:
     from releasecopilot.logging_config import get_logger
-except (
-    ModuleNotFoundError
-):  # pragma: no cover - runtime fallback for python -m execution
+except ModuleNotFoundError:  # pragma: no cover - runtime fallback for python -m execution
     sys.path.append(str(Path(__file__).resolve().parents[2] / "src"))
     from releasecopilot.logging_config import get_logger
 
@@ -64,12 +62,9 @@ class Wave2HelperConfig:
                 for key, value in (payload.get("label_weights") or {}).items()
             },
             maintainers=list(payload.get("maintainers", [])),
-            target_labels=[
-                (label or "").lower() for label in payload.get("target_labels", [])
-            ],
+            target_labels=[(label or "").lower() for label in payload.get("target_labels", [])],
             artifact_dirs={
-                key: str(value)
-                for key, value in (payload.get("artifact_dirs") or {}).items()
+                key: str(value) for key, value in (payload.get("artifact_dirs") or {}).items()
             },
             mop_constraints=dict(payload.get("mop_constraints", {})),
         )
@@ -333,9 +328,7 @@ class Wave2Helper:
             lines.append(f"- Aligns with #{primary.number} – {primary.title}.")
         else:
             lines.append("- Backlog automation support tasks.")
-        lines.append(
-            "- Ensures Phoenix-local scheduling context and deterministic artifacts."
-        )
+        lines.append("- Ensures Phoenix-local scheduling context and deterministic artifacts.")
         lines.append("")
         lines.append("## Testing")
         lines.append("- [ ] `pytest tests/github/test_wave2_helper.py` (offline)")
@@ -443,9 +436,7 @@ def load_spec(path: Path | str) -> dict[str, Any]:
         result: list[str] = []
         for entry in values:
             if isinstance(entry, dict):
-                result.append(
-                    ", ".join(f"{key}: {value}" for key, value in entry.items())
-                )
+                result.append(", ".join(f"{key}: {value}" for key, value in entry.items()))
             else:
                 result.append(str(entry))
         return result
@@ -589,9 +580,7 @@ def render_subprompts_and_issues(
     return items
 
 
-def write_manifest(
-    wave: int, items: list[dict[str, Any]], generated_at: str | None = None
-) -> Path:
+def write_manifest(wave: int, items: list[dict[str, Any]], generated_at: str | None = None) -> Path:
     """Write the manifest describing generated sub-prompts."""
 
     manifest_path = Path("artifacts/manifests") / f"wave{wave}_subprompts.json"

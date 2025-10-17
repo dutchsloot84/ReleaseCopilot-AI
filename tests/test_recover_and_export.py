@@ -10,7 +10,6 @@ import pandas as pd
 import pandas.testing as pdt
 import pytest
 
-
 FIXTURE_DIR = Path("tests/fixtures/temp_data")
 GOLDEN_DIR = Path("tests/fixtures/golden")
 EXPECTED_WORKBOOK = GOLDEN_DIR / "audit_results_workbook.json"

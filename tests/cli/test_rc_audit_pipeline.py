@@ -64,15 +64,11 @@ def test_run_audit_generates_expected_artifacts(defaults, fixtures_dir):
 
     golden_dir = Path(__file__).resolve().parents[1] / "fixtures" / "golden"
     generated_payload = json.loads(json_path.read_text(encoding="utf-8"))
-    golden_payload = json.loads(
-        (golden_dir / "audit_results.json").read_text(encoding="utf-8")
-    )
+    golden_payload = json.loads((golden_dir / "audit_results.json").read_text(encoding="utf-8"))
     assert generated_payload == golden_payload
 
     generated_summary = json.loads(summary_path.read_text(encoding="utf-8"))
-    golden_summary = json.loads(
-        (golden_dir / "summary.json").read_text(encoding="utf-8")
-    )
+    golden_summary = json.loads((golden_dir / "summary.json").read_text(encoding="utf-8"))
     assert generated_summary == golden_summary
 
     assert result.uploaded is False

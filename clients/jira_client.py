@@ -74,9 +74,7 @@ class JiraClient(BaseAPIClient):
             context = {
                 "service": "jira",
                 "operation": "refresh_token",
-                "status_code": getattr(
-                    getattr(exc, "response", None), "status_code", None
-                ),
+                "status_code": getattr(getattr(exc, "response", None), "status_code", None),
             }
             logger.error("Failed to refresh Jira OAuth token", extra=context)
             raise JiraTokenRefreshError(
@@ -151,9 +149,7 @@ class JiraClient(BaseAPIClient):
                 )
                 response.raise_for_status()
             except requests.RequestException as exc:
-                status_code = getattr(
-                    getattr(exc, "response", None), "status_code", None
-                )
+                status_code = getattr(getattr(exc, "response", None), "status_code", None)
                 snippet = None
                 if getattr(exc, "response", None) is not None:
                     snippet = exc.response.text[:200]
@@ -166,16 +162,12 @@ class JiraClient(BaseAPIClient):
                     "snippet": snippet,
                 }
                 logger.error("Jira search failed", extra=context)
-                raise JiraQueryError(
-                    "Failed to fetch Jira issues", context=context
-                ) from exc
+                raise JiraQueryError("Failed to fetch Jira issues", context=context) from exc
             payload = response.json()
 
             batch = payload.get("issues", [])
             issues.extend(batch)
-            if len(batch) == 0 or start_at + params["maxResults"] >= payload.get(
-                "total", 0
-            ):
+            if len(batch) == 0 or start_at + params["maxResults"] >= payload.get("total", 0):
                 break
             start_at += params["maxResults"]
 
@@ -188,9 +180,7 @@ class JiraClient(BaseAPIClient):
         return issues, cache_path
 
 
-def compute_fix_version_window(
-    freeze_date: datetime, window_days: int
-) -> Dict[str, datetime]:
+def compute_fix_version_window(freeze_date: datetime, window_days: int) -> Dict[str, datetime]:
     """Helper used by downstream processing to expose the audit window."""
     return {
         "start": freeze_date - timedelta(days=window_days),

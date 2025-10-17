@@ -15,7 +15,6 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
-
 PHOENIX_TZ = ZoneInfo("America/Phoenix")
 COMMENT_MARKER = "<!-- actions-comment -->"
 COMMENT_TITLE = "⚠️ Outstanding Human Actions"
@@ -81,9 +80,7 @@ def extract_pr_number(event: dict) -> int:
         raise ValueError("Pull request number missing from event payload") from exc
 
 
-def filter_actions(
-    actions: Iterable[PendingAction], pr_number: int
-) -> List[PendingAction]:
+def filter_actions(actions: Iterable[PendingAction], pr_number: int) -> List[PendingAction]:
     needle = f"#{pr_number}"
     return [action for action in actions if action.pr == needle]
 
@@ -119,9 +116,7 @@ def build_comment(
     return body
 
 
-def github_request(
-    method: str, url: str, token: str, data: Optional[dict] = None
-) -> dict:
+def github_request(method: str, url: str, token: str, data: Optional[dict] = None) -> dict:
     payload: Optional[bytes] = None
     if data is not None:
         payload = json.dumps(data).encode("utf-8")
@@ -163,9 +158,7 @@ def sync_comment(token: str, repo: str, pr_number: int, body: str) -> None:
         github_request("POST", comments_url, token, {"body": body})
 
 
-def sync_labels(
-    token: str, repo: str, pr_number: int, actions: Iterable[PendingAction]
-) -> None:
+def sync_labels(token: str, repo: str, pr_number: int, actions: Iterable[PendingAction]) -> None:
     labels: List[str] = []
     for item in actions:
         for label in item.labels:
@@ -228,9 +221,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "git_sha": git_sha,
         "actions_path": str(args.actions_path),
         "pr_number": pr_number,
-        "applied_labels": sorted(
-            {label for action in pr_actions for label in action.labels}
-        ),
+        "applied_labels": sorted({label for action in pr_actions for label in action.labels}),
         "cli_args": sys.argv[1:],
     }
     print(json.dumps(metadata, indent=2))

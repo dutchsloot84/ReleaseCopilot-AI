@@ -57,12 +57,8 @@ def test_diff_runs_returns_sorted_changes() -> None:
 
     assert diff["stories_added"] == ["STORY-3"]
     assert diff["stories_removed"] == ["STORY-2"]
-    assert diff["status_changes"] == [
-        {"key": "STORY-1", "from": "In Progress", "to": "Done"}
-    ]
-    assert diff["assignee_changes"] == [
-        {"key": "STORY-1", "from": "Alice", "to": "Charlie"}
-    ]
+    assert diff["status_changes"] == [{"key": "STORY-1", "from": "In Progress", "to": "Done"}]
+    assert diff["assignee_changes"] == [{"key": "STORY-1", "from": "Alice", "to": "Charlie"}]
     assert diff["commits_added"] == [
         {"key": "STORY-1", "commit_ids": ["b2"]},
         {"key": "STORY-3", "commit_ids": ["c3"]},

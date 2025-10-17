@@ -14,7 +14,7 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Set
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 import requests
 import yaml
@@ -109,9 +109,7 @@ class GithubClient:
         LOGGER.debug("%s %s params=%s", method, url, kwargs.get("params"))
         response = self.session.request(method, url, timeout=30, **kwargs)
         if response.status_code >= 400:
-            raise RuntimeError(
-                f"GitHub API error {response.status_code}: {response.text}"
-            )
+            raise RuntimeError(f"GitHub API error {response.status_code}: {response.text}")
         return response
 
     def paginate(
@@ -191,9 +189,7 @@ class GithubClient:
             results.append(issue)
         return results
 
-    def list_merged_prs(
-        self, since: dt.datetime, until: dt.datetime
-    ) -> List[PullRequest]:
+    def list_merged_prs(self, since: dt.datetime, until: dt.datetime) -> List[PullRequest]:
         params = {
             "state": "closed",
             "per_page": 100,
@@ -250,9 +246,7 @@ class GithubClient:
         )
 
     def list_run_artifacts(self, run_id: int) -> List[dict]:
-        response = self._request(
-            "GET", f"{self.base_url}/actions/runs/{run_id}/artifacts"
-        )
+        response = self._request("GET", f"{self.base_url}/actions/runs/{run_id}/artifacts")
         data = response.json()
         return data.get("artifacts", [])
 
@@ -320,9 +314,7 @@ def _validate_window(since: dt.datetime, until: dt.datetime) -> None:
 def _parse_github_datetime(value: Optional[str]) -> Optional[dt.datetime]:
     if not value:
         return None
-    return dt.datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(
-        dt.timezone.utc
-    )
+    return dt.datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(dt.timezone.utc)
 
 
 def _determine_repo(arg_repo: Optional[str]) -> str:
@@ -352,19 +344,13 @@ def _determine_repo(arg_repo: Optional[str]) -> str:
             parts = output.split("github.com/")
             if len(parts) == 2:
                 return parts[1]
-    raise ValueError(
-        "Unable to determine repository. Pass --repo or set GITHUB_REPOSITORY."
-    )
+    raise ValueError("Unable to determine repository. Pass --repo or set GITHUB_REPOSITORY.")
 
 
-def _load_historian_config(
-    config_path: Optional[Path], root: Path
-) -> Dict[str, object]:
+def _load_historian_config(config_path: Optional[Path], root: Path) -> Dict[str, object]:
     search_path = config_path or root / "config" / "defaults.yml"
     if not search_path.exists():
-        raise FileNotFoundError(
-            f"Historian configuration not found at {search_path.as_posix()}"
-        )
+        raise FileNotFoundError(f"Historian configuration not found at {search_path.as_posix()}")
     with search_path.open("r", encoding="utf-8") as handle:
         data = yaml.safe_load(handle) or {}
     return data.get("historian", {})
@@ -478,11 +464,7 @@ def _collect_project_section(
 
     issues = sorted(issue_map.values(), key=lambda item: item.number)
     entries = [_format_issue(issue, include_status=True) for issue in issues]
-    metadata = {
-        "issue_status": {
-            issue.number: issue.status or fallback_status for issue in issues
-        }
-    }
+    metadata = {"issue_status": {issue.number: issue.status or fallback_status for issue in issues}}
     return SectionResult(entries=entries, filters=filters, metadata=metadata)
 
 
@@ -549,9 +531,7 @@ def _extract_comment_markers(
         body = comment.get("body") or ""
         if not body:
             continue
-        updated = _parse_github_datetime(
-            comment.get("updated_at") or comment.get("created_at")
-        )
+        updated = _parse_github_datetime(comment.get("updated_at") or comment.get("created_at"))
         if not updated or updated > until:
             continue
         issue_url = comment.get("issue_url") or comment.get("pull_request_url")
@@ -562,9 +542,7 @@ def _extract_comment_markers(
         except ValueError:
             continue
         item_type = "pull_request" if comment.get("pull_request_url") else "issue"
-        status = status_lookup.get((item_type, number)) or status_lookup.get(
-            ("issue", number)
-        )
+        status = status_lookup.get((item_type, number)) or status_lookup.get(("issue", number))
         author = (comment.get("user") or {}).get("login")
         url = comment.get("html_url")
         comment_id = str(comment.get("id") or comment.get("node_id") or "")
@@ -694,9 +672,7 @@ def _collect_notes_section(
     mirror_config: Optional[Dict[str, object]] = None,
 ) -> SectionResult:
     notes_config = notes_config or {}
-    markers = notes_config.get(
-        "comment_markers", ["Decision:", "Note:", "Blocker:", "Action:"]
-    )
+    markers = notes_config.get("comment_markers", ["Decision:", "Note:", "Blocker:", "Action:"])
     scan_issue_comments = notes_config.get("scan_issue_comments", True)
     scan_pr_comments = notes_config.get("scan_pr_comments", True)
     annotate_group = notes_config.get("annotate_group", True)
@@ -711,8 +687,7 @@ def _collect_notes_section(
     if scan_pr_comments:
         scope_fragments.append("pull requests")
     filters.append(
-        "Scope: comment bodies for "
-        + (" & ".join(scope_fragments) if scope_fragments else "none")
+        "Scope: comment bodies for " + (" & ".join(scope_fragments) if scope_fragments else "none")
     )
     if scan_notes_files:
         filters.append(f"Mirrored notes files: {notes_glob}")
@@ -745,9 +720,7 @@ def _collect_notes_section(
     local_notes = _collect_local_notes(root, since)
     jira_notes = _collect_jira_references(root, since)
     marker_entries.sort(key=lambda item: item.updated, reverse=True)
-    formatted_markers = [
-        _format_note_entry(marker, annotate_group) for marker in marker_entries
-    ]
+    formatted_markers = [_format_note_entry(marker, annotate_group) for marker in marker_entries]
     note_entries = list(formatted_markers)
     note_entries.extend(local_notes)
     note_entries.extend(jira_notes)
@@ -774,9 +747,7 @@ def _collect_local_notes(root: Path, since: dt.datetime) -> List[str]:
     ]
     for adr_dir in adr_dirs:
         if adr_dir.exists():
-            for path in sorted(
-                adr_dir.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True
-            ):
+            for path in sorted(adr_dir.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True):
                 mtime = dt.datetime.fromtimestamp(path.stat().st_mtime, dt.timezone.utc)
                 if mtime < since:
                     continue
@@ -858,9 +829,7 @@ def _mirror_note_markers(
         if digest in digest_cache[note_path]:
             continue
         if dry_run:
-            LOGGER.debug(
-                "Dry run: would mirror note marker %s for #%s", digest, marker.number
-            )
+            LOGGER.debug("Dry run: would mirror note marker %s for #%s", digest, marker.number)
             continue
         issue_data = issue_cache.get(marker.number)
         if issue_data is None:
@@ -940,9 +909,7 @@ def _append_note_entry(
     detail = (marker.detail or marker.marker).strip()
     if len(detail) > 300:
         detail = detail[:297].rstrip() + "…"
-    comment_url = marker.url or str(
-        issue_data.get("html_url") or _default_item_url(repo, marker)
-    )
+    comment_url = marker.url or str(issue_data.get("html_url") or _default_item_url(repo, marker))
 
     entry_lines = [
         f"- {marker.marker}{status_segment} — {marker.updated.date().isoformat()} by {author}",
@@ -1073,12 +1040,9 @@ def _collect_artifacts_section(
     if gha_cfg.get("enabled"):
         workflows = gha_cfg.get("workflows", [])
         filters.append(
-            "GitHub Actions workflows: "
-            + (", ".join(workflows) if workflows else "all")
+            "GitHub Actions workflows: " + (", ".join(workflows) if workflows else "all")
         )
-        entries.extend(
-            _collect_github_actions_artifacts(client, workflows, since, until)
-        )
+        entries.extend(_collect_github_actions_artifacts(client, workflows, since, until))
     else:
         filters.append("GitHub Actions workflows: disabled")
 
@@ -1086,15 +1050,11 @@ def _collect_artifacts_section(
     bucket = s3_cfg.get("bucket")
     prefixes = s3_cfg.get("prefixes", [])
     if s3_cfg.get("enabled") and bucket and prefixes:
-        filters.append(
-            f"S3 prefixes: s3://{bucket}/" + ", s3://{bucket}/".join(prefixes)
-        )
+        filters.append(f"S3 prefixes: s3://{bucket}/" + ", s3://{bucket}/".join(prefixes))
         entries.extend(_collect_s3_artifacts(bucket, prefixes, since, until))
     elif bucket and prefixes:
         filters.append(
-            f"S3 prefixes: s3://{bucket}/"
-            + ", s3://{bucket}/".join(prefixes)
-            + " (disabled)"
+            f"S3 prefixes: s3://{bucket}/" + ", s3://{bucket}/".join(prefixes) + " (disabled)"
         )
     else:
         filters.append("S3 prefixes: disabled")
@@ -1243,9 +1203,7 @@ def render_history(args: argparse.Namespace) -> HistoryDocument:
         "date": until.date().isoformat(),
         "since": since.date().isoformat(),
         "until": until.date().isoformat(),
-        "completed": _render_section(
-            completed_result, "_No completed work in this window_"
-        ),
+        "completed": _render_section(completed_result, "_No completed work in this window_"),
         "in_progress": _render_section(
             in_progress_result,
             "_No matching in-progress issues (see filters above)_",
@@ -1257,9 +1215,7 @@ def render_history(args: argparse.Namespace) -> HistoryDocument:
             notes_result,
             "_No decision markers captured in this window_",
         ),
-        "artifacts": _render_section(
-            artifacts_result, "_No artifacts captured in this window_"
-        ),
+        "artifacts": _render_section(artifacts_result, "_No artifacts captured in this window_"),
         "completed_count": str(completed_result.count),
         "in_progress_count": str(in_progress_result.count),
         "backlog_count": str(backlog_result.count),
@@ -1286,9 +1242,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--since",
         default="7d",
-        help=(
-            "Relative format like '7d'/'24h' or ISO timestamp " "(YYYY-MM-DDTHH:MM:SSZ)"
-        ),
+        help=("Relative format like '7d'/'24h' or ISO timestamp " "(YYYY-MM-DDTHH:MM:SSZ)"),
     )
     parser.add_argument(
         "--until",
@@ -1302,9 +1256,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--repo", help="owner/name repository override")
     parser.add_argument("--token", help="GitHub API token (defaults to GITHUB_TOKEN)")
     parser.add_argument("--template", type=Path, help="Path to custom template")
-    parser.add_argument(
-        "--config", type=Path, help="Path to historian YAML configuration"
-    )
+    parser.add_argument("--config", type=Path, help="Path to historian YAML configuration")
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -1315,9 +1267,7 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Emit additional scan diagnostics and default to DEBUG logging",
     )
-    parser.add_argument(
-        "--log-level", help="Logging level (overrides --debug-scan default)"
-    )
+    parser.add_argument("--log-level", help="Logging level (overrides --debug-scan default)")
     parser.add_argument(
         "--root",
         default=".",

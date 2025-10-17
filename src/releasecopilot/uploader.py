@@ -95,9 +95,7 @@ def upload_directory(
 
     for file_path in files:
         relative_key = file_path.relative_to(base_path)
-        key = "/".join(
-            filter(None, [combined_prefix, str(relative_key).replace("\\", "/")])
-        )
+        key = "/".join(filter(None, [combined_prefix, str(relative_key).replace("\\", "/")]))
         extra_args: dict[str, Any] = {"ServerSideEncryption": "AES256"}
         if normalized_metadata:
             extra_args["Metadata"] = normalized_metadata
@@ -108,9 +106,7 @@ def upload_directory(
         try:
             client.upload_file(str(file_path), bucket, key, ExtraArgs=extra_args)
         except (BotoCoreError, ClientError):  # pragma: no cover - network failure path
-            logger.exception(
-                "Failed to upload %s to s3://%s/%s", file_path, bucket, key
-            )
+            logger.exception("Failed to upload %s to s3://%s/%s", file_path, bucket, key)
             raise
         logger.info("Uploaded %s to s3://%s/%s", file_path, bucket, key)
 

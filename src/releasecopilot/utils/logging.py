@@ -38,11 +38,7 @@ def redact(key: str | None, value: Any, *, placeholder: str = "***") -> Any:
 
     if isinstance(value, (list, tuple, set)):
         redacted_items = [
-            (
-                redact(key, item, placeholder=placeholder)
-                if isinstance(item, Mapping)
-                else item
-            )
+            (redact(key, item, placeholder=placeholder) if isinstance(item, Mapping) else item)
             for item in value
         ]
         if isinstance(value, tuple):
