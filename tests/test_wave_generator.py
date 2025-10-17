@@ -13,6 +13,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - dependency guard
         pytest.skip("jinja2 is required for generator tests", allow_module_level=True)
     raise
 
+
 def test_archive_once_per_day(generator_env: Path) -> None:
     mop_root = generator_env / "docs/mop"
     mop_root.mkdir(exist_ok=True)
