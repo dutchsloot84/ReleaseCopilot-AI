@@ -4,7 +4,9 @@
     "total_commits": 2,
     "stories_with_commits": 1,
     "stories_without_commits": 1,
-    "orphan_commits": 1
+    "orphan_commits": 1,
+    "generated_at": "2025-10-15T17:23:09-07:00",
+    "timezone": "America/Phoenix"
   },
   "stories_with_no_commits": [
     {

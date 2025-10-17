@@ -369,6 +369,9 @@ Logs are emitted in JSON-friendly format, making them CloudWatch-ready. Adjust l
 - Linting and unit tests can be wired into GitHub Actions as part of CI/CD.
 - `temp_data/` retains every raw response; purge periodically if storage becomes large.
 - Contributions should include updates to this README when adding new functionality.
+- Use cached fixtures by setting `RC_CACHED_PAYLOAD_DIR` before invoking `rc audit`.
+  The Wave 3 test prompt (`artifacts/issues/wave3/tests-mocked-jira-bitbucket-e2e-with-cached-payloads.md`)
+  documents Phoenix-aware expectations for offline runs.
 
 ## Documentation
 
