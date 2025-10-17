@@ -20,12 +20,12 @@ if "config.settings" not in sys.modules:
     sys.modules.setdefault("config", config_pkg)
     sys.modules.setdefault("config.settings", config_settings)
 
-import pytest
+import pytest  # noqa: E402
 
-import releasecopilot_bootstrap  # noqa: F401  # ensures src on sys.path
-import main as main_module
-from releasecopilot.errors import JiraJQLFailed
-from src.cli.shared import AuditConfig
+import releasecopilot_bootstrap  # noqa: F401,E402  # ensures src on sys.path
+import main as main_module  # noqa: E402
+from releasecopilot.errors import JiraJQLFailed  # noqa: E402
+from src.cli.shared import AuditConfig  # noqa: E402
 
 
 class _FailingIssueProvider:
