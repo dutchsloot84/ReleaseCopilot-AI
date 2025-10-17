@@ -21,16 +21,12 @@ class _FakeClient:
         self.response = response
         self.calls: list[str] = []
 
-    def get_secret_value(
-        self, SecretId: str
-    ) -> Dict[str, Any]:  # noqa: N803 - AWS casing
+    def get_secret_value(self, SecretId: str) -> Dict[str, Any]:  # noqa: N803 - AWS casing
         self.calls.append(SecretId)
         return dict(self.response)
 
 
-def _patch_boto3(
-    monkeypatch: pytest.MonkeyPatch, response: Dict[str, Any]
-) -> _FakeClient:
+def _patch_boto3(monkeypatch: pytest.MonkeyPatch, response: Dict[str, Any]) -> _FakeClient:
     client = _FakeClient(response)
     namespace = types.SimpleNamespace(client=lambda service: client)
     monkeypatch.setattr(secret_loader, "boto3", namespace)

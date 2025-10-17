@@ -37,7 +37,6 @@ from processors.audit_processor import AuditProcessor
 from releasecopilot import uploader
 from releasecopilot.errors import ReleaseCopilotError
 from releasecopilot.logging_config import configure_logging, get_logger
-
 from src.cli.shared import AuditConfig, finalize_run, handle_dry_run, parse_args
 from tools.generator.generator import run_cli as run_generator_cli
 
@@ -160,9 +159,7 @@ def run_audit(
         use_cache=config.use_cache,
     )
     commits_output = DATA_DIR / "bitbucket_commits.json"
-    write_json(
-        commits_output, {"repos": repos, "branches": branches, "commits": commits}
-    )
+    write_json(commits_output, {"repos": repos, "branches": branches, "commits": commits})
 
     processor = AuditProcessor(issues=issues, commits=commits)
     audit_result = processor.process()
@@ -342,13 +339,9 @@ def upload_artifacts(
     temp_dir = staging_root / "temp_data"
 
     json_reports = [path for path in reports if Path(path).suffix.lower() == ".json"]
-    excel_reports = [
-        path for path in reports if Path(path).suffix.lower() in {".xls", ".xlsx"}
-    ]
+    excel_reports = [path for path in reports if Path(path).suffix.lower() in {".xls", ".xlsx"}]
     other_reports = [
-        path
-        for path in reports
-        if Path(path).suffix.lower() not in {".json", ".xls", ".xlsx"}
+        path for path in reports if Path(path).suffix.lower() not in {".json", ".xls", ".xlsx"}
     ]
     if other_reports:
         logger.warning(
@@ -417,9 +410,7 @@ def _stage_files(target_dir: Path, sources: Iterable[Path]) -> None:
 
 def _detect_git_sha() -> Optional[str]:
     try:
-        output = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
-        )
+        output = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
     except (OSError, subprocess.CalledProcessError):
         return None
     sha = output.decode("utf-8").strip()

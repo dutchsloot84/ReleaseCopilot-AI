@@ -90,18 +90,14 @@ class DispatchEnvelope:
             raise ValueError(f"Missing field in dispatch envelope: {exc}") from exc
 
         if not isinstance(command_payload, dict) or not isinstance(plan_payload, dict):
-            raise ValueError(
-                "Envelope payload must include mapping values for command and plan"
-            )
+            raise ValueError("Envelope payload must include mapping values for command and plan")
 
         command = SlashCommand(
             raw_text=str(command_payload.get("raw_text", "")),
             command_name=str(command_payload.get("command", "")),
             helper_prompt=str(command_payload.get("helper_prompt", "")),
             issue_number=int(command_payload.get("issue_number", 0)),
-            issued_at=_parse_phoenix_timestamp(
-                command_payload.get("phoenix_timestamp")
-            ),
+            issued_at=_parse_phoenix_timestamp(command_payload.get("phoenix_timestamp")),
         )
 
         plan = DispatchPlan(

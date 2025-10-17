@@ -8,9 +8,7 @@ from pathlib import Path
 from exporters.json_exporter import JSONExporter
 
 
-def test_json_exporter_produces_expected_payload(
-    tmp_path, fixtures_dir, load_json
-) -> None:
+def test_json_exporter_produces_expected_payload(tmp_path, fixtures_dir, load_json) -> None:
     """Exported JSON should match the golden artifact byte-for-byte."""
 
     payload = {

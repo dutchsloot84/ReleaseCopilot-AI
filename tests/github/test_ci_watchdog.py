@@ -6,7 +6,6 @@ import pytest
 
 from scripts.github import ci_watchdog
 
-
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "github" / "watchdog"
 
 
@@ -68,9 +67,7 @@ def test_collect_failures_filters_and_sorts(monkeypatch):
     }
     freeze_utc_now(
         monkeypatch,
-        ci_watchdog._dt.datetime(
-            2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc
-        ),
+        ci_watchdog._dt.datetime(2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc),
     )
     mock_session(monkeypatch, mapping)
 
@@ -92,9 +89,7 @@ def test_collect_failures_skips_stale(monkeypatch):
     }
     freeze_utc_now(
         monkeypatch,
-        ci_watchdog._dt.datetime(
-            2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc
-        ),
+        ci_watchdog._dt.datetime(2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc),
     )
     mock_session(monkeypatch, mapping)
 
@@ -105,9 +100,7 @@ def test_collect_failures_skips_stale(monkeypatch):
 def test_render_report_matches_golden(monkeypatch, tmp_path):
     freeze_utc_now(
         monkeypatch,
-        ci_watchdog._dt.datetime(
-            2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc
-        ),
+        ci_watchdog._dt.datetime(2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc),
     )
 
     failure = ci_watchdog.PullRequestFailure(
@@ -127,9 +120,9 @@ def test_render_report_matches_golden(monkeypatch, tmp_path):
     )
 
     report = ci_watchdog.render_report([failure])
-    golden = (
-        Path(__file__).parent.parent / "golden" / "watchdog" / "report.md"
-    ).read_text(encoding="utf-8")
+    golden = (Path(__file__).parent.parent / "golden" / "watchdog" / "report.md").read_text(
+        encoding="utf-8"
+    )
     assert report == golden
 
 

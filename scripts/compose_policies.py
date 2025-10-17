@@ -26,9 +26,7 @@ def _dynamodb_arns(region: str, account: str, tables: Iterable[str]) -> list[str
 
 
 def _secret_arns(region: str, account: str, secrets: Iterable[str]) -> list[str]:
-    return [
-        f"arn:aws:secretsmanager:{region}:{account}:secret:{name}" for name in secrets
-    ]
+    return [f"arn:aws:secretsmanager:{region}:{account}:secret:{name}" for name in secrets]
 
 
 def _role_arns(account: str, roles: Iterable[str]) -> list[str]:

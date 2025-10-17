@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
+
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
@@ -36,9 +37,7 @@ class SecretsManager:
     def _get_client(self):
         if self._client is None and self.region_name:
             try:
-                self._client = boto3.client(
-                    "secretsmanager", region_name=self.region_name
-                )
+                self._client = boto3.client("secretsmanager", region_name=self.region_name)
             except (BotoCoreError, ClientError):
                 logger.exception("Unable to create Secrets Manager client")
                 self._client = None
@@ -51,9 +50,7 @@ class SecretsManager:
 
         client = self._get_client()
         if client is None:
-            logger.info(
-                "Secrets Manager client unavailable; skipping fetch for %s", secret_id
-            )
+            logger.info("Secrets Manager client unavailable; skipping fetch for %s", secret_id)
             return None
 
         try:

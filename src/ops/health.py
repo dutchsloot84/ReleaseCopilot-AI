@@ -144,9 +144,7 @@ def _check_secrets(
     secret_status: MutableMapping[str, bool] = {}
     if not options.secrets:
         return (
-            CheckResult(
-                "pass", resource="secretsmanager://none", reason="No secrets requested"
-            ),
+            CheckResult("pass", resource="secretsmanager://none", reason="No secrets requested"),
             secret_status,
         )
 
@@ -161,9 +159,7 @@ def _check_secrets(
         for secret_id in options.secrets.values():
             secret_status[secret_id] = True
         return (
-            CheckResult(
-                "pass", resource=f"secretsmanager://{resource}", reason="Dry-run"
-            ),
+            CheckResult("pass", resource=f"secretsmanager://{resource}", reason="Dry-run"),
             secret_status,
         )
 
@@ -212,9 +208,7 @@ def _check_webhook(
         return CheckResult("pass", resource="webhook-secret", reason="Dry-run")
 
     if options.webhook_env_present:
-        LOGGER.info(
-            "Webhook secret resolved from environment", extra={"source": env_name}
-        )
+        LOGGER.info("Webhook secret resolved from environment", extra={"source": env_name})
         return CheckResult("pass", resource=f"env://{env_name}")
 
     secret_id = options.webhook_secret_id
@@ -303,9 +297,7 @@ def _check_dynamodb(
     if not key_schema:
         LOGGER.error("Table key schema missing", extra={"table_name": table_name})
         return (
-            CheckResult(
-                "fail", resource=f"dynamodb://{table_name}", reason="Missing key schema"
-            ),
+            CheckResult("fail", resource=f"dynamodb://{table_name}", reason="Missing key schema"),
             None,
         )
 
@@ -316,9 +308,7 @@ def _check_dynamodb(
             extra={"table_name": table_name, "key_schema": key_schema},
         )
         return (
-            CheckResult(
-                "fail", resource=f"dynamodb://{table_name}", reason="Missing range key"
-            ),
+            CheckResult("fail", resource=f"dynamodb://{table_name}", reason="Missing range key"),
             None,
         )
 
@@ -329,9 +319,7 @@ def _check_dynamodb(
             extra={"table_name": table_name, "key_schema": key_schema},
         )
         return (
-            CheckResult(
-                "fail", resource=f"dynamodb://{table_name}", reason="Missing range key"
-            ),
+            CheckResult("fail", resource=f"dynamodb://{table_name}", reason="Missing range key"),
             None,
         )
 
@@ -352,9 +340,7 @@ def _check_dynamodb(
             extra={"table_name": table_name, "error": str(exc)},
         )
         return (
-            CheckResult(
-                "fail", resource=f"dynamodb://{table_name}", reason="PutItem failed"
-            ),
+            CheckResult("fail", resource=f"dynamodb://{table_name}", reason="PutItem failed"),
             None,
         )
 
@@ -362,9 +348,7 @@ def _check_dynamodb(
     try:
         client.delete_item(TableName=table_name, Key=item)
     except (BotoCoreError, ClientError) as exc:
-        cleanup_warning = (
-            f"Failed to delete DynamoDB sentinel ({exc.__class__.__name__})"
-        )
+        cleanup_warning = f"Failed to delete DynamoDB sentinel ({exc.__class__.__name__})"
         LOGGER.warning(
             "Failed to delete DynamoDB sentinel",
             extra={"table_name": table_name, "error": str(exc)},
@@ -398,9 +382,7 @@ def _check_s3(
 
     client = clients.s3
     sentinel = uuid.uuid4().hex
-    key_parts = [
-        part for part in (prefix, "health", "readiness", f"{sentinel}.txt") if part
-    ]
+    key_parts = [part for part in (prefix, "health", "readiness", f"{sentinel}.txt") if part]
     key = "/".join(key_parts)
     resource = f"s3://{bucket}/{key}"
 

@@ -47,11 +47,7 @@ def prepare_story_tables(report: Dict[str, Any]) -> Tuple[pd.DataFrame, pd.DataF
     with_rows: List[Dict[str, Any]] = []
     for entry in report.get("commit_story_mapping", []):
         commits = entry.get("commits", [])
-        dates = [
-            pd.to_datetime(commit.get("date"))
-            for commit in commits
-            if commit.get("date")
-        ]
+        dates = [pd.to_datetime(commit.get("date")) for commit in commits if commit.get("date")]
         with_rows.append(
             {
                 "story_key": entry.get("story_key"),
@@ -67,11 +63,7 @@ def prepare_story_tables(report: Dict[str, Any]) -> Tuple[pd.DataFrame, pd.DataF
                 "labels": _ensure_list(entry.get("labels")),
                 "all_labels": _collect_labels(entry),
                 "repositories": sorted(
-                    {
-                        commit.get("repository")
-                        for commit in commits
-                        if commit.get("repository")
-                    }
+                    {commit.get("repository") for commit in commits if commit.get("repository")}
                 ),
                 "branches": sorted(
                     {commit.get("branch") for commit in commits if commit.get("branch")}
@@ -133,16 +125,12 @@ def build_orphan_dataframe(report: Dict[str, Any]) -> pd.DataFrame:
                 "hash": commit.get("hash"),
                 "message": commit.get("message"),
                 "author": commit.get("author"),
-                "date": (
-                    pd.to_datetime(commit.get("date")) if commit.get("date") else pd.NaT
-                ),
+                "date": (pd.to_datetime(commit.get("date")) if commit.get("date") else pd.NaT),
                 "repository": commit.get("repository"),
                 "branch": commit.get("branch"),
             }
         )
-    return pd.DataFrame(
-        rows, columns=["hash", "message", "author", "date", "repository", "branch"]
-    )
+    return pd.DataFrame(rows, columns=["hash", "message", "author", "date", "repository", "branch"])
 
 
 def filter_story_tables(
@@ -157,9 +145,7 @@ def filter_story_tables(
     return filtered_with, filtered_without
 
 
-def filter_orphan_commits(
-    orphan_df: pd.DataFrame, filters: StoryFilters
-) -> pd.DataFrame:
+def filter_orphan_commits(orphan_df: pd.DataFrame, filters: StoryFilters) -> pd.DataFrame:
     """Apply filters to the orphan commits table."""
 
     if orphan_df.empty:
@@ -192,9 +178,7 @@ def get_filter_options(
 ) -> Dict[str, Sequence[Any]]:
     """Collect filter options from the loaded data."""
 
-    combined = pd.concat(
-        [stories_with_commits, stories_without_commits], ignore_index=True
-    )
+    combined = pd.concat([stories_with_commits, stories_without_commits], ignore_index=True)
 
     fix_versions = sorted(
         {
@@ -254,9 +238,7 @@ def get_filter_options(
         "repositories": repositories,
         "branches": branches,
         "date_range": (
-            (date_min, date_max)
-            if date_min is not pd.NaT and date_max is not pd.NaT
-            else None
+            (date_min, date_max) if date_min is not pd.NaT and date_max is not pd.NaT else None
         ),
     }
 
@@ -270,9 +252,7 @@ def _apply_story_filters(df: pd.DataFrame, filters: StoryFilters) -> pd.DataFram
     fix_versions = filters.get("fix_versions")
     if fix_versions:
         result = result[
-            result["fix_versions"].apply(
-                lambda items: _contains_any(items, fix_versions)
-            )
+            result["fix_versions"].apply(lambda items: _contains_any(items, fix_versions))
         ]
 
     statuses = filters.get("statuses")
@@ -285,31 +265,24 @@ def _apply_story_filters(df: pd.DataFrame, filters: StoryFilters) -> pd.DataFram
 
     labels = filters.get("components_labels")
     if labels:
-        result = result[
-            result["all_labels"].apply(lambda items: _contains_any(items, labels))
-        ]
+        result = result[result["all_labels"].apply(lambda items: _contains_any(items, labels))]
 
     repositories = filters.get("repositories")
     if repositories:
         result = result[
-            result["repositories"].apply(
-                lambda items: _contains_any(items, repositories)
-            )
+            result["repositories"].apply(lambda items: _contains_any(items, repositories))
         ]
 
     branches = filters.get("branches")
     if branches:
-        result = result[
-            result["branches"].apply(lambda items: _contains_any(items, branches))
-        ]
+        result = result[result["branches"].apply(lambda items: _contains_any(items, branches))]
 
     date_range = filters.get("date_range")
     if date_range:
         start, end = date_range
         if start is not None:
             result = result[
-                result["latest_commit_date"].notna()
-                & (result["latest_commit_date"] >= start)
+                result["latest_commit_date"].notna() & (result["latest_commit_date"] >= start)
             ]
         if end is not None:
             result = result[result["latest_commit_date"] <= end]

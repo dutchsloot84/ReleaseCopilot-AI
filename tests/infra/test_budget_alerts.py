@@ -9,7 +9,6 @@ from aws_cdk.assertions import Match, Template
 
 from infra.cdk.core_stack import CoreStack
 
-
 ACCOUNT = "123456789012"
 REGION = "us-west-2"
 ASSET_DIR = str(Path(__file__).resolve().parents[2] / "dist")
@@ -26,9 +25,7 @@ def _synth_template(**overrides) -> Template:
         environment_name=overrides.pop("environment_name", "dev"),
         budget_amount=overrides.pop("budget_amount", 275.0),
         budget_currency=overrides.pop("budget_currency", "USD"),
-        budget_email_recipients=overrides.pop(
-            "budget_email_recipients", ["alerts@example.com"]
-        ),
+        budget_email_recipients=overrides.pop("budget_email_recipients", ["alerts@example.com"]),
         **overrides,
     )
     return Template.from_stack(stack)
@@ -42,10 +39,7 @@ def test_budget_notifications_configured() -> None:
 
     budget = next(iter(template.find_resources("AWS::Budgets::Budget").values()))
 
-    assert (
-        budget["Properties"]["Budget"]["BudgetName"]
-        == "releasecopilot-dev-monthly-cost"
-    )
+    assert budget["Properties"]["Budget"]["BudgetName"] == "releasecopilot-dev-monthly-cost"
 
     notifications = budget["Properties"]["NotificationsWithSubscribers"]
     assert len(notifications) == 3
