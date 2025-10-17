@@ -8,7 +8,6 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from releasecopilot.logging_config import get_logger
-
 from scripts.github.wave2_helper import (
     Issue,
     Wave2Helper,
@@ -35,9 +34,7 @@ def fixture_issues() -> list[Issue]:
     return [Issue.from_raw(item) for item in data]
 
 
-def test_prioritize_is_deterministic(
-    helper: Wave2Helper, fixture_issues: list[Issue]
-) -> None:
+def test_prioritize_is_deterministic(helper: Wave2Helper, fixture_issues: list[Issue]) -> None:
     filtered = helper.filter_issues(fixture_issues)
     numbers = [issue.number for issue in filtered]
     assert 310 not in numbers  # filtered out by label guard
@@ -110,4 +107,4 @@ def test_collect_uses_gh_without_leaking_token(
 
     helper_logger = get_logger("scripts.github.wave2_helper.test")
     helper_logger.info("verifying redaction", extra={"token": "supersecret-token"})
-    assert getattr(caplog.records[-1], "token") == "***REDACTED***"
+    assert caplog.records[-1].token == "***REDACTED***"

@@ -11,7 +11,6 @@ from typing import Any, Dict, Iterable
 
 from src.export.exporter import build_export_payload, export_all
 
-
 LOGGER = logging.getLogger("recover")
 
 REQUIRED_FILES = {
@@ -27,9 +26,7 @@ class MissingInputError(RuntimeError):
 
 
 def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Rebuild export artifacts from cached payloads"
-    )
+    parser = argparse.ArgumentParser(description="Rebuild export artifacts from cached payloads")
     parser.add_argument(
         "--input-dir",
         default="temp_data/",
@@ -70,9 +67,7 @@ def load_inputs(input_dir: Path) -> Dict[str, Dict[str, Any]]:
         else:
             metadata = {"length": len(payload) if hasattr(payload, "__len__") else None}
         LOGGER.info(
-            json.dumps(
-                {"event": "input_loaded", "name": key, "path": str(path), **metadata}
-            )
+            json.dumps({"event": "input_loaded", "name": key, "path": str(path), **metadata})
         )
     return inputs
 
@@ -107,9 +102,7 @@ def build_payload_from_inputs(inputs: Dict[str, Dict[str, Any]]) -> Dict[str, An
         data={
             "summary": _ensure_dict(inputs["summary"]),
             "stories_with_no_commits": _ensure_list(
-                _extract(
-                    inputs["stories"], "stories_with_no_commits", "stories", "items"
-                )
+                _extract(inputs["stories"], "stories_with_no_commits", "stories", "items")
             ),
             "orphan_commits": _ensure_list(
                 _extract(inputs["commits"], "orphan_commits", "commits", "items")
@@ -135,9 +128,7 @@ def main(argv: Iterable[str] | None = None) -> int:
     try:
         inputs = load_inputs(input_dir)
         payload = build_payload_from_inputs(inputs)
-        outputs = export_all(
-            payload, out_dir=output_dir, formats=parse_formats(args.format)
-        )
+        outputs = export_all(payload, out_dir=output_dir, formats=parse_formats(args.format))
     except MissingInputError as exc:
         LOGGER.error(json.dumps({"event": "missing_input", "message": str(exc)}))
         print(str(exc), file=sys.stderr)

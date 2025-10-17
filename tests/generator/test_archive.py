@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-
 from zoneinfo import ZoneInfo
 
 from tools.generator.archive import PHOENIX_TZ, archive_previous_wave

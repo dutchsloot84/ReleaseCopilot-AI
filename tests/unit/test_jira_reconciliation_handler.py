@@ -20,9 +20,7 @@ def _reset_module(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AWS_SESSION_TOKEN", "testing")
     monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
     monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
-    module = importlib.reload(
-        importlib.import_module("services.jira_reconciliation_job.handler")
-    )
+    module = importlib.reload(importlib.import_module("services.jira_reconciliation_job.handler"))
     monkeypatch.setitem(
         module.__dict__,
         "_SECRET_CACHE",
@@ -39,20 +37,14 @@ class DummyTable:
         self.update_calls: List[Dict[str, Any]] = []
         self.scan_calls = 0
 
-    def query(
-        self, **kwargs: Any
-    ) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
+    def query(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
         return {"Items": list(self.items)}
 
-    def scan(
-        self, **kwargs: Any
-    ) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
+    def scan(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
         self.scan_calls += 1
         return {"Items": [{"fix_version": "2024.05"}], "LastEvaluatedKey": None}
 
-    def put_item(
-        self, **kwargs: Any
-    ) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
+    def put_item(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - exercised indirectly
         self.put_calls.append(kwargs)
         self.items.append(kwargs.get("Item", {}))
         return {}

@@ -2,17 +2,17 @@ import datetime as dt
 import json
 import os
 import time
+
 import boto3
+from adf_md import to_markdown
 from jira_api import (
-    refresh_access_token,
-    search_page,
     discover_field_map,
     get_all_comments_if_needed,
+    refresh_access_token,
+    search_page,
 )
-from adf_md import to_markdown
 
 from releasecopilot.logging_config import configure_logging, get_logger
-
 
 configure_logging()
 LOGGER = get_logger(__name__)
@@ -75,13 +75,9 @@ def _normalize_issue(issue, field_ids, base_url):
     for link in f.get("issuelinks", []) or []:
         t = (link.get("type") or {}).get("name")
         if "outwardIssue" in link:
-            links.append(
-                {"type": t, "direction": "outward", "key": link["outwardIssue"]["key"]}
-            )
+            links.append({"type": t, "direction": "outward", "key": link["outwardIssue"]["key"]})
         if "inwardIssue" in link:
-            links.append(
-                {"type": t, "direction": "inward", "key": link["inwardIssue"]["key"]}
-            )
+            links.append({"type": t, "direction": "inward", "key": link["inwardIssue"]["key"]})
 
     # Custom fields
     ac_id = field_ids.get("acceptance_criteria")
@@ -98,12 +94,8 @@ def _normalize_issue(issue, field_ids, base_url):
         "status": (f.get("status") or {}).get("name"),
         "summary": f.get("summary"),
         "description": wrap(f.get("description")),
-        "acceptance_criteria": (
-            wrap(f.get(ac_id)) if ac_id else {"adf": None, "markdown": ""}
-        ),
-        "deployment_notes": (
-            wrap(f.get(dn_id)) if dn_id else {"adf": None, "markdown": ""}
-        ),
+        "acceptance_criteria": (wrap(f.get(ac_id)) if ac_id else {"adf": None, "markdown": ""}),
+        "deployment_notes": (wrap(f.get(dn_id)) if dn_id else {"adf": None, "markdown": ""}),
         "comments": norm_comments,
         "links": links,
         "labels": f.get("labels") or [],
@@ -158,9 +150,7 @@ def handler(event, context):
     total_processed = 0
 
     while True:
-        page = search_page(
-            base_url, token, jql, fields_csv, start_at=start, max_results=100
-        )
+        page = search_page(base_url, token, jql, fields_csv, start_at=start, max_results=100)
         issues = page.get("issues", [])
         if not issues:
             break

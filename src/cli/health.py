@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+
 from releasecopilot.logging_config import get_logger
 
 from ..config.loader import (
@@ -25,9 +26,7 @@ class HealthCommandError(RuntimeError):
     """Raised when health command execution fails."""
 
 
-def register_health_parser(
-    subparsers: argparse._SubParsersAction, defaults: Defaults
-) -> None:
+def register_health_parser(subparsers: argparse._SubParsersAction, defaults: Defaults) -> None:
     parser = subparsers.add_parser(
         "health",
         help="Operational health checks",

@@ -75,9 +75,7 @@ class BitbucketClient(BaseAPIClient):
                     commits = self._fetch_commits_for_branch(repo, branch, start, end)
                 except BitbucketRequestError:
                     raise
-                except (
-                    requests.RequestException
-                ) as exc:  # pragma: no cover - defensive guard
+                except requests.RequestException as exc:  # pragma: no cover - defensive guard
                     context = {
                         "service": "bitbucket",
                         "repository": repo,

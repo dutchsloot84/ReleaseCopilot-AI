@@ -11,13 +11,13 @@ from pathlib import Path
 from typing import Any, Iterable
 from zoneinfo import ZoneInfo
 
+from config.loader import Defaults
 from releasecopilot.logging_config import get_logger
 from releasecopilot.orchestrator.command import (
     DispatchEnvelope,
     DispatchPlan,
     SlashCommand,
 )
-from config.loader import Defaults
 
 LOGGER = get_logger(__name__)
 PHOENIX_TZ = ZoneInfo("America/Phoenix")
@@ -151,18 +151,14 @@ def _handle_plan(
     return envelope, artifact_path
 
 
-def _handle_dispatch(
-    args: argparse.Namespace, context: OrchestratorContext
-) -> DispatchEnvelope:
+def _handle_dispatch(args: argparse.Namespace, context: OrchestratorContext) -> DispatchEnvelope:
     plan_path = Path(args.plan_path)
     if not plan_path.exists():
         raise OrchestratorCommandError(f"Dispatch plan not found at {plan_path}")
     try:
         payload = json.loads(plan_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise OrchestratorCommandError(
-            f"Plan file {plan_path} is not valid JSON: {exc}"
-        ) from exc
+        raise OrchestratorCommandError(f"Plan file {plan_path} is not valid JSON: {exc}") from exc
 
     try:
         envelope = DispatchEnvelope.from_dict(payload)
@@ -183,9 +179,7 @@ def _load_event_payload(
         try:
             return json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
-            raise OrchestratorCommandError(
-                f"Event file {path} is not valid JSON: {exc}"
-            ) from exc
+            raise OrchestratorCommandError(f"Event file {path} is not valid JSON: {exc}") from exc
 
     if stdin is None:
         stdin = sys.stdin
@@ -195,9 +189,7 @@ def _load_event_payload(
     try:
         return json.loads(content)
     except json.JSONDecodeError as exc:
-        raise OrchestratorCommandError(
-            f"Stdin payload is not valid JSON: {exc}"
-        ) from exc
+        raise OrchestratorCommandError(f"Stdin payload is not valid JSON: {exc}") from exc
 
 
 def _parse_slash_command(
@@ -210,16 +202,12 @@ def _parse_slash_command(
         raise OrchestratorCommandError("Event payload is missing issue information")
     issue_number = issue.get("number")
     if not isinstance(issue_number, int):
-        raise OrchestratorCommandError(
-            "Issue payload did not include a numeric issue number"
-        )
+        raise OrchestratorCommandError("Issue payload did not include a numeric issue number")
 
     labels = issue.get("labels", [])
     label_names = [label.get("name") for label in labels if isinstance(label, dict)]
     if "wave:wave2" not in label_names:
-        raise OrchestratorCommandError(
-            "Issue does not include required label 'wave:wave2'"
-        )
+        raise OrchestratorCommandError("Issue does not include required label 'wave:wave2'")
 
     comment = event_payload.get("comment")
     if not isinstance(comment, dict):
@@ -242,9 +230,7 @@ def _parse_slash_command(
 
 def _extract_helper_prompt(body: str) -> str:
     lines = [line.strip() for line in body.splitlines() if line.strip()]
-    command_line = next(
-        (line for line in lines if line.startswith("/orchestrate")), None
-    )
+    command_line = next((line for line in lines if line.startswith("/orchestrate")), None)
     if not command_line:
         raise OrchestratorCommandError("No /orchestrate command found in comment")
 
@@ -265,9 +251,7 @@ def _extract_helper_prompt(body: str) -> str:
             break
 
     if not helper_value:
-        raise OrchestratorCommandError(
-            "Helper prompt not provided in /orchestrate command"
-        )
+        raise OrchestratorCommandError("Helper prompt not provided in /orchestrate command")
     return helper_value
 
 
@@ -280,18 +264,14 @@ def _build_dispatch_plan(
     helper_name = slash_command.helper_prompt
     candidate = prompts_root / helper_name
     if candidate.is_dir():
-        raise OrchestratorCommandError(
-            f"Helper prompt refers to a directory: {helper_name}"
-        )
+        raise OrchestratorCommandError(f"Helper prompt refers to a directory: {helper_name}")
     if candidate.suffix:
         prompt_path = candidate
     else:
         prompt_path = candidate.with_suffix(".md")
 
     if not prompt_path.exists():
-        raise OrchestratorCommandError(
-            f"Helper prompt file not found: {prompt_path.name}"
-        )
+        raise OrchestratorCommandError(f"Helper prompt file not found: {prompt_path.name}")
 
     workflow_name = "orchestrator-runner"
     return DispatchPlan(

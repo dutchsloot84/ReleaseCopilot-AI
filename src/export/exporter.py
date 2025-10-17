@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Any, Dict, Mapping as TypingMapping
+from typing import Any, Dict
+from typing import Mapping as TypingMapping
 
 from exporters.excel_exporter import ExcelExporter
 from exporters.json_exporter import JSONExporter
@@ -29,9 +30,7 @@ def build_export_payload(
     which are then merged into the expected structure.
     """
 
-    if data is not None and any(
-        item is not None for item in (matched, missing, orphans, summary)
-    ):
+    if data is not None and any(item is not None for item in (matched, missing, orphans, summary)):
         raise ValueError("Provide either `data` or the individual components, not both")
 
     if data is None:
@@ -46,13 +45,9 @@ def build_export_payload(
 
     return {
         "summary": dict(payload_source.get("summary", {})),
-        "stories_with_no_commits": list(
-            payload_source.get("stories_with_no_commits", []) or []
-        ),
+        "stories_with_no_commits": list(payload_source.get("stories_with_no_commits", []) or []),
         "orphan_commits": list(payload_source.get("orphan_commits", []) or []),
-        "commit_story_mapping": list(
-            payload_source.get("commit_story_mapping", []) or []
-        ),
+        "commit_story_mapping": list(payload_source.get("commit_story_mapping", []) or []),
     }
 
 
@@ -103,9 +98,7 @@ def export_all(
             path.parent.mkdir(parents=True, exist_ok=True)
             return path
         if base_dir is None:
-            raise ValueError(
-                "`out_dir` must be provided when explicit filenames are not supplied"
-            )
+            raise ValueError("`out_dir` must be provided when explicit filenames are not supplied")
         base_dir.mkdir(parents=True, exist_ok=True)
         return (base_dir / default).resolve()
 

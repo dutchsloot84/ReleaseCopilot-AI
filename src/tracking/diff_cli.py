@@ -20,12 +20,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--old", required=True, type=Path, help="Path to the previous JSON artifact"
     )
-    parser.add_argument(
-        "--new", required=True, type=Path, help="Path to the new JSON artifact"
-    )
-    parser.add_argument(
-        "--out", type=Path, help="Optional path to write the markdown summary"
-    )
+    parser.add_argument("--new", required=True, type=Path, help="Path to the new JSON artifact")
+    parser.add_argument("--out", type=Path, help="Optional path to write the markdown summary")
     parser.add_argument(
         "--json",
         dest="json_out",
