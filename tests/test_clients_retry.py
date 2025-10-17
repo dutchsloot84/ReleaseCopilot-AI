@@ -11,7 +11,11 @@ import requests
 
 from clients.bitbucket_client import BitbucketClient
 from clients.jira_client import JiraClient
-from releasecopilot.errors import BitbucketRequestError, JiraQueryError
+from releasecopilot.errors import (
+    BitbucketRequestError,
+    JiraJQLFailed,
+    JiraQueryError,
+)
 
 
 class DummyResponse:
@@ -127,6 +131,32 @@ def test_jira_fetch_issues_raises_typed_error(
     assert "server down" in excinfo.value.context["snippet"]
     assert len(delays) == client._MAX_ATTEMPTS - 1
     assert any(record.getMessage() == "Jira search failed" for record in caplog.records)
+
+
+def test_jira_fetch_issues_invalid_jql_raises_specific_error(
+    tmp_path: Any,
+) -> None:
+    responses = [
+        DummyResponse(
+            400,
+            json_data={},
+            text="JQL Query malformed",
+        )
+    ]
+    client = JiraClient(
+        base_url="https://example.atlassian.net",
+        access_token="token",
+        token_expiry=int(time.time()) + 3600,
+        cache_dir=str(tmp_path),
+    )
+    client.session = FakeSession(responses)  # type: ignore[assignment]
+    client._random = ZeroJitter()
+
+    with pytest.raises(JiraJQLFailed) as excinfo:
+        client.fetch_issues(fix_version="3.0.0")
+
+    assert excinfo.value.context["status_code"] == 400
+    assert excinfo.value.context["snippet"].startswith("JQL Query")
 
 
 def test_bitbucket_retries_and_logs(

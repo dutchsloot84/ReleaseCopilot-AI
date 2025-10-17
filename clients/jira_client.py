@@ -9,7 +9,11 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from releasecopilot.errors import JiraQueryError, JiraTokenRefreshError
+from releasecopilot.errors import (
+    JiraJQLFailed,
+    JiraQueryError,
+    JiraTokenRefreshError,
+)
 from releasecopilot.logging_config import get_logger
 
 from .base import BaseAPIClient
@@ -151,12 +155,14 @@ class JiraClient(BaseAPIClient):
                 )
                 response.raise_for_status()
             except requests.RequestException as exc:
-                status_code = getattr(
-                    getattr(exc, "response", None), "status_code", None
-                )
+                response = getattr(exc, "response", None)
+                status_code = getattr(response, "status_code", None)
                 snippet = None
-                if getattr(exc, "response", None) is not None:
-                    snippet = exc.response.text[:200]
+                if response is not None:
+                    try:
+                        snippet = response.text[:200]
+                    except Exception:  # pragma: no cover - defensive
+                        snippet = None
                 context = {
                     "service": "jira",
                     "operation": "search",
@@ -166,6 +172,10 @@ class JiraClient(BaseAPIClient):
                     "snippet": snippet,
                 }
                 logger.error("Jira search failed", extra=context)
+                if status_code == 400:
+                    raise JiraJQLFailed(
+                        "Jira JQL failed after retries", context=context
+                    ) from exc
                 raise JiraQueryError(
                     "Failed to fetch Jira issues", context=context
                 ) from exc
