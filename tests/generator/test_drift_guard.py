@@ -53,9 +53,7 @@ def _run_guard(cwd: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_drift_guard_detects_changes(
-    generator_env: Path, sample_spec: dict[str, object]
-) -> None:
+def test_drift_guard_detects_changes(generator_env: Path, sample_spec: dict[str, object]) -> None:
     """The guard should fail when artifacts drift and pass once regenerated."""
 
     repo = generator_env
@@ -74,9 +72,7 @@ def test_drift_guard_detects_changes(
     manifest_path = repo / "artifacts/manifests" / f"wave{wave}_subprompts.json"
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     payload["timezone"] = "UTC"
-    manifest_path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    manifest_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     drift = _run_guard(repo)
     assert drift.returncode != 0

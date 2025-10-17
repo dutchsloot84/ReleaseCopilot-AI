@@ -48,12 +48,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: Pre-commit (ruff, black, mypy)
-        run: scripts/ci/run_precommit.sh
-        shell: bash
+      - name: Ruff
+        run: ruff check .
+
+      - name: Black
+        run: black --check .
+
+      - name: Mypy
+        run: mypy --config-file mypy.ini -p releasecopilot
 
       - name: Pytest
-        run: pytest -q
+        run: pytest --cov=src --cov-report=xml
+
+      - name: Coverage gate
+        run: scripts/ci/coverage_gate.py coverage.xml
 
   package:
     name: Package Lambda bundle

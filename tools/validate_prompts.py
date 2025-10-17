@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Dict, List, Sequence
 from zoneinfo import ZoneInfo
 
-
 PHOENIX_TZ = ZoneInfo("America/Phoenix")
 
 
@@ -67,9 +66,7 @@ class PromptRecipeValidator:
         missing: List[str] = []
         repo_root = Path.cwd().resolve()
         for prompt in prompts:
-            prompt_path = (
-                prompt if prompt.is_absolute() else (repo_root / prompt).resolve()
-            )
+            prompt_path = prompt if prompt.is_absolute() else (repo_root / prompt).resolve()
             try:
                 key = str(prompt_path.relative_to(repo_root))
             except ValueError:
@@ -178,8 +175,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     if not prompt_dirs:
         print(
-            "No prompt directories discovered. Use --prompts-dir or --waves to"
-            " specify targets.",
+            "No prompt directories discovered. Use --prompts-dir or --waves to" " specify targets.",
             file=sys.stderr,
         )
         return 1
@@ -187,8 +183,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     missing_dirs = [str(path) for path in prompt_dirs if not path.exists()]
     if missing_dirs:
         print(
-            "Prompt directories not found:\n"
-            + "\n".join(f" - {item}" for item in missing_dirs),
+            "Prompt directories not found:\n" + "\n".join(f" - {item}" for item in missing_dirs),
             file=sys.stderr,
         )
         return 1
@@ -212,18 +207,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     if missing:
         print(
-            "Missing prompt recipes for:"
-            + "\n"
-            + "\n".join(f" - {item}" for item in missing),
+            "Missing prompt recipes for:" + "\n" + "\n".join(f" - {item}" for item in missing),
             file=sys.stderr,
         )
         return 1
     return 0
 
 
-def _load_configured_dirs(
-    *, config_path: Path, prompts_root: Path
-) -> tuple[List[Path], List[str]]:
+def _load_configured_dirs(*, config_path: Path, prompts_root: Path) -> tuple[List[Path], List[str]]:
     if not config_path or not config_path.exists():
         return [], []
 

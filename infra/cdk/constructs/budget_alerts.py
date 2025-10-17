@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import Iterable, Sequence
 
-from aws_cdk import aws_budgets as budgets, aws_iam as iam, aws_sns as sns
+from aws_cdk import aws_budgets as budgets
+from aws_cdk import aws_iam as iam
+from aws_cdk import aws_sns as sns
 from constructs import Construct
 
 
@@ -44,8 +46,7 @@ class BudgetAlerts(Construct):
                 self,
                 topic_id,
                 display_name=f"ReleaseCopilot {environment_name} Budget Alerts",
-                topic_name=sns_topic_name
-                or f"releasecopilot-{normalized_env}-budget-alerts",
+                topic_name=sns_topic_name or f"releasecopilot-{normalized_env}-budget-alerts",
             )
             topic.add_to_resource_policy(
                 iam.PolicyStatement(

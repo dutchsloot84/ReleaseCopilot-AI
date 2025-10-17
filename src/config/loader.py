@@ -73,9 +73,7 @@ def _load_settings_file(path: Path) -> Dict[str, Any]:
     raise ValueError(f"Unsupported configuration format: {path}")
 
 
-def get_aws_region(
-    config: Mapping[str, Any], env: Mapping[str, str] | None = None
-) -> str | None:
+def get_aws_region(config: Mapping[str, Any], env: Mapping[str, str] | None = None) -> str | None:
     """Return the AWS region derived from configuration or environment."""
 
     env = env or os.environ
@@ -108,9 +106,7 @@ def get_dynamodb_table(config: Mapping[str, Any]) -> str | None:
 
     storage_cfg = config.get("storage", {}) if isinstance(config, Mapping) else {}
     if isinstance(storage_cfg, Mapping):
-        dynamodb_cfg = (
-            storage_cfg.get("dynamodb", {}) if isinstance(storage_cfg, Mapping) else {}
-        )
+        dynamodb_cfg = storage_cfg.get("dynamodb", {}) if isinstance(storage_cfg, Mapping) else {}
         if isinstance(dynamodb_cfg, Mapping):
             table_name = dynamodb_cfg.get("jira_issue_table")
             if table_name:
@@ -149,18 +145,10 @@ def load_defaults(env: Mapping[str, str] | None = None) -> Defaults:
     """
 
     env = env or os.environ
-    project_root = Path(
-        _env(env, "RC_ROOT", str(Path(__file__).resolve().parents[2]))
-    ).resolve()
-    cache_dir = Path(
-        _env(env, "RC_CACHE_DIR", str(project_root / "temp_data"))
-    ).resolve()
-    artifact_dir = Path(
-        _env(env, "RC_ARTIFACT_DIR", str(project_root / "dist"))
-    ).resolve()
-    reports_dir = Path(
-        _env(env, "RC_REPORTS_DIR", str(project_root / "reports"))
-    ).resolve()
+    project_root = Path(_env(env, "RC_ROOT", str(Path(__file__).resolve().parents[2]))).resolve()
+    cache_dir = Path(_env(env, "RC_CACHE_DIR", str(project_root / "temp_data"))).resolve()
+    artifact_dir = Path(_env(env, "RC_ARTIFACT_DIR", str(project_root / "dist"))).resolve()
+    reports_dir = Path(_env(env, "RC_REPORTS_DIR", str(project_root / "reports"))).resolve()
     settings_path = Path(
         _env(env, "RC_SETTINGS_FILE", str(project_root / "config" / "defaults.yml"))
     ).resolve()
@@ -245,9 +233,7 @@ def _deep_merge(base: Mapping[str, Any], override: Mapping[str, Any]) -> Dict[st
     return result
 
 
-def _set_path(
-    config: MutableMapping[str, Any], path: Sequence[str], value: Any
-) -> None:
+def _set_path(config: MutableMapping[str, Any], path: Sequence[str], value: Any) -> None:
     cursor: MutableMapping[str, Any] = config
     for segment in path[:-1]:
         existing = cursor.get(segment)
@@ -273,8 +259,8 @@ def _parse_env_value(key: str, value: str) -> Any:
     if key in _INT_ENV_KEYS:
         try:
             return int(value)
-        except (TypeError, ValueError):
-            raise ConfigurationError(f"Environment variable {key} must be an integer.")
+        except (TypeError, ValueError) as exc:
+            raise ConfigurationError(f"Environment variable {key} must be an integer.") from exc
     lowered = value.lower().strip()
     if lowered in {"true", "1", "yes", "on"}:
         return True
@@ -283,9 +269,7 @@ def _parse_env_value(key: str, value: str) -> Any:
     return value
 
 
-def _apply_environment_overrides(
-    config: MutableMapping[str, Any], env: Mapping[str, str]
-) -> None:
+def _apply_environment_overrides(config: MutableMapping[str, Any], env: Mapping[str, str]) -> None:
     for env_key, path in _ENVIRONMENT_PATHS.items():
         if env_key not in env:
             continue
@@ -300,7 +284,7 @@ def _apply_secret_overrides(
     secrets_cfg = config.get("secrets")
     if not isinstance(secrets_cfg, Mapping):
         return
-    for secret_name, metadata in secrets_cfg.items():
+    for _secret_name, metadata in secrets_cfg.items():
         if not isinstance(metadata, Mapping):
             continue
         arn = metadata.get("arn")
@@ -363,9 +347,7 @@ def load_config(
     region = _get_path(config, ("aws", "region"))
     secrets_manager = credential_store
     if secrets_manager is None:
-        sm_client = SecretsManager(
-            region_name=region if isinstance(region, str) else None
-        )
+        sm_client = SecretsManager(region_name=region if isinstance(region, str) else None)
         secrets_manager = CredentialStore(secrets_manager=sm_client)
 
     _apply_secret_overrides(config, secrets_manager)

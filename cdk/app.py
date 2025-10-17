@@ -4,10 +4,8 @@ from __future__ import annotations
 import os
 
 import aws_cdk as cdk
-
 from stacks.core_stack import CoreStack
 from stacks.lambda_stack import LambdaStack
-
 
 app = cdk.App()
 project = app.node.try_get_context("projectName") or "releasecopilot-ai"

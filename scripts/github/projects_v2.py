@@ -79,9 +79,7 @@ class ProjectsV2Client:
                     continue
                 assignees = [
                     assignee.get("login")
-                    for assignee in (content.get("assignees", {}) or {}).get(
-                        "nodes", []
-                    )
+                    for assignee in (content.get("assignees", {}) or {}).get("nodes", [])
                     if assignee and assignee.get("login")
                 ]
                 items.append(
@@ -99,9 +97,7 @@ class ProjectsV2Client:
             after = page_info.get("endCursor")
         return items
 
-    def _resolve_project_id(
-        self, owner: str, repo: str, project_name: str
-    ) -> Optional[str]:
+    def _resolve_project_id(self, owner: str, repo: str, project_name: str) -> Optional[str]:
         """Look up the GraphQL node ID for a repository project."""
 
         data = self._execute(
@@ -111,34 +107,23 @@ class ProjectsV2Client:
                 "name": repo,
             },
         )
-        projects = (
-            data.get("data", {})
-            .get("repository", {})
-            .get("projectsV2", {})
-            .get("nodes", [])
-        )
+        projects = data.get("data", {}).get("repository", {}).get("projectsV2", {}).get("nodes", [])
         for project in projects:
             if (project or {}).get("title") == project_name:
                 return project.get("id")
         return None
 
-    def _execute(
-        self, query: str, variables: Dict[str, Optional[str]]
-    ) -> Dict[str, object]:
+    def _execute(self, query: str, variables: Dict[str, Optional[str]]) -> Dict[str, object]:
         response = self.session.post(
             _GRAPHQL_URL,
             json={"query": query, "variables": variables},
             timeout=30,
         )
         if response.status_code >= 400:
-            raise RuntimeError(
-                f"GitHub GraphQL error {response.status_code}: {response.text}"
-            )
+            raise RuntimeError(f"GitHub GraphQL error {response.status_code}: {response.text}")
         data = response.json()
         if errors := data.get("errors"):
-            message = ", ".join(
-                error.get("message", "unknown error") for error in errors
-            )
+            message = ", ".join(error.get("message", "unknown error") for error in errors)
             raise RuntimeError(f"GitHub GraphQL returned errors: {message}")
         return data
 

@@ -23,3 +23,7 @@ repos:
         entry: make check-generated
         language: system
         pass_filenames: false
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: detect-private-key

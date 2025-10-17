@@ -20,9 +20,7 @@ def test_manifest_contains_expected_metadata(sample_spec: dict[str, object]) -> 
     assert payload["items"] == sorted(items, key=lambda item: item["slug"])
 
 
-def test_resolve_generated_at_reuses_manifest_timestamp(
-    sample_spec: dict[str, object]
-) -> None:
+def test_resolve_generated_at_reuses_manifest_timestamp(sample_spec: dict[str, object]) -> None:
     """`resolve_generated_at` should reuse Phoenix timestamps from disk."""
 
     items = generator.render_subprompts_and_issues(sample_spec)

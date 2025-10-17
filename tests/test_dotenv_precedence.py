@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-import sys
+import importlib
 from pathlib import Path
 
 import pytest
@@ -31,9 +31,8 @@ def test_cli_prefers_cli_then_env_then_yaml(
         monkeypatch.delenv(key, raising=False)
 
     try:
-        sys.modules.pop("releasecopilot", None)
-        sys.modules.pop("releasecopilot.cli", None)
-        import releasecopilot.cli as cli_module  # noqa: WPS433
+        cli_module = importlib.import_module("releasecopilot.cli")
+        cli_module = importlib.reload(cli_module)
 
         assert cli_module.load_dotenv is not None
         assert cli_module.find_dotenv_path() == env_path
@@ -73,8 +72,7 @@ def test_cli_prefers_cli_then_env_then_yaml(
         assert config["jira_base"] == "https://cli-jira"
         assert config["bitbucket_base"] == "https://dotenv-bitbucket"
     finally:
-        sys.modules.pop("releasecopilot", None)
-        sys.modules.pop("releasecopilot.cli", None)
+        importlib.reload(cli_module)
         if existing_env is None:
             env_path.unlink(missing_ok=True)
         else:
