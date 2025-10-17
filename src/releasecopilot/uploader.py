@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
@@ -32,7 +32,7 @@ def put_object(
 
     client = client or build_s3_client(region_name=region_name)
     payload = body.encode("utf-8") if isinstance(body, str) else body
-    extra_args: Dict[str, str] = {"ServerSideEncryption": "AES256"}
+    extra_args: Dict[str, Any] = {"ServerSideEncryption": "AES256"}
     if content_type:
         extra_args["ContentType"] = content_type
     if metadata:
@@ -98,7 +98,7 @@ def upload_directory(
         key = "/".join(
             filter(None, [combined_prefix, str(relative_key).replace("\\", "/")])
         )
-        extra_args = {"ServerSideEncryption": "AES256"}
+        extra_args: dict[str, Any] = {"ServerSideEncryption": "AES256"}
         if normalized_metadata:
             extra_args["Metadata"] = normalized_metadata
         content_type = _guess_content_type(file_path)

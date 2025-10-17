@@ -48,9 +48,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: Ruff lint
-        run: ruff check .
-        continue-on-error: true
+      - name: Pre-commit (ruff, black, mypy)
+        run: scripts/ci/run_precommit.sh
+        shell: bash
 
       - name: Pytest
         run: pytest -q
