@@ -2,63 +2,16 @@ from __future__ import annotations
 
 import hashlib
 import json
-import shutil
-from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import pytest
 
-from scripts.github import wave2_helper as generator
-
-FIXED_NOW = datetime(2024, 1, 1, 12, 0, tzinfo=ZoneInfo(generator.PHOENIX_TZ))
-
-
-def _copy_templates(dst: Path) -> None:
-    template_root = Path(__file__).resolve().parents[1] / "templates"
-    for template in ("mop.md.j2", "subprompt.md.j2", "issue_body.md.j2"):
-        shutil.copyfile(template_root / template, dst / template)
-
-
-@pytest.fixture()
-def generator_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    (tmp_path / "templates").mkdir(parents=True)
-    (tmp_path / "backlog").mkdir(parents=True)
-    (tmp_path / "docs/mop/archive").mkdir(parents=True)
-    (tmp_path / "docs/sub-prompts").mkdir(parents=True)
-    (tmp_path / "artifacts/issues").mkdir(parents=True)
-    (tmp_path / "artifacts/manifests").mkdir(parents=True)
-    _copy_templates(tmp_path / "templates")
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(generator, "phoenix_now", lambda: FIXED_NOW)
-    return tmp_path
-
-
-@pytest.fixture()
-def sample_spec(generator_env: Path) -> dict:
-    spec_path = generator_env / "backlog/sample.yaml"
-    spec_path.write_text(
-        """
-wave: 3
-purpose: Ensure sample wave for testing
-constraints:
-  - Respect America/Phoenix scheduling
-quality_bar:
-  - Maintain ≥70% coverage on generators
-sequenced_prs:
-  - title: Sample PR
-    acceptance:
-      - Render mop
-      - Render prompts
-    notes:
-      - Include Phoenix reminder
-    labels:
-      - wave:wave3
-      - testing
-""".strip(),
-        encoding="utf-8",
-    )
-    return generator.load_spec(spec_path)
+try:
+    from scripts.github import wave2_helper as generator
+except ModuleNotFoundError as exc:  # pragma: no cover - dependency guard
+    if exc.name == "jinja2":
+        pytest.skip("jinja2 is required for generator tests", allow_module_level=True)
+    raise
 
 
 def test_archive_once_per_day(generator_env: Path) -> None:

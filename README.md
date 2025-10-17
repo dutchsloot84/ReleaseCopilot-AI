@@ -117,8 +117,9 @@ Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CL
    - `docs/sub-prompts/wave3/`
    - `artifacts/issues/wave3/`
    - `artifacts/manifests/wave3_subprompts.json`
-4. Phoenix time (America/Phoenix, no DST) is stamped into every artifact. Verify schedules and archives respect that timezone.
-5. Commit the changes or rerun the command until `git status` is clean. Outputs are idempotent—no drift should appear on repeated runs.
+   - `docs/mop/archive/` (previous wave MOP archived once per Phoenix day)
+4. Validate Phoenix timestamps (America/Phoenix, UTC-7 year-round) in every artifact before committing. The generator runbook (`docs/runbooks/generator.md`) outlines the contributor checklist.
+5. Run the generator twice to confirm idempotency, then commit or rerun until `git status` is clean. Wave outputs must remain drift-free across Phoenix days.
 
 ### Troubleshooting
 

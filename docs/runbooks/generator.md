@@ -1,43 +1,63 @@
 # Wave Generator Runbook (America/Phoenix)
 
-**Decision:** Operate the YAML-driven generator via `python main.py generate` so all Wave 3 artifacts remain deterministic.
-**Note:** The generator archives the previous wave's MOP once per Phoenix day, storing tarballs under `artifacts/issues/archive/` with a Phoenix timestamp and lockfile.
-**Action:** Run the drift guard (`./scripts/ci/check_generator_drift.sh`) locally or in CI to ensure committed artifacts match regenerated output.
+**Last updated:** 2024-05-22T09:00:00-07:00 (America/Phoenix)
 
-## Overview
+The wave generator converts YAML manifests (e.g., `backlog/wave3.yaml`) into the Mission Outline Plan (MOP), sub-prompts, GitHub
+issue bodies, and manifest metadata. Follow this runbook before committing regenerated artifacts.
 
-The generator consumes `backlog/wave3.yaml` and emits:
+## Prerequisites
 
-- Mission Outline Plan (MOP): `docs/mop/mop_wave3.md`
-- Sub-prompts: `docs/sub-prompts/wave3/`
-- Issue bodies: `artifacts/issues/wave3/`
-- Manifest: `artifacts/manifests/wave3_subprompts.json`
+- Python 3.11+ with repository dependencies installed: `pip install -r requirements.txt -r requirements-dev.txt`
+- Git workspace synced with the latest `main`
+- Phoenix-local awareness. America/Phoenix (UTC-7) is the canonical timezone. Do **not** swap to UTC or daylight-saving offsets.
 
-All timestamps and scheduling guidance use **America/Phoenix** (no DST).
+## Standard Operating Procedure
 
-## Daily workflow
-
-1. Pull latest main branch and ensure dependencies are installed (`pip install -r requirements-dev.txt`).
-2. Generate artifacts:
+1. Inspect the source manifest (`backlog/wave3.yaml`) and confirm constraints reference Phoenix explicitly.
+2. Resolve deterministic timestamps:
    ```bash
    python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix
    ```
-   - Re-runs are idempotent. When rerun on the same Phoenix day the generator will skip archiving if a lockfile exists.
-3. Verify the archive: if `docs/mop/mop_wave2.md` exists the command creates `artifacts/issues/archive/wave2_<YYYY-MM-DD>.tar.gz` plus a `.lock` file tagged with the Phoenix date.
-4. Run the drift guard:
+   - The CLI delegates to `scripts/github/wave2_helper.py generate`, persisting Phoenix timestamps everywhere.
+   - A prior wave MOP archive is written to `docs/mop/archive/mop_wave<N-1>_YYYY-MM-DD.md` once per Phoenix day.
+3. Validate outputs:
+   - `docs/mop/mop_wave3.md`
+   - `docs/sub-prompts/wave3/`
+   - `artifacts/issues/wave3/`
+   - `artifacts/manifests/wave3_subprompts.json`
+   - `docs/mop/archive/`
+4. Re-run the generator:
    ```bash
-   ./scripts/ci/check_generator_drift.sh
+   python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix
    ```
-   - CI and pre-commit invoke this guard automatically.
-5. Review updated files, confirm Phoenix timestamps, and commit the changes with Decision/Note/Action markers as needed.
+   No diffs should appear; idempotency is enforced by pytest coverage (`tests/generator/`).
+5. Execute the generator test suite:
+   ```bash
+   pytest tests/generator --cov=scripts.github.wave2_helper
+   ```
+   Ensure Phoenix timestamp assertions and archiver/idempotency coverage pass locally.
+6. Update documentation and changelog markers using **Decision / Note / Action** prefixes. Reference
+   `artifacts/manifests/wave3_subprompts.json` in PR discussions for traceability.
 
-## Troubleshooting
+## Validation Checklist
 
-- **Missing templates** – Ensure `templates/mop.md.j2`, `subprompt.md.j2`, and `issue_body.md.j2` exist. Copy them from `templates/` if using a temporary workspace.
-- **Archive not created** – The previous wave MOP must exist. Confirm `docs/mop/mop_wave2.md` or pass `--no-archive` if intentionally skipping archiving for dry runs.
-- **Timezone drift** – Always pass `--timezone America/Phoenix` (default) to maintain Phoenix timestamps.
-- **Drift guard failure** – Inspect `git diff` after the guard runs; it indicates which generated files diverge. Regenerate and recommit.
+- [ ] Phoenix timestamps (`America/Phoenix`, `UTC-7`) appear in the MOP, manifest, and archived filenames.
+- [ ] `docs/mop/archive/` contains at most one entry per Phoenix day.
+- [ ] `pytest tests/generator --cov` succeeds with ≥70% coverage for generator modules.
+- [ ] README highlights the generator workflow and links back to this runbook.
+- [ ] CHANGELOG and PR template begin status blocks with **Decision:**/**Note:**/**Action:** markers.
 
-## Traceability
+## Rollback
 
-After generation, the manifest includes the Git SHA (`git_sha`), Phoenix timestamp, and all generated slugs. Reference the manifest entry when citing sub-prompts in changelog updates or PR descriptions.
+If regenerated artifacts drift or timestamps slip out of Phoenix:
+
+1. `git checkout -- docs/mop docs/sub-prompts artifacts/issues artifacts/manifests`
+2. Remove `docs/mop/archive/mop_wave*_YYYY-MM-DD.md` created in the broken run.
+3. Re-run the generator after confirming local timezone flags (`--timezone America/Phoenix`).
+4. Escalate in Slack `#releasecopilot-wave3` with the manifest path and pytest logs attached.
+
+## References
+
+- `backlog/wave3.yaml` – canonical wave spec
+- `artifacts/manifests/wave3_subprompts.json` – deterministic manifest with Phoenix timestamps
+- `tests/generator/` – pytest suite covering archiving, manifests, and idempotency

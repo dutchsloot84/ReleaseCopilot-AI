@@ -16,7 +16,7 @@
 - [ ] Docs updated (README/runbook) and CHANGELOG entries applied when required.
 
 ### Markers
-<!-- Use canonical Decision:/Note:/Action:/Blocker: prefixes in the PR body -->
-**Decision:** …
-**Note:** …
-**Action:** (Owner: …) …
+<!-- Begin each block with Decision:/Note:/Action: and link to the relevant manifest entry -->
+**Decision:** Reference `artifacts/manifests/wave3_subprompts.json` and summarize the change.
+**Note:** Reinforce America/Phoenix (UTC-7, no DST) requirements or caveats.
+**Action:** (Owner: …) Follow-up item tied to the manifest slug or sequenced PR.
