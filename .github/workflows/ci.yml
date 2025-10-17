@@ -48,12 +48,51 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
+      - name: Determine coverage scope
+        run: |
+          set -eo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base=${{ github.event.pull_request.base.sha }}
+          else
+            base=${{ github.event.before }}
+          fi
+          if [ -z "$base" ]; then
+            base=$(git rev-parse HEAD^)
+          fi
+          git fetch --no-tags --depth=1 origin "$base" || true
+          git diff --name-only "$base" "$GITHUB_SHA" -- '*.py' > coverage_paths.txt
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          paths = Path('coverage_paths.txt').read_text().split()
+          value = ' '.join(paths)
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as env:
+              env.write(f'COVERAGE_PATHS={value}\n')
+          PY
+
       - name: Pre-commit (ruff, black, mypy)
         run: scripts/ci/run_precommit.sh
         shell: bash
 
       - name: Pytest
-        run: pytest -q
+        run: |
+          pytest
+          if [ -n "$COVERAGE_PATHS" ]; then
+            python tools/coverage_gate.py coverage.json --minimum 70 --paths $COVERAGE_PATHS
+          else
+            python tools/coverage_gate.py coverage.json --minimum 70
+          fi
+      - name: Coverage PR comment
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "$COVERAGE_PATHS" ]; then
+            python -m releasecopilot.cli pr-comment coverage --file coverage.json --minimum 70 --paths $COVERAGE_PATHS
+          else
+            python -m releasecopilot.cli pr-comment coverage --file coverage.json --minimum 70
+          fi
 
   package:
     name: Package Lambda bundle
