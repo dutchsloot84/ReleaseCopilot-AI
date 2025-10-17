@@ -111,7 +111,7 @@ The pre-commit hooks run `ruff --fix`, `black`, and `mypy` locally, catching for
 Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CLI renders the Mission Outline Plan (MOP), sub-prompts, issue bodies, and a JSON manifest directly from that spec.
 
 1. Update `backlog/wave3.yaml` with the new wave metadata, constraints, and sequenced PRs.
-2. Run `make gen-wave3` to execute `scripts/github/wave2_helper.py generate backlog/wave3.yaml`.
+2. Run `make gen-wave3` to execute `python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix`.
 3. Inspect regenerated files under:
    - `docs/mop/mop_wave3.md`
    - `docs/sub-prompts/wave3/`
@@ -122,7 +122,7 @@ Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CL
 
 ### Troubleshooting
 
-- **CI failure “Regenerate: make gen-wave3”** – Run `make gen-wave3` locally and commit the resulting diffs. The `.github/workflows/gen-guard.yml` workflow enforces this guard on pull requests.
+- **CI failure “Generator drift detected”** – Run `make gen-wave3` locally (or execute `./scripts/ci/check_generator_drift.sh`) and commit the resulting diffs. The guard script reruns the generator and blocks PRs when artifacts drift.
 - **Archive skipped** – The generator only archives the previous wave MOP once per Phoenix day. Confirm `docs/mop/mop_wave2.md` exists before running the command.
 - **Need issue metadata** – Use the existing Wave 2 helper subcommands (for example `python scripts/github/wave2_helper.py collect`) to download issues, then stitch them into the generated sub-prompts manually.
 

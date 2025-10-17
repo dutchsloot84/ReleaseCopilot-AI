@@ -20,11 +20,12 @@ from typing import (
     runtime_checkable,
 )
 
+import releasecopilot_bootstrap  # noqa: F401  # ensures src/ is on sys.path
+
 try:  # pragma: no cover - best effort optional dependency
     from dotenv import load_dotenv
 except Exception:  # pragma: no cover - ignore missing dependency
     load_dotenv = None
-
 
 from clients.bitbucket_client import BitbucketClient
 from clients.jira_client import JiraClient, compute_fix_version_window
@@ -38,6 +39,7 @@ from releasecopilot.errors import ReleaseCopilotError
 from releasecopilot.logging_config import configure_logging, get_logger
 
 from src.cli.shared import AuditConfig, finalize_run, handle_dry_run, parse_args
+from tools.generator.generator import run_cli as run_generator_cli
 
 
 def _load_local_dotenv() -> None:
@@ -424,8 +426,21 @@ def _detect_git_sha() -> Optional[str]:
     return sha or None
 
 
-def main(argv: Optional[Iterable[str]] = None) -> int:
+def _dispatch(argv: list[str]) -> tuple[Optional[int], Optional[tuple[Any, ...]]]:
+    if argv and argv[0] == "generate":
+        exit_code = run_generator_cli(argv[1:])
+        return exit_code, None
     args, config = parse_args(argv)
+    return None, (args, config)
+
+
+def main(argv: Optional[Iterable[str]] = None) -> int:
+    vector = list(argv or []) if argv is not None else sys.argv[1:]
+    exit_code, parsed = _dispatch(vector)
+    if exit_code is not None:
+        return exit_code
+    assert parsed is not None  # for type checkers
+    args, config = parsed
     configure_logging(args.log_level)
     logger = get_logger(__name__)
 

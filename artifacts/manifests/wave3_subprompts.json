@@ -9,6 +9,7 @@
         "Phoenix-stamped JSON in artifacts/orchestrator/.",
         "Orchestrator dispatch supports \u2018langgraph-runner\u2019; UI shows narrative."
       ],
+      "id": "pr-007",
       "issue_path": "artifacts/issues/wave3/agents-optional-langgraph-minimal-path.md",
       "labels": [
         "wave:wave3",
@@ -27,6 +28,7 @@
         "JSON/Excel include run_id, git_sha, generated_at.",
         "UI download buttons wired."
       ],
+      "id": "pr-006",
       "issue_path": "artifacts/issues/wave3/artifacts-release-notes-validation-doc-exports.md",
       "labels": [
         "wave:wave3",
@@ -45,6 +47,7 @@
         "Store files_changed and authorship; idempotent upsert.",
         "Key extraction from message/branch/PR title."
       ],
+      "id": "pr-003",
       "issue_path": "artifacts/issues/wave3/bitbucket-ingest-scan-webhooks.md",
       "labels": [
         "wave:wave3",
@@ -61,6 +64,7 @@
         "pytest-cov \u226570% on touched code; build fails otherwise.",
         "PR comment posts coverage summary."
       ],
+      "id": "pr-010",
       "issue_path": "artifacts/issues/wave3/ci-coverage-gate-pr-summary-comment.md",
       "labels": [
         "wave:wave3",
@@ -79,6 +83,7 @@
         "Persist run metadata (args, git_sha, generated_at).",
         "Unit tests for edge cases/collisions."
       ],
+      "id": "pr-004",
       "issue_path": "artifacts/issues/wave3/correlation-gaps-engine.md",
       "labels": [
         "wave:wave3",
@@ -96,6 +101,7 @@
         "Clear CLI messaging; graceful errors for bad paths/CSV.",
         "Tests for success/failure paths."
       ],
+      "id": "pr-008",
       "issue_path": "artifacts/issues/wave3/csv-fallback-for-failed-jira-jql.md",
       "labels": [
         "wave:wave3",
@@ -114,6 +120,7 @@
         "Recompute correlation for touched issues.",
         "Docs: setup, troubleshooting, Phoenix timestamps."
       ],
+      "id": "pr-002",
       "issue_path": "artifacts/issues/wave3/jira-webhook-based-sync-prod-grade.md",
       "labels": [
         "wave:wave3",
@@ -131,6 +138,7 @@
         "Notes quality bar, \u226570% coverage, ruff/black/mypy gates.",
         "Docs page explains orchestrator plan/dispatch and Phoenix TZ."
       ],
+      "id": "pr-011",
       "issue_path": "artifacts/issues/wave3/pr-template-orchestration-docs-slash-commands-phoenix-tz.md",
       "labels": [
         "wave:wave3",
@@ -147,6 +155,7 @@
         ".pre-commit-config.yaml lands; README has install steps.",
         "pre-commit run --all-files passes in CI."
       ],
+      "id": "pr-012",
       "issue_path": "artifacts/issues/wave3/pre-commit-ruff-black-mypy.md",
       "labels": [
         "wave:wave3",
@@ -165,6 +174,7 @@
         "UI list with reason tooltips; JSON export section.",
         "Artifacts: Release Notes + Validation Doc + Exports."
       ],
+      "id": "pr-005",
       "issue_path": "artifacts/issues/wave3/qa-focus-regression-heuristics-yaml-driven.md",
       "labels": [
         "wave:wave3",
@@ -183,6 +193,7 @@
         "Actions: Re-sync Jira, Re-scan Repos, Recompute Correlation.",
         "Download buttons: Release Notes, Validation Doc, JSON, Excel."
       ],
+      "id": "pr-001",
       "issue_path": "artifacts/issues/wave3/streamlit-mvp-dashboard-v1-nov-25-lane.md",
       "labels": [
         "wave:wave3",
@@ -200,6 +211,7 @@
         "E2E audit using cached fixtures verifies schema + content.",
         "Contract tests guard JSON/Excel schema (jsonschema + column checks)."
       ],
+      "id": "pr-009",
       "issue_path": "artifacts/issues/wave3/tests-mocked-jira-bitbucket-e2e-with-cached-payloads.md",
       "labels": [
         "wave:wave3",
