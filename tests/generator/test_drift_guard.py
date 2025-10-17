@@ -6,7 +6,9 @@ import subprocess
 from pathlib import Path
 
 
-def _run(cmd: list[str], cwd: Path, *, check: bool = True) -> subprocess.CompletedProcess:
+def _run(
+    cmd: list[str], cwd: Path, *, check: bool = True
+) -> subprocess.CompletedProcess:
     env = os.environ.copy()
     env.pop("COVERAGE_PROCESS_START", None)
     env.pop("COVERAGE_FILE", None)
