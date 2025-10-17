@@ -90,20 +90,28 @@ Set up the shared pre-commit hooks so formatting runs automatically before every
 pre-commit install
 ```
 
-Run all hooks once to ensure your workspace matches the CI configuration:
+Run all hooks once to ensure your workspace matches the CI configuration and that Phoenix-stamped logs from the hooks look correct:
 
 ```bash
 pre-commit run --all-files
 ```
 
-The pre-commit hooks run `ruff --fix`, `black`, and `mypy` locally, catching formatting drifts before `black --check .` executes in CI.
+The pre-commit hooks run `ruff --fix`, `black`, and `mypy` locally, catching formatting drifts before CI. Wave 3 automation expects hook output timestamps in America/Phoenix (no DST), matching the Mission Outline Plan.
+
+## Contributing & Quality Gates
+
+- Pull request descriptions must begin with **Decision:**, **Note:**, and **Action:** summaries that align with the generated manifest entry and reference Phoenix (America/Phoenix) scheduling where applicable.
+- Confirm ≥70% test coverage on touched code by running `pytest --cov` (or an equivalent target) and link to the report when requesting review.
+- Acknowledge the lint/type gates explicitly by running `ruff`, `black`, and `mypy` before submitting the PR template checklist.
+- Document updates belong alongside code changes; orchestrator-related pull requests should cross-reference [`docs/runbooks/orchestrator.md`](docs/runbooks/orchestrator.md) so reviewers can validate Phoenix-aware plan and dispatch flows.
+- Phoenix time (America/Phoenix, UTC-7 year-round) is the canonical timezone for orchestration—include Phoenix-local timestamps in new artifacts and note deviations in the **Note:** section of the PR template.
 
 ## Generating Waves (YAML → MOP/Sub-Prompts/Issues)
 
 Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CLI renders the Mission Outline Plan (MOP), sub-prompts, issue bodies, and a JSON manifest directly from that spec.
 
 1. Update `backlog/wave3.yaml` with the new wave metadata, constraints, and sequenced PRs.
-2. Resolve the Phoenix-aware timestamp with `python main.py generate --timezone America/Phoenix --spec backlog/wave3.yaml`. The helper dispatches to `scripts/github/wave2_helper.py generate`.
+2. Run `make gen-wave3` to execute `python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix`.
 3. Inspect regenerated files under:
    - `docs/mop/mop_wave3.md`
    - `docs/sub-prompts/wave3/`
@@ -115,7 +123,7 @@ Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CL
 
 ### Troubleshooting
 
-- **CI failure “Regenerate: make gen-wave3”** – Run `make gen-wave3` locally and commit the resulting diffs. The `.github/workflows/gen-guard.yml` workflow enforces this guard on pull requests.
+- **CI failure “Generator drift detected”** – Run `make gen-wave3` locally (or execute `./scripts/ci/check_generator_drift.sh`) and commit the resulting diffs. The guard script reruns the generator and blocks PRs when artifacts drift.
 - **Archive skipped** – The generator only archives the previous wave MOP once per Phoenix day. Confirm `docs/mop/mop_wave2.md` exists before running the command.
 - **Need issue metadata** – Use the existing Wave 2 helper subcommands (for example `python scripts/github/wave2_helper.py collect`) to download issues, then stitch them into the generated sub-prompts manually.
 

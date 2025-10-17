@@ -4,6 +4,9 @@
 **Note:** America/Phoenix (UTC-7, no DST) remains the required timezone for manifests, archives, and coverage checks.
 **Action:** Added README/runbook guidance, expanded pytest coverage under `tests/generator/`, and aligned PR template markers referencing `artifacts/manifests/wave3_subprompts.json`.
 ### Added
+- **Decision:** Adopt `python main.py generate --timezone America/Phoenix` as the source of truth for Wave 3 artifacts.
+- **Note:** `./scripts/ci/check_generator_drift.sh` reruns the generator and compares `docs/mop/mop_wave3.md`, `docs/sub-prompts/wave3/`, `artifacts/issues/wave3/`, and `artifacts/manifests/wave3_subprompts.json` against the manifest entry.
+- **Action:** Introduced `tools/generator/` modules, Phoenix-day archiving, and generator drift guard invoked by Make/CI/pre-commit.
 - YAML-driven Wave 3 generator (`scripts/github/wave2_helper.py generate`) emitting the MOP,
   sub-prompts, issue bodies, and manifest with Phoenix timestamps.
 - Templated artifacts (`templates/*.j2`) plus backlog spec (`backlog/wave3.yaml`) and
