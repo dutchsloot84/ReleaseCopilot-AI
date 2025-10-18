@@ -158,3 +158,10 @@ def run(argv: Optional[Iterable[str]] = None) -> dict:
 
 
 __all__ = ["parse_args", "run", "build_config", "find_dotenv_path"]
+
+
+if __name__ == "__main__":  # pragma: no cover - CLI shim
+    from releasecopilot.cli.__main__ import main as _package_main
+
+    raise SystemExit(_package_main())
+
