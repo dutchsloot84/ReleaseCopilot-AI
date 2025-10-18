@@ -47,7 +47,9 @@ def _github_request(
     raise RuntimeError("Unexpected payload from GitHub API")
 
 
-def _find_existing_comment(items: Iterable[Mapping[str, object]]) -> Mapping[str, object] | None:
+def _find_existing_comment(
+    items: Iterable[Mapping[str, object]],
+) -> Mapping[str, object] | None:
     for item in items:
         body = item.get("body")
         if isinstance(body, str) and COMMENT_MARKER in body:

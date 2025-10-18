@@ -164,4 +164,3 @@ if __name__ == "__main__":  # pragma: no cover - CLI shim
     from releasecopilot.cli.__main__ import main as _package_main
 
     raise SystemExit(_package_main())
-

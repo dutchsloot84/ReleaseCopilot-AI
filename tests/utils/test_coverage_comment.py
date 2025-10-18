@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-
 from zoneinfo import ZoneInfo
 
 from releasecopilot.utils import coverage_comment
@@ -24,7 +23,7 @@ def test_build_comment_uses_marker_and_timestamp(monkeypatch) -> None:
     assert "87.3%" in comment
     assert "70.0%" in comment
     assert "2025-10-17 08:00:00 MST" in comment
-    assert '| Files gated | 1 |' in comment
+    assert "| Files gated | 1 |" in comment
 
 
 def test_build_comment_respects_custom_timezone(monkeypatch) -> None:
