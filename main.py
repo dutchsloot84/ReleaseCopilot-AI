@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 from datetime import datetime
+from logging import Logger
 from pathlib import Path
 from typing import (
     Any,
@@ -19,6 +20,9 @@ from typing import (
     Protocol,
     runtime_checkable,
 )
+
+import click
+from zoneinfo import ZoneInfo
 
 import releasecopilot_bootstrap  # noqa: F401  # ensures src/ is on sys.path
 
@@ -35,8 +39,13 @@ from exporters.excel_exporter import ExcelExporter
 from exporters.json_exporter import JSONExporter
 from processors.audit_processor import AuditProcessor
 from releasecopilot import uploader
-from releasecopilot.errors import ReleaseCopilotError
+from releasecopilot.errors import JiraJQLFailed, ReleaseCopilotError
 from releasecopilot.logging_config import configure_logging, get_logger
+from releasecopilot.utils.jira_csv_loader import (
+    JiraCSVLoaderError,
+    load_issues_from_csv,
+)
+
 from src.cli.shared import AuditConfig, finalize_run, handle_dry_run, parse_args
 from tools.generator.generator import run_cli as run_generator_cli
 
@@ -60,6 +69,41 @@ _load_local_dotenv()
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 TEMP_DIR = BASE_DIR / "temp_data"
+PHOENIX_ZONE = ZoneInfo("America/Phoenix")
+
+
+def _phoenix_timestamp() -> str:
+    return datetime.now(tz=PHOENIX_ZONE).isoformat(timespec="seconds")
+
+
+def _prompt_for_csv_fallback(*, logger: Logger) -> tuple[list[dict[str, Any]], Path]:
+    prompt_text = "Jira JQL failed after retries. Provide path to Jira CSV export"
+    while True:
+        try:
+            response = click.prompt(prompt_text, type=str)
+        except click.Abort as exc:
+            raise ReleaseCopilotError("CSV fallback aborted by user") from exc
+        csv_path = Path(response).expanduser()
+        if not csv_path.exists() or not csv_path.is_file():
+            click.echo(f"CSV file not found: {csv_path}", err=True)
+            continue
+        try:
+            issues = load_issues_from_csv(csv_path)
+        except JiraCSVLoaderError as loader_error:
+            click.echo(f"Invalid CSV: {loader_error}", err=True)
+            continue
+        timestamp = _phoenix_timestamp()
+        click.echo(f"[{timestamp}] Loading issues from CSV fallback: {csv_path}")
+        logger.info(
+            "Loaded issues from CSV fallback",
+            extra={
+                "csv_path": str(csv_path),
+                "issue_count": len(issues),
+                "timestamp": timestamp,
+                "timezone": "America/Phoenix",
+            },
+        )
+        return issues, csv_path
 
 
 @runtime_checkable
@@ -144,10 +188,20 @@ def run_audit(
         },
     )
 
-    issues, jira_cache_path = issue_provider.fetch_issues(
-        fix_version=config.fix_version,
-        use_cache=config.use_cache,
-    )
+    csv_fallback_path: Path | None = None
+    try:
+        issues, jira_cache_path = issue_provider.fetch_issues(
+            fix_version=config.fix_version,
+            use_cache=config.use_cache,
+        )
+    except JiraJQLFailed as exc:
+        fallback_context = dict(getattr(exc, "context", {}))
+        fallback_context.update({"fix_version": config.fix_version})
+        logger.warning(
+            "Jira JQL failed; prompting for CSV fallback", extra=fallback_context
+        )
+        issues, csv_fallback_path = _prompt_for_csv_fallback(logger=logger)
+        jira_cache_path = csv_fallback_path
     jira_output = DATA_DIR / "jira_issues.json"
     write_json(jira_output, {"fixVersion": config.fix_version, "issues": issues})
 
@@ -195,6 +249,8 @@ def run_audit(
     raw_cache_sources: List[Path] = []
     if jira_cache_path:
         raw_cache_sources.append(Path(jira_cache_path))
+    if csv_fallback_path and csv_fallback_path not in raw_cache_sources:
+        raw_cache_sources.append(csv_fallback_path)
     raw_files.extend(raw_cache_sources)
     for cache_key in cache_keys:
         cache_file = commit_provider.get_last_cache_file(cache_key)

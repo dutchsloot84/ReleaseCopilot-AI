@@ -139,6 +139,11 @@ Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CL
 
 ### Troubleshooting
 
+**Decision:** Provide CSV fallback flow when Jira JQL retries fail. See [`artifacts/issues/wave3/csv-fallback-for-failed-jira-jql.md`](artifacts/issues/wave3/csv-fallback-for-failed-jira-jql.md) for the Wave 3 manifest entry.
+**Note:** CSV exports must include the default Jira columns (Issue key, Summary, Status) for ingestion.
+**Action:** When the audit CLI reports a JQL failure after retries, provide the path to a UTF-8 Jira CSV export when prompted. The fallback is timestamped in America/Phoenix for traceability.
+
+- **Jira JQL failures** – After retries are exhausted, the CLI prompts for a CSV export. Supply the path to a Jira export generated with the default column set; invalid paths or malformed CSVs are rejected with a clear Phoenix-stamped status message before re-prompting.
 - **CI failure “Generator drift detected”** – Run `make gen-wave3` locally (or execute `./scripts/ci/check_generator_drift.sh`) and commit the resulting diffs. The guard script reruns the generator and blocks PRs when artifacts drift.
 - **Archive skipped** – The generator only archives the previous wave MOP once per Phoenix day. Confirm `docs/mop/mop_wave2.md` exists before running the command.
 - **Need issue metadata** – Use the existing Wave 2 helper subcommands (for example `python scripts/github/wave2_helper.py collect`) to download issues, then stitch them into the generated sub-prompts manually.
