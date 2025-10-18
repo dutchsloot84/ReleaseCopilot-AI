@@ -94,7 +94,9 @@ def _add_pr_comment_parser(subparsers) -> None:
     )
     pr_sub = pr_comment.add_subparsers(dest="topic", required=True)
 
-    coverage = pr_sub.add_parser("coverage", help="Publish pytest coverage results as a PR comment")
+    coverage = pr_sub.add_parser(
+        "coverage", help="Publish pytest coverage results as a PR comment"
+    )
     coverage.add_argument(
         "--file",
         dest="report",

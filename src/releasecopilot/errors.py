@@ -21,6 +21,10 @@ class JiraQueryError(ReleaseCopilotError):
     """Raised when Jira issue search fails."""
 
 
+class JiraJQLFailed(JiraQueryError):
+    """Raised when Jira JQL searches exhaust retries and still fail."""
+
+
 class BitbucketRequestError(ReleaseCopilotError):
     """Raised when Bitbucket requests fail."""
 
@@ -29,5 +33,6 @@ __all__ = [
     "ReleaseCopilotError",
     "JiraTokenRefreshError",
     "JiraQueryError",
+    "JiraJQLFailed",
     "BitbucketRequestError",
 ]
