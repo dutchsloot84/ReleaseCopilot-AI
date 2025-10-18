@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AuditResults",
+  "type": "object",
+  "required": [
+    "summary",
+    "stories_with_no_commits",
+    "orphan_commits",
+    "commit_story_mapping"
+  ],
+  "properties": {
+    "summary": {
+      "type": "object",
+      "required": [
+        "total_stories",
+        "total_commits",
+        "stories_with_commits",
+        "stories_without_commits",
+        "orphan_commits",
+        "generated_at",
+        "timezone"
+      ],
+      "properties": {
+        "total_stories": {"type": "integer", "minimum": 0},
+        "total_commits": {"type": "integer", "minimum": 0},
+        "stories_with_commits": {"type": "integer", "minimum": 0},
+        "stories_without_commits": {"type": "integer", "minimum": 0},
+        "orphan_commits": {"type": "integer", "minimum": 0},
+        "generated_at": {
+          "type": "string",
+          "pattern": "^20\\d{2}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}-07:00$"
+        },
+        "timezone": {"type": "string", "const": "America/Phoenix"}
+      },
+      "additionalProperties": true
+    },
+    "stories_with_no_commits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "fields"],
+        "properties": {
+          "key": {"type": "string"},
+          "fields": {"type": "object"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "orphan_commits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["hash", "message", "date"],
+        "properties": {
+          "hash": {"type": "string"},
+          "message": {"type": "string"},
+          "author": {"type": ["string", "object", "null"]},
+          "date": {"type": "string"},
+          "repository": {"type": ["string", "null"]},
+          "branch": {"type": ["string", "null"]}
+        },
+        "additionalProperties": true
+      }
+    },
+    "commit_story_mapping": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["story_key", "commits"],
+        "properties": {
+          "story_key": {"type": "string"},
+          "story_summary": {"type": ["string", "null"]},
+          "commit_count": {"type": ["integer", "null"]},
+          "commits": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["hash", "message", "date"],
+              "properties": {
+                "hash": {"type": "string"},
+                "message": {"type": "string"},
+                "author": {"type": ["string", "null"]},
+                "date": {"type": "string"},
+                "repository": {"type": ["string", "null"]},
+                "branch": {"type": ["string", "null"]}
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}
