@@ -10,6 +10,11 @@ from typing import Iterable, Mapping, MutableMapping, Sequence
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from clients.bitbucket_client import BitbucketClient
+from config.settings import load_settings
+from releasecopilot.ingest.bitbucket_scanner import BitbucketScanner
+from releasecopilot.ingest.storage import CommitStorage
+from releasecopilot.logging_config import configure_logging
 from releasecopilot.utils.coverage import enforce_threshold
 from releasecopilot.utils.coverage_comment import COMMENT_MARKER, build_comment
 
@@ -145,10 +150,57 @@ def _add_pr_comment_parser(subparsers) -> None:
     )
 
 
+def _add_ingest_parser(subparsers) -> None:
+    ingest = subparsers.add_parser("ingest", help="Ingestion utilities")
+    ingest_sub = ingest.add_subparsers(dest="topic", required=True)
+
+    scan = ingest_sub.add_parser(
+        "bitbucket-scan",
+        help="Run a Phoenix-aware Bitbucket commit scan and persist results",
+    )
+    scan.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        help="Optional override configuration file (defaults to config/settings.yaml)",
+    )
+    scan.add_argument(
+        "--hours",
+        type=int,
+        default=24,
+        help="Time window (in hours) to include in the scan",
+    )
+    scan.add_argument(
+        "--repos",
+        nargs="*",
+        default=None,
+        help="Repositories to scan (defaults to configuration)",
+    )
+    scan.add_argument(
+        "--branches",
+        nargs="*",
+        default=None,
+        help="Optional branches to include (defaults to configuration)",
+    )
+    scan.add_argument(
+        "--database",
+        type=Path,
+        default=Path("data/bitbucket/commits.db"),
+        help="SQLite database used for commit persistence",
+    )
+    scan.add_argument(
+        "--artifact-dir",
+        type=Path,
+        default=Path("artifacts/issues/wave3/bitbucket"),
+        help="Directory for run metadata artifacts",
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
     _add_pr_comment_parser(subparsers)
+    _add_ingest_parser(subparsers)
     return parser
 
 
@@ -180,12 +232,82 @@ def _handle_pr_comment_coverage(args: argparse.Namespace) -> str:
     return comment
 
 
+def _handle_ingest_bitbucket_scan(args: argparse.Namespace) -> dict[str, object]:
+    settings = load_settings(path=args.config)
+    bitbucket_cfg = settings.get("bitbucket", {}) if isinstance(settings, dict) else {}
+
+    workspace = bitbucket_cfg.get("workspace")
+    if not workspace:
+        raise SystemExit("Bitbucket workspace is not configured")
+
+    credentials = bitbucket_cfg.get("credentials", {}) if isinstance(bitbucket_cfg, dict) else {}
+
+    client = BitbucketClient(
+        workspace=workspace,
+        username=credentials.get("username"),
+        app_password=credentials.get("app_password"),
+        access_token=credentials.get("access_token"),
+        cache_dir=Path("temp_data") / "bitbucket",
+    )
+
+    repositories_cfg = args.repos or bitbucket_cfg.get("repositories") or []
+    if isinstance(repositories_cfg, str):
+        repositories = [repositories_cfg]
+    elif isinstance(repositories_cfg, Sequence):
+        repositories = [str(repo) for repo in repositories_cfg]
+    else:
+        repositories = []
+
+    if not repositories:
+        raise SystemExit("No Bitbucket repositories configured")
+
+    branches_cfg = args.branches or bitbucket_cfg.get("default_branches") or None
+    if branches_cfg is None:
+        branches_tuple: tuple[str, ...] | None = None
+    elif isinstance(branches_cfg, str):
+        branches_tuple = (branches_cfg,)
+    elif isinstance(branches_cfg, Sequence):
+        branches_tuple = tuple(str(branch) for branch in branches_cfg)
+    else:
+        raise SystemExit("Configured branches must be a sequence of strings")
+
+    storage = CommitStorage(args.database)
+    scanner = BitbucketScanner(
+        client=client,
+        storage=storage,
+        artifact_dir=args.artifact_dir,
+    )
+
+    result = scanner.scan(
+        repos=repositories,
+        hours=args.hours,
+        branches=branches_tuple,
+    )
+
+    summary = {
+        "artifact": str(result["artifact_path"]),
+        "commit_count": len(result["commits"]),
+        "window": {
+            "start": result["window_start"].isoformat(),
+            "end": result["window_end"].isoformat(),
+            "hours": args.hours,
+        },
+    }
+    print(json.dumps(summary, indent=2))
+    return summary
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
+    configure_logging(os.environ.get("LOG_LEVEL", "INFO"))
+
     if args.command == "pr-comment" and args.topic == "coverage":
         _handle_pr_comment_coverage(args)
+        return 0
+    if args.command == "ingest" and args.topic == "bitbucket-scan":
+        _handle_ingest_bitbucket_scan(args)
         return 0
 
     parser.error("Unsupported command")

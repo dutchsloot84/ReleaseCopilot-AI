@@ -1,0 +1,30 @@
+{
+  "event_key": "pullrequest:updated",
+  "repository": {
+    "full_name": "example/repo"
+  },
+  "pullrequest": {
+    "title": "RC-200 Align configs",
+    "source": {
+      "branch": {"name": "feature/rc-200-align"}
+    },
+    "commits": [
+      {
+        "hash": "123abc",
+        "message": "RC-200 Prepare release",
+        "author": {"raw": "Alice <alice@example.com>"},
+        "files": [
+          {"path": "config/defaults.yml"}
+        ]
+      },
+      {
+        "hash": "123abc",
+        "message": "duplicate entry should dedupe",
+        "author": {"raw": "Alice <alice@example.com>"},
+        "files": [
+          {"path": "config/settings.yaml"}
+        ]
+      }
+    ]
+  }
+}
