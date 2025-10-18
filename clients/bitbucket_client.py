@@ -165,11 +165,7 @@ class BitbucketClient(BaseAPIClient):
                 # Normalise branch information when available. Bitbucket commit
                 # payloads often expose it through ``target``.
                 if "branch" not in commit:
-                    branch_name = (
-                        (commit.get("target") or {})
-                        .get("branch", {})
-                        .get("name")
-                    )
+                    branch_name = (commit.get("target") or {}).get("branch", {}).get("name")
                     if branch_name:
                         commit["branch"] = branch_name
                 yield commit
