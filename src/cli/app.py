@@ -32,9 +32,7 @@ def _scope_entry(value: str) -> tuple[str, str]:
     return key.strip(), parsed.strip()
 
 
-def _build_audit_parser(
-    subparsers: argparse._SubParsersAction, defaults: Defaults
-) -> None:
+def _build_audit_parser(subparsers: argparse._SubParsersAction, defaults: Defaults) -> None:
     audit = subparsers.add_parser(
         "audit",
         help="Generate release audit artifacts from cached payloads",
@@ -96,9 +94,7 @@ def build_parser(defaults: Defaults | None = None) -> argparse.ArgumentParser:
     return parser
 
 
-def _collect_audit_options(
-    args: argparse.Namespace, defaults: Defaults
-) -> AuditOptions:
+def _collect_audit_options(args: argparse.Namespace, defaults: Defaults) -> AuditOptions:
     scope: dict[str, str] = {}
     for key, value in args.scope:
         scope[key] = value

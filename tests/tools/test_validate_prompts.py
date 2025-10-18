@@ -10,9 +10,7 @@ from tools import validate_prompts
 
 @pytest.fixture(autouse=True)
 def _freeze_git_sha(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        validate_prompts, "resolve_git_sha", lambda explicit: "test-sha"
-    )
+    monkeypatch.setattr(validate_prompts, "resolve_git_sha", lambda explicit: "test-sha")
 
 
 def test_missing_recipe_fails(
@@ -67,9 +65,7 @@ def test_missing_recipe_with_relative_paths(
     assert "prompts/task.md" in captured.err
 
 
-def test_validator_passes_with_recipe(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_validator_passes_with_recipe(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     prompts_dir = tmp_path / "prompts"
     prompts_dir.mkdir()
@@ -136,9 +132,7 @@ def test_validator_passes_with_relative_paths(
     assert exit_code == 0
 
 
-def test_auto_discovers_wave_directories(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_auto_discovers_wave_directories(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     prompts_root = Path("project") / "prompts"
     wave_dir = prompts_root / "wave5"
@@ -212,9 +206,7 @@ def test_wave_argument_limits_directories(
     assert "wave3" not in captured.out
 
 
-def test_config_file_drives_discovery(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_config_file_drives_discovery(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     prompts_root = Path("project") / "prompts"
     active_wave = prompts_root / "wave9"

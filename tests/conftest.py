@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import shutil
 import socket
+import sys
+import types
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
@@ -12,8 +15,32 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_SRC_DIR = _REPO_ROOT / "src"
+for candidate in (str(_REPO_ROOT), str(_SRC_DIR)):
+    if candidate in sys.path:
+        sys.path.remove(candidate)
+sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(1, str(_SRC_DIR))
+
+config_module = importlib.import_module("config")
+config_module.__path__ = [str(_REPO_ROOT / "config"), str(_SRC_DIR / "config")]
+for _namespace in ("tools", "scripts"):
+    if _namespace not in sys.modules:
+        _module = types.ModuleType(_namespace)
+        _module.__path__ = [str(_REPO_ROOT / _namespace)]  # type: ignore[attr-defined]
+        sys.modules[_namespace] = _module
+
+_WAVE_HELPER_PATH = _REPO_ROOT / "scripts/github/wave2_helper.py"
+_WAVE_SPEC = importlib.util.spec_from_file_location(
+    "scripts.github.wave2_helper", _WAVE_HELPER_PATH
+)
+if _WAVE_SPEC is None or _WAVE_SPEC.loader is None:  # pragma: no cover - defensive guard
+    raise RuntimeError("Unable to load wave2_helper module for tests")
+generator = importlib.util.module_from_spec(_WAVE_SPEC)
+sys.modules[_WAVE_SPEC.name] = generator
 try:
-    from scripts.github import wave2_helper as generator
+    _WAVE_SPEC.loader.exec_module(generator)
 except ModuleNotFoundError as exc:  # pragma: no cover - dependency guard
     if exc.name == "jinja2":
         pytest.skip("jinja2 is required for generator tests", allow_module_level=True)
@@ -22,26 +49,64 @@ except ModuleNotFoundError as exc:  # pragma: no cover - dependency guard
 FIXED_NOW = datetime(2024, 1, 1, 12, 0, tzinfo=ZoneInfo(generator.PHOENIX_TZ))
 
 
-def _copy_templates(dst: Path) -> None:
-    template_root = Path(__file__).resolve().parents[1] / "templates"
-    for template in ("mop.md.j2", "subprompt.md.j2", "issue_body.md.j2"):
-        shutil.copyfile(template_root / template, dst / template)
+@pytest.fixture(scope="session", autouse=True)
+def stub_config_settings() -> None:
+    """Provide minimal ``config.settings`` defaults for all tests."""
+
+    module = sys.modules.get("config.settings")
+    created = False
+    if module is None:
+        module = types.ModuleType("config.settings")
+        sys.modules["config.settings"] = module
+        created = True
+
+    original_timezone = getattr(module, "DEFAULT_TIMEZONE", None)
+    original_network_flag = getattr(module, "ENABLE_NETWORK", None)
+
+    module.DEFAULT_TIMEZONE = "America/Phoenix"
+    module.ENABLE_NETWORK = False
+
+    try:
+        yield
+    finally:
+        if original_timezone is None:
+            delattr(module, "DEFAULT_TIMEZONE")
+        else:
+            module.DEFAULT_TIMEZONE = original_timezone
+
+        if original_network_flag is None:
+            delattr(module, "ENABLE_NETWORK")
+        else:
+            module.ENABLE_NETWORK = original_network_flag
+
+        if created:
+            sys.modules.pop("config.settings", None)
 
 
-@pytest.fixture(autouse=True)
-def _disable_network(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Prevent network access during the test suite.
+@pytest.fixture(scope="session", autouse=True)
+def block_network() -> None:
+    """Prevent network access during the entire test session."""
 
-    Several modules rely on optional network calls (e.g. fetching secrets).
-    Tests should never reach out to external services, so we patch the most
-    common socket entry points to raise a helpful error if triggered.
-    """
+    original_socket = socket.socket
+    original_create_connection = socket.create_connection
 
     def _guard(*args: object, **kwargs: object) -> socket.socket:  # type: ignore[override]
         raise RuntimeError("Network access is disabled during tests.")
 
-    monkeypatch.setattr(socket, "socket", _guard)
-    monkeypatch.setattr(socket, "create_connection", _guard)
+    socket.socket = _guard  # type: ignore[assignment]
+    socket.create_connection = _guard  # type: ignore[assignment]
+
+    try:
+        yield
+    finally:
+        socket.socket = original_socket
+        socket.create_connection = original_create_connection
+
+
+def _copy_templates(dst: Path) -> None:
+    template_root = Path(__file__).resolve().parents[1] / "templates"
+    for template in ("mop.md.j2", "subprompt.md.j2", "issue_body.md.j2"):
+        shutil.copyfile(template_root / template, dst / template)
 
 
 @pytest.fixture(autouse=True)
@@ -84,9 +149,7 @@ def load_json() -> "LoadJSONFn":
 class LoadJSONFn:
     """Protocol-like helper for typing the ``load_json`` fixture."""
 
-    def __call__(
-        self, path: str | Path
-    ) -> Dict[str, Any]:  # pragma: no cover - documentation only
+    def __call__(self, path: str | Path) -> Dict[str, Any]:  # pragma: no cover - documentation only
         ...
 
 

@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
 from typing import Iterable, List, Sequence
-
 from zoneinfo import ZoneInfo
 
 PHOENIX_ZONE = ZoneInfo("America/Phoenix")
@@ -126,10 +125,7 @@ def parse_global_constraints(mop_text: str) -> List[str]:
             capture = True
             continue
         if capture:
-            if (
-                line.startswith("##")
-                and line.strip().lower() != "## global constraints"
-            ):
+            if line.startswith("##") and line.strip().lower() != "## global constraints":
                 break
             stripped = line.strip()
             if stripped.startswith("-"):
@@ -152,9 +148,7 @@ def extract_issue_number(text: str) -> int | None:
 
 def format_phoenix_timestamp(dt: datetime) -> str:
     if dt.tzinfo is None:
-        raise ValueError(
-            "Naive datetime values are not supported; provide an explicit timezone."
-        )
+        raise ValueError("Naive datetime values are not supported; provide an explicit timezone.")
     phoenix_dt = dt.astimezone(PHOENIX_ZONE)
     offset = phoenix_dt.utcoffset() or timedelta(0)
     offset_hours = int(offset.total_seconds() // 3600)
@@ -211,11 +205,7 @@ def build_checklist(
     ordered_section_names = sorted(
         set(ordered_section_names),
         key=lambda name: (
-            (
-                0
-                if name == "Orchestrator Workflow"
-                else 1 if name == "Helpers Workflow" else 2
-            ),
+            (0 if name == "Orchestrator Workflow" else 1 if name == "Helpers Workflow" else 2),
             name,
         ),
     )
@@ -254,12 +244,8 @@ def build_checklist(
     lines.append(
         "- Confirm artifact timestamps reflect America/Phoenix with no DST shifts (UTC-7 year-round)."
     )
-    lines.append(
-        "- Escalate blockers to the orchestrator DRI using the runbook contacts."
-    )
-    lines.append(
-        "- Ensure no secrets or credentials were embedded in generated artifacts."
-    )
+    lines.append("- Escalate blockers to the orchestrator DRI using the runbook contacts.")
+    lines.append("- Ensure no secrets or credentials were embedded in generated artifacts.")
     lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
@@ -270,9 +256,9 @@ def build_calendar(metadata: GenerationMetadata, issues: Sequence[Issue]) -> dic
     dtstamp = metadata.timestamp.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
     events: List[str] = []
     for idx, issue in enumerate(issues):
-        start_date = datetime.combine(
-            base_date, time(hour=9), tzinfo=PHOENIX_ZONE
-        ) + timedelta(days=idx)
+        start_date = datetime.combine(base_date, time(hour=9), tzinfo=PHOENIX_ZONE) + timedelta(
+            days=idx
+        )
         end_date = start_date + timedelta(minutes=45)
         uid = f"{metadata.run_hash}-{issue.number}@releasecopilot"
         events.extend(
@@ -338,9 +324,7 @@ def write_text(path: Path, content: str) -> None:
 
 def write_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def log_activity(
@@ -373,9 +357,7 @@ def log_activity(
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Generate Wave 2 human action artifacts."
-    )
+    parser = argparse.ArgumentParser(description="Generate Wave 2 human action artifacts.")
     parser.add_argument(
         "--mop-path",
         type=Path,

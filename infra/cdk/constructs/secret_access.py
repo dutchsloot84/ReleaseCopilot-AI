@@ -7,11 +7,14 @@ from typing import Iterable, Sequence
 
 from aws_cdk import (
     aws_iam as iam,
+)
+from aws_cdk import (
     aws_lambda as _lambda,
+)
+from aws_cdk import (
     aws_secretsmanager as secretsmanager,
 )
 from constructs import Construct
-
 
 _SENSITIVE_ENV_PREFIX = "SECRET_"
 

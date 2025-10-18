@@ -118,9 +118,7 @@ def test_generate_human_actions_with_empty_issues(tmp_path: Path) -> None:
     checklist_text = (output_dir / "checklist.md").read_text(encoding="utf-8")
     assert "No prioritized issues supplied" in checklist_text
 
-    calendar_payload = json.loads(
-        (output_dir / "calendar.json").read_text(encoding="utf-8")
-    )
+    calendar_payload = json.loads((output_dir / "calendar.json").read_text(encoding="utf-8"))
     assert "stub" in calendar_payload["ical"]
     assert metadata.run_hash in calendar_payload["ical"]
 

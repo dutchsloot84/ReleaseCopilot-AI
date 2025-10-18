@@ -1,6 +1,5 @@
 import importlib
 import json
-import sys
 
 import pytest
 
@@ -12,19 +11,16 @@ def _reset_logging(monkeypatch):
     monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "testing")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "testing")
-    if "releasecopilot.logging_config" in sys.modules:
-        importlib.reload(sys.modules["releasecopilot.logging_config"])
-    else:
-        importlib.import_module("releasecopilot.logging_config")
+    logging_module = importlib.import_module("releasecopilot.logging_config")
+    importlib.reload(logging_module)
     yield
     # Ensure we clean up handlers between tests
-    if "releasecopilot.logging_config" in sys.modules:
-        importlib.reload(sys.modules["releasecopilot.logging_config"])
+    importlib.reload(logging_module)
 
 
 def _reload_module(module_name: str):
-    sys.modules.pop(module_name, None)
-    return importlib.import_module(module_name)
+    module = importlib.import_module(module_name)
+    return importlib.reload(module)
 
 
 def _collect_logs(capsys):
@@ -46,9 +42,7 @@ def test_webhook_handler_redacts_sensitive_event_fields(monkeypatch, capsys):
     handler.handler(event, None)
 
     logs = _collect_logs(capsys)
-    received = next(
-        payload for payload in logs if payload.get("message") == "Received event"
-    )
+    received = next(payload for payload in logs if payload.get("message") == "Received event")
     event_payload = received["event"]
     assert event_payload["headers"]["Authorization"] == "***REDACTED***"
     assert event_payload["body"] == "***REDACTED***"
@@ -81,9 +75,7 @@ def test_reconciliation_handler_redacts_sensitive_event_fields(monkeypatch, caps
 
     logs = _collect_logs(capsys)
     received = next(
-        payload
-        for payload in logs
-        if payload.get("message") == "Starting Jira reconciliation"
+        payload for payload in logs if payload.get("message") == "Starting Jira reconciliation"
     )
     event_payload = received["event"]
     assert event_payload["headers"]["Authorization"] == "***REDACTED***"

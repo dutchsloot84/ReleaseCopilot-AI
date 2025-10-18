@@ -62,9 +62,7 @@ def _report(overall: str = "pass", dry_run: bool = False) -> ReadinessReport:
     )
 
 
-def test_health_readiness_prints_report(
-    monkeypatch: pytest.MonkeyPatch, defaults, capsys
-):
+def test_health_readiness_prints_report(monkeypatch: pytest.MonkeyPatch, defaults, capsys):
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "testing")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "testing")
     monkeypatch.setenv("AWS_SESSION_TOKEN", "testing")
@@ -83,9 +81,7 @@ def test_health_readiness_prints_report(
     assert payload["checks"]["s3"]["status"] == "pass"
 
 
-def test_health_readiness_writes_json(
-    monkeypatch: pytest.MonkeyPatch, defaults, tmp_path: Path
-):
+def test_health_readiness_writes_json(monkeypatch: pytest.MonkeyPatch, defaults, tmp_path: Path):
     output_path = tmp_path / "health.json"
 
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "testing")
@@ -139,9 +135,7 @@ def test_health_readiness_respects_overrides(monkeypatch: pytest.MonkeyPatch, de
     assert options.secrets["external/secret"] == "external/secret"
 
 
-def test_health_requires_readiness_flag(
-    monkeypatch: pytest.MonkeyPatch, defaults, capsys
-):
+def test_health_requires_readiness_flag(monkeypatch: pytest.MonkeyPatch, defaults, capsys):
     monkeypatch.setattr("src.cli.health.run_readiness", lambda options: _report())
 
     exit_code = app.main(["health"], defaults=defaults)

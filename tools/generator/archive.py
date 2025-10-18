@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Final
-
 from zoneinfo import ZoneInfo
 
 PHOENIX_TZ: Final[str] = "America/Phoenix"

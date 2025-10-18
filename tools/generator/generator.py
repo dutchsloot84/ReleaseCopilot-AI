@@ -9,13 +9,14 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Final, Iterable, Mapping
+from zoneinfo import ZoneInfo
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
 from slugify import slugify
-from zoneinfo import ZoneInfo
 
-from .archive import ArchiveResult, archive_previous_wave, PHOENIX_TZ as ARCHIVE_TZ
+from .archive import PHOENIX_TZ as ARCHIVE_TZ
+from .archive import ArchiveResult, archive_previous_wave
 
 PHOENIX_TZ: Final[str] = ARCHIVE_TZ
 
@@ -293,9 +294,7 @@ def generate_from_yaml(
     spec = load_spec(spec_path)
     now_provider = now or (lambda: zoned_now(timezone))
     current_dt = now_provider()
-    generated_at = resolve_generated_at(
-        spec["wave"], base_dir=root, fallback=current_dt
-    )
+    generated_at = resolve_generated_at(spec["wave"], base_dir=root, fallback=current_dt)
     label = format_timezone_label(timezone)
 
     archive_result: ArchiveResult | None = None

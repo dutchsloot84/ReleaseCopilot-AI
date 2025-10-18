@@ -60,13 +60,9 @@ def _load_context(app: cdk.App) -> Dict[str, Any]:
         "lambdaTimeoutSec": int(_context(app, "lambdaTimeoutSec", 180)),
         "lambdaMemoryMb": int(_context(app, "lambdaMemoryMb", 512)),
         "jiraWebhookSecretArn": str(_context(app, "jiraWebhookSecretArn", "")),
-        "jiraBaseUrl": str(
-            _context(app, "jiraBaseUrl", "https://your-domain.atlassian.net")
-        ),
+        "jiraBaseUrl": str(_context(app, "jiraBaseUrl", "https://your-domain.atlassian.net")),
         "reconciliationCron": str(_context(app, "reconciliationCron", "")),
-        "reconciliationFixVersions": str(
-            _context(app, "reconciliationFixVersions", "")
-        ),
+        "reconciliationFixVersions": str(_context(app, "reconciliationFixVersions", "")),
         "reconciliationJqlTemplate": str(
             _context(
                 app,
@@ -77,16 +73,12 @@ def _load_context(app: cdk.App) -> Dict[str, Any]:
         "reconciliationScheduleEnabled": _to_bool(
             _context(app, "reconciliationScheduleEnabled", True)
         ),
-        "metricsNamespace": str(
-            _context(app, "metricsNamespace", "ReleaseCopilot/JiraSync")
-        ),
+        "metricsNamespace": str(_context(app, "metricsNamespace", "ReleaseCopilot/JiraSync")),
         "budgetAmount": float(_context(app, "budgetAmount", 500)),
         "budgetCurrency": str(_context(app, "budgetCurrency", "USD")),
         "budgetEmailRecipients": _csv_list(_context(app, "budgetEmailRecipients", "")),
         "budgetSnsTopicName": str(_context(app, "budgetSnsTopicName", "")),
-        "budgetExistingSnsTopicArn": str(
-            _context(app, "budgetExistingSnsTopicArn", "")
-        ),
+        "budgetExistingSnsTopicArn": str(_context(app, "budgetExistingSnsTopicArn", "")),
     }
 
 
@@ -112,9 +104,7 @@ def _aws_identity(region_hint: Optional[str]) -> Tuple[Optional[str], Optional[s
     return identity.get("Account"), resolved_region
 
 
-def _resolve_environment(
-    app: cdk.App, context: Dict[str, Any]
-) -> Tuple[Optional[str], str]:
+def _resolve_environment(app: cdk.App, context: Dict[str, Any]) -> Tuple[Optional[str], str]:
     account = _optional_str(context.get("account"))
     region = _optional_str(context.get("region"))
 

@@ -32,9 +32,7 @@ def test_cli_pipeline_generates_artifacts(tmp_path: Path) -> None:
     assert result_collect.exit_code == 0, result_collect.output
 
     config_payload = yaml.safe_load(config_path.read_text())
-    artifact_dirs = {
-        key: Path(value) for key, value in config_payload["artifact_dirs"].items()
-    }
+    artifact_dirs = {key: Path(value) for key, value in config_payload["artifact_dirs"].items()}
 
     collected_path = artifact_dirs["collected_issues"]
     assert collected_path.exists()
@@ -67,9 +65,7 @@ def test_cli_pipeline_generates_artifacts(tmp_path: Path) -> None:
 
     activity_path = artifact_dirs["activity_log"]
     entries = [
-        json.loads(line)
-        for line in activity_path.read_text(encoding="utf-8").splitlines()
-        if line
+        json.loads(line) for line in activity_path.read_text(encoding="utf-8").splitlines() if line
     ]
     assert {entry["command"] for entry in entries} >= {
         "collect",

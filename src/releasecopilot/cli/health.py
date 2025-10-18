@@ -13,9 +13,7 @@ _SECRET_ENV_VARS = ("SECRET_JIRA", "SECRET_BITBUCKET", "SECRET_WEBHOOK")
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="rc health", description="ReleaseCopilot health checks"
-    )
+    parser = argparse.ArgumentParser(prog="rc health", description="ReleaseCopilot health checks")
     subcommands = parser.add_subparsers(dest="command", required=True)
 
     readiness = subcommands.add_parser(
@@ -48,9 +46,7 @@ def _check_secret(env_key: str, secret_name: str, logger) -> bool:
     if secret is None:
         logger.error(
             "Unable to retrieve secret",
-            extra=safe_log_kv(
-                environment_variable=env_key, secret_identifier=secret_name
-            ),
+            extra=safe_log_kv(environment_variable=env_key, secret_identifier=secret_name),
         )
         print(f"FAIL {env_key} (unavailable)")
         return False
@@ -69,8 +65,7 @@ def _run_readiness(args: argparse.Namespace) -> int:
 
     names = _resolve_secret_names()
     results = [
-        _check_secret(env_key, secret_name, logger)
-        for env_key, secret_name in names.items()
+        _check_secret(env_key, secret_name, logger) for env_key, secret_name in names.items()
     ]
     return 0 if all(results) else 1
 

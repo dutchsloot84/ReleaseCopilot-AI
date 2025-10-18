@@ -14,9 +14,7 @@ def to_markdown(adf):
         elif t == "heading":
             level = node.get("attrs", {}).get("level", 1)
             hashes = "#" * max(1, min(6, level))
-            out.append(
-                hashes + " " + "".join(text_runs(node.get("content", []))) + "\n"
-            )
+            out.append(hashes + " " + "".join(text_runs(node.get("content", []))) + "\n")
         elif t == "bulletList":
             for li in node.get("content", []) or []:
                 # listItem -> paragraph(s)
@@ -26,9 +24,7 @@ def to_markdown(adf):
             i = 1
             for li in node.get("content", []) or []:
                 for p in li.get("content", []) or []:
-                    out.append(
-                        f"{i}. " + "".join(text_runs(p.get("content", []))) + "\n"
-                    )
+                    out.append(f"{i}. " + "".join(text_runs(p.get("content", []))) + "\n")
                 i += 1
         elif t == "codeBlock":
             lang = node.get("attrs", {}).get("language") or ""
