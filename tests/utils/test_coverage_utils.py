@@ -79,3 +79,47 @@ def test_load_totals_rejects_missing_file(tmp_path: Path) -> None:
 
     with pytest.raises(coverage.CoverageReportError):
         coverage.load_totals(report)
+
+
+def test_load_totals_subset_ignores_paths_outside_tracked_roots(tmp_path: Path) -> None:
+    report = tmp_path / "coverage.json"
+    payload = {
+        "totals": {
+            "percent_covered": 100.0,
+            "covered_lines": 10,
+            "num_statements": 10,
+        },
+        "files": {"src/module_a.py": {"summary": {"covered_lines": 10, "num_statements": 10}}},
+    }
+    report.write_text(json.dumps(payload), encoding="utf-8")
+
+    totals = coverage.load_totals(
+        report,
+        include=[
+            "src/module_a.py",
+            "tests/test_module_a.py",
+            "tools/helper.py",
+        ],
+    )
+
+    assert totals.percent == pytest.approx(100.0)
+    assert totals.covered == pytest.approx(10)
+    assert totals.total == pytest.approx(10)
+
+
+def test_load_totals_subset_reports_missing_for_tracked_roots(tmp_path: Path) -> None:
+    report = tmp_path / "coverage.json"
+    payload = {
+        "totals": {
+            "percent_covered": 0.0,
+            "covered_lines": 0,
+            "num_statements": 0,
+        },
+        "files": {},
+    }
+    report.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(SystemExit) as exc:
+        coverage.load_totals(report, include=["src/missing.py"])
+
+    assert "src/missing.py" in str(exc.value)

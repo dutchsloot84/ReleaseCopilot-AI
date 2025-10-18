@@ -72,6 +72,7 @@ def _parse_json_subset(data: Any, include: Iterable[str]) -> CoverageTotals:
     coverage_by_path = {
         _normalize(path): details for path, details in files.items() if isinstance(details, dict)
     }
+    coverage_roots = {key.split("/", 1)[0] if "/" in key else key for key in coverage_by_path}
 
     covered = 0.0
     total = 0.0
@@ -80,7 +81,9 @@ def _parse_json_subset(data: Any, include: Iterable[str]) -> CoverageTotals:
     for path in sorted(include_set):
         summary = coverage_by_path.get(path)
         if summary is None:
-            missing.append(path)
+            root = path.split("/", 1)[0] if "/" in path else path
+            if root in coverage_roots:
+                missing.append(path)
             continue
 
         summary_map = summary.get("summary")
