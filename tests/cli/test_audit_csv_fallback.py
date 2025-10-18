@@ -22,8 +22,8 @@ if "config.settings" not in sys.modules:
 
 import pytest  # noqa: E402
 
-import releasecopilot_bootstrap  # noqa: F401,E402  # ensures src on sys.path
 import main as main_module  # noqa: E402
+import releasecopilot_bootstrap  # noqa: F401,E402  # ensures src on sys.path
 from releasecopilot.errors import JiraJQLFailed  # noqa: E402
 from src.cli.shared import AuditConfig  # noqa: E402
 
@@ -73,9 +73,7 @@ def _patch_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-def test_run_audit_uses_csv_fallback(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_run_audit_uses_csv_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     csv_path = tmp_path / "fallback.csv"
     csv_path.write_text(
         "\n".join(["Issue key,Summary", "ABC-1,Captured from CSV"]),
@@ -87,13 +85,9 @@ def test_run_audit_uses_csv_fallback(
 
     monkeypatch.setattr(main_module, "DATA_DIR", tmp_path / "data", raising=False)
     monkeypatch.setattr(main_module, "TEMP_DIR", tmp_path / "temp", raising=False)
-    monkeypatch.setattr(
-        main_module, "_phoenix_timestamp", lambda: "2025-10-15T07:30:00-07:00"
-    )
+    monkeypatch.setattr(main_module, "_phoenix_timestamp", lambda: "2025-10-15T07:30:00-07:00")
     monkeypatch.setattr(main_module.click, "prompt", lambda *_, **__: next(prompts))
-    monkeypatch.setattr(
-        main_module.click, "echo", lambda message, **__: messages.append(message)
-    )
+    monkeypatch.setattr(main_module.click, "echo", lambda message, **__: messages.append(message))
 
     captured_upload: dict[str, Any] = {}
 
@@ -110,9 +104,7 @@ def test_run_audit_uses_csv_fallback(
     )
 
     assert result["summary"]["total_stories"] == 1
-    assert messages == [
-        f"[2025-10-15T07:30:00-07:00] Loading issues from CSV fallback: {csv_path}"
-    ]
+    assert messages == [f"[2025-10-15T07:30:00-07:00] Loading issues from CSV fallback: {csv_path}"]
     assert any(csv_path == Path(path) for path in captured_upload["raw_files"])
 
 
@@ -133,9 +125,7 @@ def test_csv_prompt_retries_on_invalid_path(
 
     monkeypatch.setattr(main_module, "DATA_DIR", tmp_path / "data", raising=False)
     monkeypatch.setattr(main_module, "TEMP_DIR", tmp_path / "temp", raising=False)
-    monkeypatch.setattr(
-        main_module, "_phoenix_timestamp", lambda: "2025-10-15T08:00:00-07:00"
-    )
+    monkeypatch.setattr(main_module, "_phoenix_timestamp", lambda: "2025-10-15T08:00:00-07:00")
     monkeypatch.setattr(main_module.click, "prompt", lambda *_, **__: next(prompts))
     monkeypatch.setattr(main_module.click, "echo", _echo)
     monkeypatch.setattr(main_module, "upload_artifacts", lambda **kwargs: None)
