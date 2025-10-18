@@ -20,9 +20,9 @@ from typing import (
     Protocol,
     runtime_checkable,
 )
+from zoneinfo import ZoneInfo
 
 import click
-from zoneinfo import ZoneInfo
 
 import releasecopilot_bootstrap  # noqa: F401  # ensures src/ is on sys.path
 
@@ -45,7 +45,6 @@ from releasecopilot.utils.jira_csv_loader import (
     JiraCSVLoaderError,
     load_issues_from_csv,
 )
-
 from src.cli.shared import AuditConfig, finalize_run, handle_dry_run, parse_args
 from tools.generator.generator import run_cli as run_generator_cli
 
@@ -197,9 +196,7 @@ def run_audit(
     except JiraJQLFailed as exc:
         fallback_context = dict(getattr(exc, "context", {}))
         fallback_context.update({"fix_version": config.fix_version})
-        logger.warning(
-            "Jira JQL failed; prompting for CSV fallback", extra=fallback_context
-        )
+        logger.warning("Jira JQL failed; prompting for CSV fallback", extra=fallback_context)
         issues, csv_fallback_path = _prompt_for_csv_fallback(logger=logger)
         jira_cache_path = csv_fallback_path
     jira_output = DATA_DIR / "jira_issues.json"

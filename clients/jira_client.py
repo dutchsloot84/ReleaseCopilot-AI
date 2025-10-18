@@ -170,12 +170,8 @@ class JiraClient(BaseAPIClient):
                 }
                 logger.error("Jira search failed", extra=context)
                 if status_code == 400:
-                    raise JiraJQLFailed(
-                        "Jira JQL failed after retries", context=context
-                    ) from exc
-                raise JiraQueryError(
-                    "Failed to fetch Jira issues", context=context
-                ) from exc
+                    raise JiraJQLFailed("Jira JQL failed after retries", context=context) from exc
+                raise JiraQueryError("Failed to fetch Jira issues", context=context) from exc
             payload = response.json()
 
             batch = payload.get("issues", [])

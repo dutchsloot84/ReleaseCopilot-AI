@@ -11,7 +11,9 @@ from src.config.loader import load_defaults
 from tests.helpers.schema_validation import assert_excel_columns, assert_json_schema
 
 CACHED_FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "cached"
-SCHEMA_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "schemas" / "audit_results.schema.json"
+SCHEMA_PATH = (
+    Path(__file__).resolve().parents[1] / "fixtures" / "schemas" / "audit_results.schema.json"
+)
 
 
 @pytest.fixture()

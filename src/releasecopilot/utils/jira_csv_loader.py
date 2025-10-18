@@ -44,9 +44,7 @@ def _clean(value: Any) -> str:
     return str(value).strip()
 
 
-def _build_issue(
-    row: Mapping[str, Any], field_map: Mapping[str, str]
-) -> dict[str, Any]:
+def _build_issue(row: Mapping[str, Any], field_map: Mapping[str, str]) -> dict[str, Any]:
     key_column = _resolve_column(field_map, _KEY_ALIASES)
     summary_column = _resolve_column(field_map, _SUMMARY_ALIASES)
     if not key_column or not summary_column:
@@ -55,9 +53,7 @@ def _build_issue(
             missing.append("Issue key")
         if not summary_column:
             missing.append("Summary")
-        raise JiraCSVLoaderError(
-            "CSV export is missing required columns: " + ", ".join(missing)
-        )
+        raise JiraCSVLoaderError("CSV export is missing required columns: " + ", ".join(missing))
 
     key = _clean(row.get(key_column))
     summary = _clean(row.get(summary_column))
