@@ -118,9 +118,7 @@ def _build_export_payload(payloads: Mapping[str, Mapping[str, Any]]) -> Dict[str
                 "stories_with_no_commits", []
             ),
             "orphan_commits": payloads.get("commits", {}).get("orphan_commits", []),
-            "commit_story_mapping": payloads.get("links", {}).get(
-                "commit_story_mapping", []
-            ),
+            "commit_story_mapping": payloads.get("links", {}).get("commit_story_mapping", []),
         }
     )
 

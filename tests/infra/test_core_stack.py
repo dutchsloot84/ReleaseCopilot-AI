@@ -10,15 +10,12 @@ from aws_cdk.assertions import Match, Template
 
 from infra.cdk.core_stack import CoreStack
 
-
 ACCOUNT = "123456789012"
 REGION = "us-west-2"
 ASSET_DIR = str(Path(__file__).resolve().parents[2] / "dist")
 
 
-def _synth_template(
-    *, app_context: dict[str, str] | None = None, **overrides
-) -> Template:
+def _synth_template(*, app_context: dict[str, str] | None = None, **overrides) -> Template:
     app = App(context=app_context or {})
     stack = CoreStack(
         app,
@@ -31,9 +28,7 @@ def _synth_template(
     return Template.from_stack(stack)
 
 
-def _create_stack(
-    *, app_context: dict[str, str] | None = None, **overrides
-) -> CoreStack:
+def _create_stack(*, app_context: dict[str, str] | None = None, **overrides) -> CoreStack:
     app = App(context=app_context or {})
     return CoreStack(
         app,
@@ -55,11 +50,7 @@ def test_bucket_encryption_and_versioning() -> None:
                 "ServerSideEncryptionConfiguration": Match.array_with(
                     [
                         Match.object_like(
-                            {
-                                "ServerSideEncryptionByDefault": {
-                                    "SSEAlgorithm": "AES256"
-                                }
-                            }
+                            {"ServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}
                         )
                     ]
                 )
@@ -119,9 +110,7 @@ def test_bucket_lifecycle_rules() -> None:
 
     logs_rule = rules_by_id["LogsLifecycle"]
     assert logs_rule["Prefix"] == "releasecopilot/logs/"
-    assert logs_rule["Transitions"] == [
-        {"StorageClass": "STANDARD_IA", "TransitionInDays": 30}
-    ]
+    assert logs_rule["Transitions"] == [{"StorageClass": "STANDARD_IA", "TransitionInDays": 30}]
     assert logs_rule["ExpirationInDays"] == 120
 
 
@@ -159,10 +148,7 @@ def test_bucket_policy_enforces_security() -> None:
     }
     observed_condition = encryption_statement["Condition"]
     # CDK may render the Null condition as a string or boolean literal.
-    if (
-        observed_condition.get("Null", {}).get("s3:x-amz-server-side-encryption")
-        == "true"
-    ):
+    if observed_condition.get("Null", {}).get("s3:x-amz-server-side-encryption") == "true":
         observed_condition = {
             **observed_condition,
             "Null": {"s3:x-amz-server-side-encryption": True},
@@ -173,9 +159,7 @@ def test_bucket_policy_enforces_security() -> None:
 def test_iam_policy_statements() -> None:
     template = _synth_template()
     policies = template.find_resources("AWS::IAM::Policy")
-    policy = next(
-        policy for name, policy in policies.items() if "LambdaExecutionPolicy" in name
-    )
+    policy = next(policy for name, policy in policies.items() if "LambdaExecutionPolicy" in name)
     statements = policy["Properties"]["PolicyDocument"]["Statement"]
 
     assert {stmt["Sid"] for stmt in statements} == {
@@ -185,9 +169,7 @@ def test_iam_policy_statements() -> None:
         "AllowLambdaLogging",
     }
 
-    object_statement = next(
-        stmt for stmt in statements if stmt["Sid"] == "AllowS3ObjectAccess"
-    )
+    object_statement = next(stmt for stmt in statements if stmt["Sid"] == "AllowS3ObjectAccess")
     assert set(object_statement["Action"]) == {"s3:GetObject", "s3:PutObject"}
     object_resources = object_statement["Resource"]
     assert isinstance(object_resources, list)
@@ -211,18 +193,14 @@ def test_iam_policy_statements() -> None:
         }
     }
 
-    secrets_statement = next(
-        stmt for stmt in statements if stmt["Sid"] == "AllowSecretRetrieval"
-    )
+    secrets_statement = next(stmt for stmt in statements if stmt["Sid"] == "AllowSecretRetrieval")
     assert secrets_statement["Action"] == "secretsmanager:GetSecretValue"
     resources = secrets_statement["Resource"]
     assert isinstance(resources, list)
     assert len(resources) == 3
     assert "*" not in resources
 
-    logs_statement = next(
-        stmt for stmt in statements if stmt["Sid"] == "AllowLambdaLogging"
-    )
+    logs_statement = next(stmt for stmt in statements if stmt["Sid"] == "AllowLambdaLogging")
     assert set(logs_statement["Action"]) == {
         "logs:CreateLogGroup",
         "logs:CreateLogStream",
@@ -233,10 +211,7 @@ def test_iam_policy_statements() -> None:
     assert len(resources) == 3
 
     log_group_ids = set(template.find_resources("AWS::Logs::LogGroup").keys())
-    assert all(
-        isinstance(resource, dict) and "Fn::GetAtt" in resource
-        for resource in resources
-    )
+    assert all(isinstance(resource, dict) and "Fn::GetAtt" in resource for resource in resources)
 
     statement_log_group_ids = {resource["Fn::GetAtt"][0] for resource in resources}
 
@@ -268,9 +243,7 @@ def test_managed_policies_scope_access() -> None:
     read_resource_statement = next(
         stmt for stmt in reader_statements if stmt["Sid"] == "AllowArtifactReads"
     )
-    read_suffixes = {
-        resource["Fn::Join"][1][1] for resource in read_resource_statement["Resource"]
-    }
+    read_suffixes = {resource["Fn::Join"][1][1] for resource in read_resource_statement["Resource"]}
     assert read_suffixes == {
         "/releasecopilot/artifacts/json/*",
         "/releasecopilot/artifacts/excel/*",

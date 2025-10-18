@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "hash": "abc123",
+      "message": "APP-1 initial implementation",
+      "date": "2024-01-01T08:30:00+00:00",
+      "author": {"raw": "Alice"},
+      "links": {"html": {"href": "https://bitbucket.test/repo/commits/abc123"}}
+    }
+  ],
+  "next": "https://api.bitbucket.org/2.0/repositories/example/repo/commits?page=2"
+}

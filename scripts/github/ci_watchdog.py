@@ -14,10 +14,9 @@ import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence
-
-import requests
 from zoneinfo import ZoneInfo
 
+import requests
 
 PHOENIX_TZ = ZoneInfo("America/Phoenix")
 
@@ -29,9 +28,7 @@ class WatchdogError(RuntimeError):
 def _auth_headers() -> Dict[str, str]:
     token = os.environ.get("ORCHESTRATOR_BOT_TOKEN")
     if not token:
-        raise WatchdogError(
-            "ORCHESTRATOR_BOT_TOKEN is required for watchdog operations"
-        )
+        raise WatchdogError("ORCHESTRATOR_BOT_TOKEN is required for watchdog operations")
     return {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
@@ -46,9 +43,7 @@ def _paginate(
     while next_url:
         response = session.get(next_url, params=params)
         if response.status_code >= 400:
-            raise WatchdogError(
-                f"GitHub API error {response.status_code}: {response.text}"
-            )
+            raise WatchdogError(f"GitHub API error {response.status_code}: {response.text}")
         payload = response.json()
         if isinstance(payload, dict) and "items" in payload:
             items = payload["items"]
@@ -108,9 +103,7 @@ def collect_failures(repo: str, max_age_hours: int) -> List[PullRequestFailure]:
             continue
 
         head_sha = pull["head"]["sha"]
-        check_runs_url = (
-            f"https://api.github.com/repos/{repo}/commits/{head_sha}/check-runs"
-        )
+        check_runs_url = f"https://api.github.com/repos/{repo}/commits/{head_sha}/check-runs"
         failing_checks: List[FailingCheck] = []
         latest_failure_at: _dt.datetime | None = None
 
@@ -119,9 +112,7 @@ def collect_failures(repo: str, max_age_hours: int) -> List[PullRequestFailure]:
             completed_at_raw = check.get("completed_at")
             if not completed_at_raw:
                 continue
-            completed_at = _dt.datetime.fromisoformat(
-                completed_at_raw.replace("Z", "+00:00")
-            )
+            completed_at = _dt.datetime.fromisoformat(completed_at_raw.replace("Z", "+00:00"))
             if completed_at < max_age:
                 continue
             if conclusion not in {
@@ -148,9 +139,7 @@ def collect_failures(repo: str, max_age_hours: int) -> List[PullRequestFailure]:
         failing_checks.sort(key=lambda c: (c.name.lower(), c.completed_at))
 
         latest_str = (
-            latest_failure_at.isoformat().replace("+00:00", "Z")
-            if latest_failure_at
-            else ""
+            latest_failure_at.isoformat().replace("+00:00", "Z") if latest_failure_at else ""
         )
 
         failures.append(
@@ -218,9 +207,7 @@ def should_autofix(event: Dict) -> bool:
         approvals = int(pull_request["approved_review_count"])
     else:
         reviews = pull_request.get("reviews", [])
-        approvals = sum(
-            1 for review in reviews if review.get("state", "").upper() == "APPROVED"
-        )
+        approvals = sum(1 for review in reviews if review.get("state", "").upper() == "APPROVED")
 
     return approvals > 0
 
@@ -231,17 +218,11 @@ def serialize_failures(failures: Sequence[PullRequestFailure]) -> List[dict]:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="CI Watchdog helper CLI")
-    parser.add_argument(
-        "--repo", required=True, help="GitHub repository in owner/name form"
-    )
+    parser.add_argument("--repo", required=True, help="GitHub repository in owner/name form")
     parser.add_argument("--max-age-hours", type=int, default=24)
-    parser.add_argument(
-        "--render", action="store_true", help="Render the markdown report"
-    )
+    parser.add_argument("--render", action="store_true", help="Render the markdown report")
     parser.add_argument("--output", type=Path, help="Optional path to write the report")
-    parser.add_argument(
-        "--metrics", type=Path, help="Optional path to write metrics JSON"
-    )
+    parser.add_argument("--metrics", type=Path, help="Optional path to write metrics JSON")
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     failures = collect_failures(args.repo, args.max_age_hours)

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 import json
-import sys
 from types import ModuleType
 
 import pytest
@@ -11,10 +10,8 @@ import pytest
 def _reload_logging(monkeypatch: pytest.MonkeyPatch, **env: str) -> ModuleType:
     for key, value in env.items():
         monkeypatch.setenv(key, value)
-    for name in list(sys.modules):
-        if name.startswith("releasecopilot"):
-            sys.modules.pop(name)
-    return importlib.import_module("releasecopilot.logging_config")
+    module = importlib.import_module("releasecopilot.logging_config")
+    return importlib.reload(module)
 
 
 def test_structured_logging_includes_correlation_id(
@@ -56,9 +53,7 @@ def test_secret_redaction(
     logging_module.configure_logging("DEBUG")
     logger = logging_module.get_logger("redact.logger")
 
-    logger.debug(
-        "token value", extra={"api_token": "abc123", "nested": {"secret": "shhh"}}
-    )
+    logger.debug("token value", extra={"api_token": "abc123", "nested": {"secret": "shhh"}})
 
     output = capsys.readouterr().out
     assert "***REDACTED***" in output

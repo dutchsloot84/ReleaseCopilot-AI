@@ -23,9 +23,7 @@ def load_settings(
 
     override_path = Path(path) if path else DEFAULT_OVERRIDE_PATH
     if path and not override_path.exists():
-        logger.warning(
-            "Configuration override file %s not found; falling back to defaults", path
-        )
+        logger.warning("Configuration override file %s not found; falling back to defaults", path)
     return load_config(
         overrides=overrides,
         env=env,

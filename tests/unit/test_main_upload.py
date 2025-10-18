@@ -1,49 +1,22 @@
 from __future__ import annotations
 
-import sys
+import importlib
 import types
 from datetime import datetime
 from pathlib import Path
-
-import importlib
-import importlib.util
 
 import pytest
 
 
 @pytest.fixture
-def main_module(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
-    root = Path(__file__).resolve().parents[2]
-    root_str = str(root)
-    if root_str in sys.path:
-        sys.path.remove(root_str)
-    sys.path.insert(0, root_str)
-    src_path = root / "src"
-    src_str = str(src_path)
-    if src_str in sys.path:
-        sys.path.remove(src_str)
-    sys.path.insert(1, src_str)
+def main_module() -> types.ModuleType:
+    import main
 
-    monkeypatch.delitem(sys.modules, "config", raising=False)
-    monkeypatch.delitem(sys.modules, "config.settings", raising=False)
-    monkeypatch.delitem(sys.modules, "main", raising=False)
-
-    config_module = importlib.import_module("config.settings")
-    sys.modules["config.settings"] = config_module
-
-    spec = importlib.util.spec_from_file_location("main", root / "main.py")
-    if spec is None or spec.loader is None:  # pragma: no cover - defensive
-        raise RuntimeError("Unable to load main module")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["main"] = module
-    spec.loader.exec_module(module)
-    return module
+    return importlib.reload(main)
 
 
 @pytest.fixture
-def fixed_datetime(
-    monkeypatch: pytest.MonkeyPatch, main_module: types.ModuleType
-) -> None:
+def fixed_datetime(monkeypatch: pytest.MonkeyPatch, main_module: types.ModuleType) -> None:
     class FixedDatetime(datetime):
         @classmethod
         def utcnow(cls) -> "FixedDatetime":  # type: ignore[override]

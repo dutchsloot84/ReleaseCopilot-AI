@@ -1,8 +1,17 @@
 ## [Unreleased]
+### Hardened CI Quality Gate
+**Decision:** Enforce linting, formatting, typing, and coverage thresholds directly in CI with Phoenix-aligned guidance for contributors.
+**Note:** Local and CI runs now share the `ruff check .`, `black --check .`, `mypy --config-file mypy.ini`, and `pytest --cov=src` sequence with America/Phoenix (UTC-7) timeboxing.
+**Action:** Added tooling configuration in `pyproject.toml`, centralized network/config stubs in `tests/conftest.py`, hardened `.github/workflows/ci.yml` with explicit lint/type/coverage steps, surfaced coverage summaries via `scripts/ci/coverage_gate.py`, and refreshed README/runbook guidance.
 ### Wave 3 Onboarding and Validation
 **Decision:** Document Wave 3 generator onboarding so contributors can translate `backlog/wave3.yaml` into sub-prompts deterministically.
 **Note:** America/Phoenix (UTC-7, no DST) remains the required timezone for manifests, archives, and coverage checks.
 **Action:** Added README/runbook guidance, expanded pytest coverage under `tests/generator/`, and aligned PR template markers referencing `artifacts/manifests/wave3_subprompts.json`.
+
+### Wave 3 – Mocked Jira/Bitbucket + Cached Audit Tests
+**Decision:** Strengthen Jira/Bitbucket tests using cached payloads and schema contracts (see `artifacts/issues/wave3/tests-mocked-jira-bitbucket-e2e-with-cached-payloads.md`).
+**Note:** Cached fixtures must be updated alongside API changes to prevent drift.
+**Action:** Added pagination/retry client tests, offline audit E2E coverage, and schema validators guarding JSON/Excel outputs.
 ### Added
 - **Decision:** Adopt `python main.py generate --timezone America/Phoenix` as the source of truth for Wave 3 artifacts.
 - **Note:** `./scripts/ci/check_generator_drift.sh` reruns the generator and compares `docs/mop/mop_wave3.md`, `docs/sub-prompts/wave3/`, `artifacts/issues/wave3/`, and `artifacts/manifests/wave3_subprompts.json` against the manifest entry.

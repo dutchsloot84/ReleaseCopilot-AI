@@ -3,12 +3,13 @@ from __future__ import annotations
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
+from types import SimpleNamespace
 from typing import Any, Iterable
 
 import pytest
 import requests
 
+import main
 from clients.bitbucket_client import BitbucketClient
 from clients.jira_client import JiraClient
 from releasecopilot.errors import (
@@ -87,9 +88,7 @@ def test_jira_fetch_retries_on_rate_limit(
     client.session = FakeSession(responses)  # type: ignore[assignment]
     client._random = ZeroJitter()
     delays: list[float] = []
-    monkeypatch.setattr(
-        JiraClient, "_sleep", lambda self, seconds: delays.append(seconds)
-    )
+    monkeypatch.setattr(JiraClient, "_sleep", lambda self, seconds: delays.append(seconds))
 
     caplog.set_level("DEBUG")
     issues, _ = client.fetch_issues(fix_version="1.0.0")
@@ -99,11 +98,10 @@ def test_jira_fetch_retries_on_rate_limit(
     retry_logs = [
         record
         for record in caplog.records
-        if record.levelname == "WARNING"
-        and record.getMessage() == "Retrying after status"
+        if record.levelname == "WARNING" and record.getMessage() == "Retrying after status"
     ]
     assert retry_logs
-    assert getattr(retry_logs[0], "status_code") == 429
+    assert retry_logs[0].status_code == 429
 
 
 def test_jira_fetch_issues_raises_typed_error(
@@ -119,9 +117,7 @@ def test_jira_fetch_issues_raises_typed_error(
     client.session = FakeSession(responses)  # type: ignore[assignment]
     client._random = ZeroJitter()
     delays: list[float] = []
-    monkeypatch.setattr(
-        JiraClient, "_sleep", lambda self, seconds: delays.append(seconds)
-    )
+    monkeypatch.setattr(JiraClient, "_sleep", lambda self, seconds: delays.append(seconds))
 
     caplog.set_level("ERROR")
     with pytest.raises(JiraQueryError) as excinfo:
@@ -171,9 +167,7 @@ def test_bitbucket_retries_and_logs(
     client.session = FakeSession(responses)  # type: ignore[assignment]
     client._random = ZeroJitter()
     delays: list[float] = []
-    monkeypatch.setattr(
-        BitbucketClient, "_sleep", lambda self, seconds: delays.append(seconds)
-    )
+    monkeypatch.setattr(BitbucketClient, "_sleep", lambda self, seconds: delays.append(seconds))
 
     caplog.set_level("DEBUG")
     commits, _ = client.fetch_commits(
@@ -187,8 +181,7 @@ def test_bitbucket_retries_and_logs(
     assert delays and delays[0] >= 1
     assert any(record.getMessage() == "HTTP request" for record in caplog.records)
     assert any(
-        record.getMessage() == "HTTP response"
-        and getattr(record, "repository", None) == "repo"
+        record.getMessage() == "HTTP response" and getattr(record, "repository", None) == "repo"
         for record in caplog.records
     )
 
@@ -202,9 +195,7 @@ def test_bitbucket_raises_typed_error(
     client.session = FakeSession(responses)  # type: ignore[assignment]
     client._random = ZeroJitter()
     delays: list[float] = []
-    monkeypatch.setattr(
-        BitbucketClient, "_sleep", lambda self, seconds: delays.append(seconds)
-    )
+    monkeypatch.setattr(BitbucketClient, "_sleep", lambda self, seconds: delays.append(seconds))
 
     caplog.set_level("ERROR")
     with pytest.raises(BitbucketRequestError) as excinfo:
@@ -218,14 +209,10 @@ def test_bitbucket_raises_typed_error(
     assert excinfo.value.context["status_code"] == 503
     assert "service unavailable" in excinfo.value.context["snippet"]
     assert len(delays) == client._MAX_ATTEMPTS - 1
-    assert any(
-        record.getMessage() == "Bitbucket HTTP error" for record in caplog.records
-    )
+    assert any(record.getMessage() == "Bitbucket HTTP error" for record in caplog.records)
 
 
-def test_retries_can_be_disabled(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Any
-) -> None:
+def test_retries_can_be_disabled(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
     monkeypatch.setenv("RC_DISABLE_RETRIES", "true")
     client = JiraClient(
         base_url="https://example.atlassian.net",
@@ -236,9 +223,7 @@ def test_retries_can_be_disabled(
     client.session = FakeSession([DummyResponse(500, text="error")])  # type: ignore[assignment]
     client._random = ZeroJitter()
     calls: list[float] = []
-    monkeypatch.setattr(
-        JiraClient, "_sleep", lambda self, seconds: calls.append(seconds)
-    )
+    monkeypatch.setattr(JiraClient, "_sleep", lambda self, seconds: calls.append(seconds))
 
     with pytest.raises(JiraQueryError):
         client.fetch_issues(fix_version="no-retry")
@@ -246,25 +231,7 @@ def test_retries_can_be_disabled(
     assert not calls
 
 
-def test_run_audit_uses_injected_providers(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Any
-) -> None:
-    import importlib
-    import sys
-
-    fake_config = ModuleType("config")
-    fake_settings = ModuleType("config.settings")
-    fake_settings.load_settings = lambda overrides=None: {}
-    fake_config.settings = fake_settings
-
-    repo_root = Path(__file__).resolve().parents[1]
-    if str(repo_root) not in sys.path:
-        sys.path.insert(0, str(repo_root))
-    monkeypatch.setitem(sys.modules, "config", fake_config)
-    monkeypatch.setitem(sys.modules, "config.settings", fake_settings)
-    importlib.invalidate_caches()
-    main = importlib.import_module("main")
-
+def test_run_audit_uses_injected_providers(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
     class DummyIssueProvider:
         def __init__(self) -> None:
             self.calls: list[dict[str, Any]] = []
@@ -342,9 +309,7 @@ def test_run_audit_uses_injected_providers(
     monkeypatch.setattr(main, "build_bitbucket_client", fail_build_bitbucket)
 
     class DummyAuditProcessor:
-        def __init__(
-            self, *, issues: list[dict[str, Any]], commits: list[dict[str, Any]]
-        ) -> None:
+        def __init__(self, *, issues: list[dict[str, Any]], commits: list[dict[str, Any]]) -> None:
             self._issues = issues
             self._commits = commits
 
@@ -411,25 +376,7 @@ def test_run_audit_uses_injected_providers(
     assert tmp_path / "issue-cache.json" in raw_paths
 
 
-def test_run_audit_uses_provider_factories(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Any
-) -> None:
-    import importlib
-    import sys
-
-    fake_config = ModuleType("config")
-    fake_settings = ModuleType("config.settings")
-    fake_settings.load_settings = lambda overrides=None: {}
-    fake_config.settings = fake_settings
-
-    repo_root = Path(__file__).resolve().parents[1]
-    if str(repo_root) not in sys.path:
-        sys.path.insert(0, str(repo_root))
-    monkeypatch.setitem(sys.modules, "config", fake_config)
-    monkeypatch.setitem(sys.modules, "config.settings", fake_settings)
-    importlib.invalidate_caches()
-    main = importlib.import_module("main")
-
+def test_run_audit_uses_provider_factories(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
     data_dir = tmp_path / "data"
     temp_dir = tmp_path / "temp"
     monkeypatch.setattr(main, "DATA_DIR", data_dir)
@@ -474,9 +421,7 @@ def test_run_audit_uses_provider_factories(
             end: datetime,
             use_cache: bool = False,
         ) -> tuple[list[dict[str, Any]], list[str]]:
-            return ([{"hash": "def456", "repository": "repo", "branch": "main"}]), [
-                "factory-cache"
-            ]
+            return ([{"hash": "def456", "repository": "repo", "branch": "main"}]), ["factory-cache"]
 
         def get_last_cache_file(self, name: str) -> Path | None:
             return self._cache_path if name == "factory-cache" else None
@@ -492,16 +437,12 @@ def test_run_audit_uses_provider_factories(
     monkeypatch.setattr(
         main,
         "build_jira_store",
-        lambda settings: (_ for _ in ()).throw(
-            AssertionError("should not build store")
-        ),
+        lambda settings: (_ for _ in ()).throw(AssertionError("should not build store")),
     )
     monkeypatch.setattr(
         main,
         "build_bitbucket_client",
-        lambda settings: (_ for _ in ()).throw(
-            AssertionError("should not build client")
-        ),
+        lambda settings: (_ for _ in ()).throw(AssertionError("should not build client")),
     )
 
     monkeypatch.setattr(

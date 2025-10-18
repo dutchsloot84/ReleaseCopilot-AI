@@ -10,20 +10,48 @@ from aws_cdk import (
     Duration,
     RemovalPolicy,
     Stack,
+)
+from aws_cdk import (
     aws_apigateway as apigateway,
+)
+from aws_cdk import (
     aws_cloudwatch as cw,
+)
+from aws_cdk import (
     aws_cloudwatch_actions as actions,
+)
+from aws_cdk import (
     aws_dynamodb as dynamodb,
+)
+from aws_cdk import (
     aws_events as events,
+)
+from aws_cdk import (
     aws_events_targets as targets,
+)
+from aws_cdk import (
     aws_iam as iam,
+)
+from aws_cdk import (
     aws_lambda as _lambda,
+)
+from aws_cdk import (
     aws_logs as logs,
+)
+from aws_cdk import (
     aws_s3 as s3,
+)
+from aws_cdk import (
     aws_secretsmanager as secretsmanager,
-    aws_sqs as sqs,
+)
+from aws_cdk import (
     aws_sns as sns,
+)
+from aws_cdk import (
     aws_sns_subscriptions as subs,
+)
+from aws_cdk import (
+    aws_sqs as sqs,
 )
 from constructs import Construct
 
@@ -86,9 +114,7 @@ class CoreStack(Stack):
         asset_path = Path(lambda_asset_path).expanduser().resolve()
         project_root = Path(__file__).resolve().parents[2]
         webhook_asset_path = project_root / "services" / "jira_sync_webhook"
-        reconciliation_asset_path = (
-            project_root / "services" / "jira_reconciliation_job"
-        )
+        reconciliation_asset_path = project_root / "services" / "jira_reconciliation_job"
 
         if not webhook_asset_path.exists():
             raise FileNotFoundError(
@@ -278,12 +304,8 @@ class CoreStack(Stack):
         self.jira_table = dynamodb.Table(
             self,
             "JiraIssuesTable",
-            partition_key=dynamodb.Attribute(
-                name="issue_key", type=dynamodb.AttributeType.STRING
-            ),
-            sort_key=dynamodb.Attribute(
-                name="updated_at", type=dynamodb.AttributeType.STRING
-            ),
+            partition_key=dynamodb.Attribute(name="issue_key", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(name="updated_at", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=RemovalPolicy.RETAIN,
             encryption=dynamodb.TableEncryption.AWS_MANAGED,
@@ -302,35 +324,23 @@ class CoreStack(Stack):
             partition_key=dynamodb.Attribute(
                 name="fix_version", type=dynamodb.AttributeType.STRING
             ),
-            sort_key=dynamodb.Attribute(
-                name="updated_at", type=dynamodb.AttributeType.STRING
-            ),
+            sort_key=dynamodb.Attribute(name="updated_at", type=dynamodb.AttributeType.STRING),
             projection_type=dynamodb.ProjectionType.ALL,
         )
         self.jira_table.add_global_secondary_index(
             index_name="StatusIndex",
-            partition_key=dynamodb.Attribute(
-                name="status", type=dynamodb.AttributeType.STRING
-            ),
-            sort_key=dynamodb.Attribute(
-                name="updated_at", type=dynamodb.AttributeType.STRING
-            ),
+            partition_key=dynamodb.Attribute(name="status", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(name="updated_at", type=dynamodb.AttributeType.STRING),
             projection_type=dynamodb.ProjectionType.ALL,
         )
         self.jira_table.add_global_secondary_index(
             index_name="AssigneeIndex",
-            partition_key=dynamodb.Attribute(
-                name="assignee", type=dynamodb.AttributeType.STRING
-            ),
-            sort_key=dynamodb.Attribute(
-                name="updated_at", type=dynamodb.AttributeType.STRING
-            ),
+            partition_key=dynamodb.Attribute(name="assignee", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(name="updated_at", type=dynamodb.AttributeType.STRING),
             projection_type=dynamodb.ProjectionType.ALL,
         )
 
-        self.lambda_function.add_environment(
-            "JIRA_TABLE_NAME", self.jira_table.table_name
-        )
+        self.lambda_function.add_environment("JIRA_TABLE_NAME", self.jira_table.table_name)
         self.jira_table.grant_read_data(self.lambda_function)
 
         webhook_secret = self._resolve_secret(
@@ -484,9 +494,7 @@ class CoreStack(Stack):
         self._alarm_action = self._configure_alarm_action()
         self._add_lambda_alarms()
         self._add_reconciliation_dlq_alarm()
-        self._add_schedule(
-            schedule_enabled=schedule_enabled, schedule_cron=schedule_cron
-        )
+        self._add_schedule(schedule_enabled=schedule_enabled, schedule_cron=schedule_cron)
 
         self._add_reconciliation_schedule(
             enable_schedule=enable_reconciliation_schedule,
@@ -516,12 +524,8 @@ class CoreStack(Stack):
             "JiraReconciliationLambdaName",
             value=self.reconciliation_lambda.function_name,
         )
-        CfnOutput(
-            self, "JiraReconciliationDlqArn", value=self.reconciliation_dlq.queue_arn
-        )
-        CfnOutput(
-            self, "JiraReconciliationDlqUrl", value=self.reconciliation_dlq.queue_url
-        )
+        CfnOutput(self, "JiraReconciliationDlqArn", value=self.reconciliation_dlq.queue_arn)
+        CfnOutput(self, "JiraReconciliationDlqUrl", value=self.reconciliation_dlq.queue_url)
 
     def _attach_policies(self) -> None:
         log_group_arns = [
@@ -529,9 +533,7 @@ class CoreStack(Stack):
             self.webhook_lambda_log_group.log_group_arn,
             self.reconciliation_lambda_log_group.log_group_arn,
         ]
-        secret_arns = sorted(
-            {grant.secret.secret_arn for grant in self.secret_access.grants}
-        )
+        secret_arns = sorted({grant.secret.secret_arn for grant in self.secret_access.grants})
 
         statements: list[iam.PolicyStatement] = []
         if secret_arns:
@@ -675,9 +677,7 @@ class CoreStack(Stack):
         secret_name: str,
     ) -> secretsmanager.ISecret:
         if provided_arn:
-            return secretsmanager.Secret.from_secret_complete_arn(
-                self, construct_id, provided_arn
-            )
+            return secretsmanager.Secret.from_secret_complete_arn(self, construct_id, provided_arn)
         return secretsmanager.Secret(
             self,
             construct_id,
@@ -730,11 +730,9 @@ class CoreStack(Stack):
             throttles_alarm.add_alarm_action(self._alarm_action)
 
     def _add_reconciliation_dlq_alarm(self) -> None:
-        dlq_metric = (
-            self.reconciliation_dlq.metric_approximate_number_of_messages_visible(
-                period=Duration.minutes(5),
-                statistic="sum",
-            )
+        dlq_metric = self.reconciliation_dlq.metric_approximate_number_of_messages_visible(
+            period=Duration.minutes(5),
+            statistic="sum",
         )
 
         dlq_alarm = cw.Alarm(
@@ -753,9 +751,7 @@ class CoreStack(Stack):
         if self._alarm_action:
             dlq_alarm.add_alarm_action(self._alarm_action)
 
-    def _add_schedule(
-        self, *, schedule_enabled: bool, schedule_cron: str | None
-    ) -> None:
+    def _add_schedule(self, *, schedule_enabled: bool, schedule_cron: str | None) -> None:
         """Provision the optional EventBridge rule when scheduling is enabled.
 
         Skipping creation when ``schedule_enabled`` is false ensures the stack

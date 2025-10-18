@@ -117,9 +117,7 @@ def main() -> None:
 
     # If no roles or users are configured we fail closed.
     if not allowed_roles and not allowed_users:
-        raise PermissionError(
-            "No allowed roles or users configured for orchestrator dispatch."
-        )
+        raise PermissionError("No allowed roles or users configured for orchestrator dispatch.")
 
     if event_name == "issue_comment":
         _validate_issue_comment(payload, allowed_roles, allowed_users, command)

@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from scripts.github import ci_watchdog
-
 from tests.github.test_ci_watchdog import freeze_utc_now, load_fixture, mock_session
 
 
@@ -17,9 +16,7 @@ def test_cli_generates_artifacts(monkeypatch, tmp_path):
 
     freeze_utc_now(
         monkeypatch,
-        ci_watchdog._dt.datetime(
-            2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc
-        ),
+        ci_watchdog._dt.datetime(2024, 5, 1, 14, 0, tzinfo=ci_watchdog._dt.timezone.utc),
     )
     mock_session(monkeypatch, mapping)
 

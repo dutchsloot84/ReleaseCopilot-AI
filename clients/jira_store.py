@@ -15,7 +15,6 @@ from botocore.exceptions import ClientError
 from releasecopilot.errors import JiraQueryError
 from releasecopilot.logging_config import get_logger
 
-
 logger = get_logger(__name__)
 
 
@@ -29,12 +28,7 @@ _RETRYABLE_DDB_ERRORS = {
 
 
 def _utcnow() -> str:
-    return (
-        datetime.utcnow()
-        .replace(tzinfo=timezone.utc)
-        .isoformat()
-        .replace("+00:00", "Z")
-    )
+    return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 @dataclass
@@ -87,12 +81,8 @@ class JiraIssueStore:
                 "fix_version": fix_version,
                 "error": str(exc),
             }
-            logger.exception(
-                "Unexpected error querying Jira issue table", extra=context
-            )
-            raise JiraQueryError(
-                "Failed to query Jira issue store", context=context
-            ) from exc
+            logger.exception("Unexpected error querying Jira issue table", extra=context)
+            raise JiraQueryError("Failed to query Jira issue store", context=context) from exc
 
         issues: List[Dict[str, Any]] = []
         seen_issue_keys: set[str] = set()
@@ -125,9 +115,7 @@ class JiraIssueStore:
     # Internal helpers -----------------------------------------------
     def _paginate_query(self, *, fix_version: str) -> Iterable[Dict[str, Any]]:
         if not fix_version:
-            logger.warning(
-                "Empty fix version provided to JiraIssueStore; returning no items"
-            )
+            logger.warning("Empty fix version provided to JiraIssueStore; returning no items")
             return []
 
         params: Dict[str, Any] = {
@@ -189,9 +177,7 @@ class JiraIssueStore:
             "captured_at": _utcnow(),
         }
         logger.error("DynamoDB query failed", extra=context)
-        raise JiraQueryError(
-            "Failed to query Jira issue store", context=context
-        ) from error
+        raise JiraQueryError("Failed to query Jira issue store", context=context) from error
 
 
 __all__ = ["JiraIssueStore"]

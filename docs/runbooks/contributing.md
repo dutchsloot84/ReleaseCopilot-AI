@@ -23,7 +23,13 @@ The Wave 3 Mission Outline Plan codified our contributor workflow, including the
 - `black` formats Python code deterministically.
 - `mypy` performs static type checks using the repository configuration.
 
-The `.github/workflows/ci.yml` pipeline executes `scripts/ci/run_precommit.sh` ahead of tests. A failure here blocks packaging and deployment jobs downstream.
+The `.github/workflows/ci.yml` pipeline now runs the same tooling directly—`ruff check .`, `black --check .`, `mypy --config-file mypy.ini -p releasecopilot`, and `pytest --cov=src --cov-report=xml` followed by `scripts/ci/coverage_gate.py`. Any failure blocks packaging and deployment jobs downstream.
+
+### Test isolation policies
+
+- `tests/conftest.py` provides the global `config.settings` stub and enforces the Phoenix timezone plus `ENABLE_NETWORK = False`.
+- Socket creation is blocked session-wide; live HTTP calls should raise immediately.
+- Tests must not edit `sys.path` or mutate `sys.modules`; prefer `importlib.reload` and monkeypatching of imported symbols.
 
 ## Troubleshooting
 

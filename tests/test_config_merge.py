@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 from src.config.loader import load_config
-
 from tests.helpers_config import StubCredentialStore, write_defaults
 
 

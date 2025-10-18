@@ -96,12 +96,28 @@ Run all hooks once to ensure your workspace matches the CI configuration and tha
 pre-commit run --all-files
 ```
 
+Quick spot checks without the hook wrapper mirror the CI workflow:
+
+```bash
+ruff check . && \
+black --check . && \
+mypy --config-file mypy.ini -p releasecopilot && \
+pytest --cov=src --cov-report=term
+```
+
+### Import hygiene & test isolation
+
+- `tests/conftest.py` seeds a `config.settings` stub with the Phoenix timezone and disables network access by patching `socket.socket` and `socket.create_connection` for the entire session.
+- Individual tests must not manipulate `sys.path`, inject modules into `sys.modules`, or import `releasecopilot_bootstrap`; rely on standard imports at the top of the file.
+- Any test that needs custom configuration should patch helpers on the imported module (for example `main.load_settings`) rather than performing ad-hoc bootstrapping.
+- Attempts to open outbound sockets raise a `RuntimeError` so network regressions fail fast both locally and in CI.
+
 The pre-commit hooks run `ruff --fix`, `black`, and `mypy` locally, catching formatting drifts before CI. Wave 3 automation expects hook output timestamps in America/Phoenix (no DST), matching the Mission Outline Plan.
 
 ## Contributing & Quality Gates
 
 - Pull request descriptions must begin with **Decision:**, **Note:**, and **Action:** summaries that align with the generated manifest entry and reference Phoenix (America/Phoenix) scheduling where applicable.
-- Confirm ≥70% test coverage on touched code by running `pytest --cov` (or an equivalent target) and link to the report when requesting review.
+- Confirm ≥70% test coverage on touched code by running `pytest` (coverage configuration is enforced via `pytest.ini`), then gate the result locally with `python tools/coverage_gate.py coverage.json --minimum 70 --paths $(git diff --name-only origin/main...HEAD -- '*.py')` before requesting review.
 - Acknowledge the lint/type gates explicitly by running `ruff`, `black`, and `mypy` before submitting the PR template checklist.
 - Document updates belong alongside code changes; orchestrator-related pull requests should cross-reference [`docs/runbooks/orchestrator.md`](docs/runbooks/orchestrator.md) so reviewers can validate Phoenix-aware plan and dispatch flows.
 - Phoenix time (America/Phoenix, UTC-7 year-round) is the canonical timezone for orchestration—include Phoenix-local timestamps in new artifacts and note deviations in the **Note:** section of the PR template.
@@ -374,6 +390,9 @@ Logs are emitted in JSON-friendly format, making them CloudWatch-ready. Adjust l
 - Linting and unit tests can be wired into GitHub Actions as part of CI/CD.
 - `temp_data/` retains every raw response; purge periodically if storage becomes large.
 - Contributions should include updates to this README when adding new functionality.
+- Use cached fixtures by setting `RC_CACHED_PAYLOAD_DIR` before invoking `rc audit`.
+  The Wave 3 test prompt (`artifacts/issues/wave3/tests-mocked-jira-bitbucket-e2e-with-cached-payloads.md`)
+  documents Phoenix-aware expectations for offline runs.
 
 ## Documentation
 

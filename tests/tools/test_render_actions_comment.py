@@ -11,9 +11,7 @@ from tools import render_actions_comment
 
 @pytest.fixture(autouse=True)
 def _freeze_git_sha(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        render_actions_comment, "resolve_git_sha", lambda explicit: "test-sha"
-    )
+    monkeypatch.setattr(render_actions_comment, "resolve_git_sha", lambda explicit: "test-sha")
 
 
 def test_build_comment_with_actions() -> None:
@@ -30,9 +28,7 @@ def test_build_comment_with_actions() -> None:
             labels=["human-action", "wave:1"],
         )
     ]
-    body = render_actions_comment.build_comment(
-        actions, actions, pr_number=2, git_sha="abc123"
-    )
+    body = render_actions_comment.build_comment(actions, actions, pr_number=2, git_sha="abc123")
     assert "Approve" in body
     assert "infra/file.py" in body
     assert "⚠️ Outstanding Human Actions" in body
@@ -40,9 +36,7 @@ def test_build_comment_with_actions() -> None:
 
 def test_build_comment_without_matching_actions() -> None:
     actions: List[render_actions_comment.PendingAction] = []
-    body = render_actions_comment.build_comment(
-        actions, actions, pr_number=5, git_sha="abc123"
-    )
+    body = render_actions_comment.build_comment(actions, actions, pr_number=5, git_sha="abc123")
     assert "No outstanding human actions" in body
 
 
@@ -88,9 +82,7 @@ def test_main_updates_comment(
 
     calls: List[Dict[str, Any]] = []
 
-    def fake_request(
-        method: str, url: str, token: str, data: Dict[str, Any] | None = None
-    ) -> Any:
+    def fake_request(method: str, url: str, token: str, data: Dict[str, Any] | None = None) -> Any:
         calls.append({"method": method, "url": url, "data": data})
         if method == "GET":
             return [
@@ -116,9 +108,7 @@ def test_main_updates_comment(
     assert exit_code == 0
     assert any(call["method"] == "PATCH" for call in calls)
     label_call = next(
-        call
-        for call in calls
-        if call["method"] == "POST" and call["url"].endswith("/labels")
+        call for call in calls if call["method"] == "POST" and call["url"].endswith("/labels")
     )
     assert sorted(label_call["data"]["labels"]) == ["human-action", "wave:1"]
     patch_call = next(call for call in calls if call["method"] == "PATCH")
@@ -127,9 +117,7 @@ def test_main_updates_comment(
     assert "test-sha" in captured.out
 
 
-def test_main_creates_comment_when_missing(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_main_creates_comment_when_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     actions_path = tmp_path / "actions.json"
     actions_path.write_text("[]", encoding="utf-8")
     event_path = tmp_path / "event.json"
@@ -140,9 +128,7 @@ def test_main_creates_comment_when_missing(
 
     calls: List[Dict[str, Any]] = []
 
-    def fake_request(
-        method: str, url: str, token: str, data: Dict[str, Any] | None = None
-    ) -> Any:
+    def fake_request(method: str, url: str, token: str, data: Dict[str, Any] | None = None) -> Any:
         calls.append({"method": method, "url": url, "data": data})
         if method == "GET":
             return []
@@ -160,6 +146,4 @@ def test_main_creates_comment_when_missing(
     )
 
     assert exit_code == 0
-    assert any(
-        call["method"] == "POST" and "/comments" in call["url"] for call in calls
-    )
+    assert any(call["method"] == "POST" and "/comments" in call["url"] for call in calls)

@@ -6,8 +6,14 @@ from aws_cdk import (
     CfnOutput,
     RemovalPolicy,
     Stack,
+)
+from aws_cdk import (
     aws_iam as iam,
+)
+from aws_cdk import (
     aws_s3 as s3,
+)
+from aws_cdk import (
     aws_secretsmanager as secretsmanager,
 )
 from constructs import Construct
@@ -16,9 +22,7 @@ from constructs import Construct
 class CoreStack(Stack):
     """Provision foundational resources shared by compute workloads."""
 
-    def __init__(
-        self, scope: Construct, construct_id: str, *, project_name: str, **kwargs
-    ) -> None:
+    def __init__(self, scope: Construct, construct_id: str, *, project_name: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         self.artifacts_bucket = s3.Bucket(

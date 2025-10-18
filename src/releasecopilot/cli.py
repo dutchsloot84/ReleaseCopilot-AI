@@ -98,9 +98,7 @@ def _create_parser() -> argparse.ArgumentParser:
         "--config",
         help="Path to a releasecopilot.yaml file (defaults to ./releasecopilot.yaml if present)",
     )
-    parser.add_argument(
-        "--fix-version", dest="fix_version", help="Fix version to operate on"
-    )
+    parser.add_argument("--fix-version", dest="fix_version", help="Fix version to operate on")
     parser.add_argument(
         "--jira-base",
         dest="jira_base",
@@ -112,9 +110,7 @@ def _create_parser() -> argparse.ArgumentParser:
         help="Base URL of the Bitbucket workspace",
     )
     parser.add_argument("--jira-user", dest="jira_user", help="Jira username or email")
-    parser.add_argument(
-        "--jira-token", dest="jira_token", help="Jira API token or password"
-    )
+    parser.add_argument("--jira-token", dest="jira_token", help="Jira API token or password")
     parser.add_argument(
         "--bitbucket-token",
         dest="bitbucket_token",
@@ -162,3 +158,10 @@ def run(argv: Optional[Iterable[str]] = None) -> dict:
 
 
 __all__ = ["parse_args", "run", "build_config", "find_dotenv_path"]
+
+
+if __name__ == "__main__":  # pragma: no cover - CLI shim
+    from releasecopilot.cli.__main__ import main as _package_main
+
+    raise SystemExit(_package_main())
+
