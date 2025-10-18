@@ -3,16 +3,23 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
-import sys
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SRC_ROOT = REPO_ROOT / 'src'
-if str(SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SRC_ROOT))
+SRC_ROOT = REPO_ROOT / "src"
 
-from releasecopilot.utils.coverage import enforce_threshold
+
+def _ensure_repo_importable() -> None:
+    if str(SRC_ROOT) not in sys.path:
+        sys.path.insert(0, str(SRC_ROOT))
+
+
+def _enforce(report: Path, minimum: float, include: list[str] | None):
+    _ensure_repo_importable()
+    from releasecopilot.utils.coverage import enforce_threshold
+
+    return enforce_threshold(report, minimum, include=include)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -40,7 +47,7 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> float:
     parser = _build_parser()
     args = parser.parse_args(argv)
-    totals = enforce_threshold(args.report, args.minimum, include=args.paths)
+    totals = _enforce(args.report, args.minimum, include=args.paths)
     scope = f" paths={len(args.paths)}" if args.paths else ""
     print(f"coverage={totals.percent:.2f}% threshold={args.minimum:.2f}%{scope}")
     return totals.percent
