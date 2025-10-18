@@ -2,7 +2,7 @@
 
 `config/defaults.yml` is the canonical source of configuration for Release Copilot.
 Both the CLI (`main.py`) and the Lambda entry point resolve their runtime settings
-through the shared loader in `src/config/loader.py`, ensuring the following
+through the shared loader in `config/loader.py`, ensuring the following
 precedence order:
 
 1. Explicit overrides – CLI flags, Lambda event payloads, or `config/settings.yaml`.

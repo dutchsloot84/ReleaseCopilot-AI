@@ -16,6 +16,7 @@ repos:
         pass_filenames: false
         additional_dependencies:
           - types-PyYAML==6.0.12.20240808
+          - types-requests==2.32.0.20241016
   - repo: local
     hooks:
       - id: check-generated-wave

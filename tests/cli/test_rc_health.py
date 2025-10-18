@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from config.loader import load_defaults
 from src.cli import app
-from src.config.loader import load_defaults
 from src.ops.health import ReadinessOptions, ReadinessReport
 
 

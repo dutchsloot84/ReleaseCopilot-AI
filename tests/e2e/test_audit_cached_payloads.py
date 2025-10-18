@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from config.loader import load_defaults
 from src.cli import app
-from src.config.loader import load_defaults
 from tests.helpers.schema_validation import assert_excel_columns, assert_json_schema
 
 CACHED_FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "cached"

@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from config.loader import load_defaults
 from src.cli.audit import AuditInputError, AuditOptions, run_audit
-from src.config.loader import load_defaults
 
 
 @pytest.fixture(name="defaults")

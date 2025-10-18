@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence
 
 import requests
@@ -23,7 +24,7 @@ class BitbucketClient(BaseAPIClient):
         self,
         *,
         workspace: str,
-        cache_dir: str,
+        cache_dir: Path | str,
         username: Optional[str] = None,
         app_password: Optional[str] = None,
         access_token: Optional[str] = None,
@@ -119,14 +120,15 @@ class BitbucketClient(BaseAPIClient):
         else:
             window_start = since.astimezone(timezone.utc)
 
-        params: Dict[str, Any] = {
+        base_params: Dict[str, Any] = {
             "pagelen": page_len,
             "q": f'modified_on >= "{window_start.isoformat()}"',
         }
         if branches:
-            params["include"] = list(branches)
+            base_params["include"] = list(branches)
 
         url = f"{self.BASE_URL}/repositories/{self.workspace}/{repo}/commits"
+        params: Dict[str, Any] | None = base_params
         while url:
             response = self._request_with_retry(
                 session=self.session,
@@ -181,7 +183,7 @@ class BitbucketClient(BaseAPIClient):
         end: datetime,
     ) -> List[Dict[str, Any]]:
         url = f"{self.BASE_URL}/repositories/{self.workspace}/{repo_slug}/commits/{branch}"
-        params = {
+        params: Dict[str, Any] | None = {
             "pagelen": 100,
             "q": f"date >= '{start.isoformat()}' AND date <= '{end.isoformat()}'",
         }
@@ -223,5 +225,6 @@ class BitbucketClient(BaseAPIClient):
                 commit.setdefault("branch", branch)
             commits.extend(values)
             url = payload.get("next")
-            params = None  # Subsequent requests include pagination cursor
+            if url:
+                params = None  # Subsequent requests include pagination cursor
         return commits

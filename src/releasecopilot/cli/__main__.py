@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable, Mapping, MutableMapping, Sequence
 from urllib.error import HTTPError, URLError
@@ -242,12 +243,13 @@ def _handle_ingest_bitbucket_scan(args: argparse.Namespace) -> dict[str, object]
 
     credentials = bitbucket_cfg.get("credentials", {}) if isinstance(bitbucket_cfg, dict) else {}
 
+    cache_root = Path("temp_data") / "bitbucket"
     client = BitbucketClient(
         workspace=workspace,
         username=credentials.get("username"),
         app_password=credentials.get("app_password"),
         access_token=credentials.get("access_token"),
-        cache_dir=Path("temp_data") / "bitbucket",
+        cache_dir=cache_root,
     )
 
     repositories_cfg = args.repos or bitbucket_cfg.get("repositories") or []
@@ -284,12 +286,25 @@ def _handle_ingest_bitbucket_scan(args: argparse.Namespace) -> dict[str, object]
         branches=branches_tuple,
     )
 
+    commits_obj = result.get("commits")
+    if not isinstance(commits_obj, list):
+        raise RuntimeError("Bitbucket scanner returned an unexpected commits payload")
+
+    window_start_obj = result.get("window_start")
+    window_end_obj = result.get("window_end")
+    if not isinstance(window_start_obj, datetime) or not isinstance(window_end_obj, datetime):
+        raise RuntimeError("Bitbucket scanner returned invalid window bounds")
+
+    artifact_path_obj = result.get("artifact_path")
+    if not isinstance(artifact_path_obj, Path):
+        raise RuntimeError("Bitbucket scanner returned an invalid artifact path")
+
     summary = {
-        "artifact": str(result["artifact_path"]),
-        "commit_count": len(result["commits"]),
+        "artifact": str(artifact_path_obj),
+        "commit_count": len(commits_obj),
         "window": {
-            "start": result["window_start"].isoformat(),
-            "end": result["window_end"].isoformat(),
+            "start": window_start_obj.isoformat(),
+            "end": window_end_obj.isoformat(),
             "hours": args.hours,
         },
     }

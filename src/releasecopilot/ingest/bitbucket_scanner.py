@@ -46,10 +46,12 @@ def scan_commits(
     collected: list[CommitUpsert] = []
     seen_hashes: set[str] = set()
     for repo in repos:
-        iterator_kwargs = {"repo": repo, "since": window_start}
-        if branches:
-            iterator_kwargs["branches"] = branches
-        for commit in client.iter_commits(**iterator_kwargs):
+        branch_filter = branches if branches else None
+        for commit in client.iter_commits(
+            repo=repo,
+            since=window_start,
+            branches=branch_filter,
+        ):
             commit_hash = commit.get("hash")
             if not commit_hash or commit_hash in seen_hashes:
                 continue
