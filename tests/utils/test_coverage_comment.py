@@ -17,9 +17,7 @@ class _FixedDateTime(datetime):
 def test_build_comment_uses_marker_and_timestamp(monkeypatch) -> None:
     monkeypatch.setattr(coverage_comment, "datetime", _FixedDateTime)
 
-    comment = coverage_comment.build_comment(
-        coverage=87.3, minimum=70.0, paths=("src/foo.py",)
-    )
+    comment = coverage_comment.build_comment(coverage=87.3, minimum=70.0, paths=("src/foo.py",))
 
     assert coverage_comment.COMMENT_MARKER in comment
     assert "87.3%" in comment
@@ -36,9 +34,7 @@ def test_build_comment_respects_custom_timezone(monkeypatch) -> None:
 
     monkeypatch.setattr(coverage_comment, "datetime", _UTCDateTime)
 
-    comment = coverage_comment.build_comment(
-        coverage=90.0, minimum=75.0, tz=ZoneInfo("UTC")
-    )
+    comment = coverage_comment.build_comment(coverage=90.0, minimum=75.0, tz=ZoneInfo("UTC"))
 
     assert "90.0%" in comment
     assert "75.0%" in comment

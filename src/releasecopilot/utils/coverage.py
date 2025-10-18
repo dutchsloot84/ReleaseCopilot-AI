@@ -70,9 +70,7 @@ def _parse_json_subset(data: Any, include: Iterable[str]) -> CoverageTotals:
         return _parse_json_totals(data)
 
     coverage_by_path = {
-        _normalize(path): details
-        for path, details in files.items()
-        if isinstance(details, dict)
+        _normalize(path): details for path, details in files.items() if isinstance(details, dict)
     }
 
     covered = 0.0
@@ -151,9 +149,7 @@ def load_totals(report: Path, include: Iterable[str] | None = None) -> CoverageT
             raise CoverageReportError("path filtering requires a JSON coverage report")
         return _parse_xml_totals(text)
 
-    raise CoverageReportError(
-        "unsupported coverage report format; expected JSON or XML"
-    )
+    raise CoverageReportError("unsupported coverage report format; expected JSON or XML")
 
 
 def enforce_threshold(
@@ -168,9 +164,7 @@ def enforce_threshold(
 
     totals = load_totals(report, include=include)
     if totals.percent < minimum:
-        raise SystemExit(
-            f"Coverage {totals.percent:.1f}% is below required {minimum:.1f}%"
-        )
+        raise SystemExit(f"Coverage {totals.percent:.1f}% is below required {minimum:.1f}%")
     return totals
 
 

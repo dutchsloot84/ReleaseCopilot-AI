@@ -65,9 +65,7 @@ def test_pr_comment_dry_run(
     assert capsys.readouterr().out.strip() == "comment-body"
 
 
-def test_pr_comment_posts_comment(
-    monkeypatch: pytest.MonkeyPatch, coverage_report: Path
-) -> None:
+def test_pr_comment_posts_comment(monkeypatch: pytest.MonkeyPatch, coverage_report: Path) -> None:
     posted: dict[str, object] = {}
 
     def _fake_sync(token: str, repo: str, pr_number: int, body: str) -> None:

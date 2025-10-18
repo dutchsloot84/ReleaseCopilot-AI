@@ -94,9 +94,7 @@ def _add_pr_comment_parser(subparsers) -> None:
     )
     pr_sub = pr_comment.add_subparsers(dest="topic", required=True)
 
-    coverage = pr_sub.add_parser(
-        "coverage", help="Publish pytest coverage results as a PR comment"
-    )
+    coverage = pr_sub.add_parser("coverage", help="Publish pytest coverage results as a PR comment")
     coverage.add_argument(
         "--file",
         dest="report",
@@ -156,9 +154,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _handle_pr_comment_coverage(args: argparse.Namespace) -> str:
     totals = enforce_threshold(args.report, args.minimum, include=args.paths)
-    comment = build_comment(
-        totals.percent, minimum=args.minimum, paths=tuple(args.paths or ())
-    )
+    comment = build_comment(totals.percent, minimum=args.minimum, paths=tuple(args.paths or ()))
 
     if args.dry_run:
         print(comment)
@@ -170,9 +166,7 @@ def _handle_pr_comment_coverage(args: argparse.Namespace) -> str:
     if not token:
         raise SystemExit("GitHub token is required (pass --token or set GITHUB_TOKEN)")
     if not repo:
-        raise SystemExit(
-            "Repository slug is required (pass --repo or set GITHUB_REPOSITORY)"
-        )
+        raise SystemExit("Repository slug is required (pass --repo or set GITHUB_REPOSITORY)")
 
     pr_number = args.pr_number
     if pr_number is None:

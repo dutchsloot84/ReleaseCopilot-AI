@@ -66,9 +66,7 @@ def test_load_totals_subset(tmp_path: Path) -> None:
 
 def test_enforce_threshold_raises_when_below(tmp_path: Path) -> None:
     report = tmp_path / "coverage.json"
-    report.write_text(
-        json.dumps({"totals": {"percent_covered": 63.0}}), encoding="utf-8"
-    )
+    report.write_text(json.dumps({"totals": {"percent_covered": 63.0}}), encoding="utf-8")
 
     with pytest.raises(SystemExit) as exc:
         coverage.enforce_threshold(report, minimum=70.0)
