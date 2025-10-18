@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Wave 3 Bitbucket ingest run",
+  "type": "object",
+  "required": ["run_id", "git_sha", "generated_at", "timezone", "window", "payload"],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "description": "Unique identifier for the ingest execution"
+    },
+    "git_sha": {
+      "type": ["string", "null"],
+      "description": "Git SHA recorded at runtime"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Phoenix-aware timestamp when the artifact was written"
+    },
+    "timezone": {
+      "const": "America/Phoenix"
+    },
+    "window": {
+      "type": "object",
+      "required": ["start", "end", "hours", "repositories"],
+      "properties": {
+        "start": {"type": "string", "format": "date-time"},
+        "end": {"type": "string", "format": "date-time"},
+        "hours": {"type": "integer", "minimum": 1},
+        "repositories": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "payload": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["hash", "repository", "files_changed"],
+        "properties": {
+          "hash": {"type": "string"},
+          "repository": {"type": "string"},
+          "files_changed": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "authorship": {"type": ["string", "null"]},
+          "branch": {"type": ["string", "null"]},
+          "modified_on": {"type": ["string", "null"]},
+          "source": {"type": "string"},
+          "story_keys": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}

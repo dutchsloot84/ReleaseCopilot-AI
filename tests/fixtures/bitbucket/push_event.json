@@ -1,0 +1,35 @@
+{
+  "event_key": "repo:push",
+  "repository": {
+    "full_name": "example/repo"
+  },
+  "push": {
+    "changes": [
+      {
+        "new": {"name": "feature/RC-123-update"},
+        "commits": [
+          {
+            "hash": "abc123",
+            "message": "RC-123 Update dependencies",
+            "author": {"raw": "Alice <alice@example.com>"},
+            "date": "2024-01-02T15:04:05+00:00",
+            "files": [
+              {"path": "src/app.py"},
+              {"path": "README.md"}
+            ]
+          },
+          {
+            "hash": "def456",
+            "message": "Chore: RC-124 tweak",
+            "author": {"user": {"display_name": "Bob"}},
+            "timestamp": "2024-01-02T16:04:05+00:00",
+            "files": [
+              {"path": "src/utils.py"},
+              {"path": "src/app.py"}
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -31,6 +31,15 @@ when scheduling helper or orchestrator checkpoints.
 - Upload artifacts to Amazon S3 and leverage Secrets Manager for credentials.
 - Ready for container deployment or invocation via AWS Lambda.
 
+### Wave 3 Bitbucket ingest timeline
+
+Wave 3 enables Phoenix-aware Bitbucket ingest across scheduled scans and
+webhook deltas. Use `rc ingest bitbucket-scan --hours 4` to backfill commits
+within a configurable window and register the `/webhooks/bitbucket` endpoint via
+`services/webhooks/bitbucket.py` for push / PR events. Each run stores metadata
+in `data/bitbucket/commits.db` and emits artifacts under
+`artifacts/issues/wave3/bitbucket/` stamped in America/Phoenix.
+
 ## Project Layout
 
 ```
