@@ -9,7 +9,7 @@ from pathlib import Path
 
 from releasecopilot.logging_config import get_logger
 
-from ..config.loader import (
+from config.loader import (
     Defaults,
     get_aws_region,
     get_dynamodb_table,

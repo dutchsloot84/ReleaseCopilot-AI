@@ -11,7 +11,7 @@ from typing import Iterable
 
 from releasecopilot.logging_config import configure_logging, get_logger
 
-from ..config.loader import Defaults, load_defaults
+from config.loader import Defaults, load_defaults
 from .audit import AuditInputError, AuditOptions, AuditResult, run_audit
 from .health import HealthCommandError, register_health_parser, run_health_command
 from .orchestrator import (
