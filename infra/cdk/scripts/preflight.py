@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Print information about the Python runtime used for CDK commands."""
+
 from __future__ import annotations
 
 import platform

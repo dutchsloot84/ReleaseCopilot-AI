@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 import pytest
+
 from scripts import generate_history
 from scripts.github.projects_v2 import ProjectStatusItem
 

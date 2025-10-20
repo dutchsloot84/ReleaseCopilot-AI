@@ -7,9 +7,9 @@ from pathlib import Path
 import shutil
 
 import pytest
-from src.cli.audit import AuditInputError, AuditOptions, run_audit
 
 from config.loader import load_defaults
+from src.cli.audit import AuditInputError, AuditOptions, run_audit
 
 
 @pytest.fixture(name="defaults")

@@ -38,6 +38,15 @@ def _totals_from_counts(covered: float, total: float) -> CoverageTotals:
     return CoverageTotals(covered=covered, total=total, percent=percent)
 
 
+def _coerce_float(value: Any, *, default: float = 0.0) -> float:
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError) as exc:  # pragma: no cover - defensive
+        raise CoverageReportError("coverage JSON value is not numeric") from exc
+
+
 def _parse_json_totals(data: Any) -> CoverageTotals:
     if not isinstance(data, dict):
         raise CoverageReportError("coverage JSON payload must be a dictionary")
@@ -46,8 +55,8 @@ def _parse_json_totals(data: Any) -> CoverageTotals:
     if not isinstance(totals, dict):
         raise CoverageReportError("coverage JSON missing 'totals'")
 
-    covered = float(totals.get("covered_lines", totals.get("covered_statements", 0)))
-    total = float(totals.get("num_statements", totals.get("statements", 0)))
+    covered = _coerce_float(totals.get("covered_lines", totals.get("covered_statements", 0)))
+    total = _coerce_float(totals.get("num_statements", totals.get("statements", 0)))
 
     raw_percent: Any = totals.get("percent_covered")
     if raw_percent is None:
@@ -95,8 +104,8 @@ def _parse_json_subset(data: Any, include: Iterable[str]) -> CoverageTotals:
         if not isinstance(summary_map, dict):
             raise CoverageReportError(f"coverage JSON missing summary for {path}")
 
-        covered += float(summary_map.get("covered_lines", 0))
-        total += float(summary_map.get("num_statements", 0))
+        covered += _coerce_float(summary_map.get("covered_lines", 0))
+        total += _coerce_float(summary_map.get("num_statements", 0))
 
     if missing:
         raise SystemExit("Coverage data missing for: " + ", ".join(sorted(missing)))

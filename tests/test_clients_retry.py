@@ -6,12 +6,12 @@ import time
 from types import SimpleNamespace
 from typing import Any, Iterable
 
-from clients.bitbucket_client import BitbucketClient
-from clients.jira_client import JiraClient
-import main
 import pytest
 import requests
 
+from clients.bitbucket_client import BitbucketClient
+from clients.jira_client import JiraClient
+import main
 from releasecopilot.errors import (
     BitbucketRequestError,
     JiraJQLFailed,

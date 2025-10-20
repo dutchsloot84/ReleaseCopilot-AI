@@ -7,7 +7,6 @@ from typing import Any, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 from processors.audit_processor import STORY_KEY_RE
-
 from releasecopilot.logging_config import get_logger
 
 from .bitbucket_scanner import PHOENIX_TZ
