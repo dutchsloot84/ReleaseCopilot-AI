@@ -4,8 +4,9 @@ import json
 from pathlib import Path
 
 from click.testing import CliRunner
-from scripts.github.wave2_helper import cli
 import yaml
+
+from scripts.github.wave2_helper import cli
 
 
 def _write_temp_config(tmp_path: Path) -> Path:

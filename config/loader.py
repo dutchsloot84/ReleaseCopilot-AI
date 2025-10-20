@@ -9,8 +9,9 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Mapping, MutableMapping, Sequence, Tuple
 
-from clients.secrets_manager import CredentialStore, SecretsManager
 import yaml
+
+from clients.secrets_manager import CredentialStore, SecretsManager
 
 __all__ = [
     "Defaults",

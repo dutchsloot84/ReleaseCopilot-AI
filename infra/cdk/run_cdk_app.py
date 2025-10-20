@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Wrapper to execute the CDK app with the active interpreter."""
+
 from __future__ import annotations
 
 import os

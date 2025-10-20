@@ -13,6 +13,9 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
+from releasecopilot.jira.signature import verify_signature
+from releasecopilot.jira.sync import phoenix_now, recompute_correlation
+from releasecopilot.jira.webhook_parser import JiraWebhookEvent, normalize_payload
 from releasecopilot.logging_config import configure_logging, get_logger
 
 configure_logging()
@@ -53,34 +56,50 @@ def handler(
     if method != "POST":
         return _response(405, {"message": "Method Not Allowed"})
 
+    raw_body = _raw_body(event)
+
     expected_secret = _resolve_secret()
     if expected_secret:
-        secret = _header(event, "X-Webhook-Secret")
-        if secret != expected_secret:
+        signature = _header(event, "X-Atlassian-Webhook-Signature")
+        if not verify_signature(secret=expected_secret, body=raw_body, signature=signature):
             LOGGER.warning("Webhook authentication failed")
             return _response(401, {"message": "Unauthorized"})
 
     try:
-        payload = _parse_body(event)
+        payload = _parse_body(raw_body)
     except ValueError as exc:
         LOGGER.warning("Malformed webhook payload: %s", exc)
         return _response(400, {"message": "Invalid payload"})
 
-    event_type = payload.get("webhookEvent")
+    try:
+        normalized = normalize_payload(payload)
+    except ValueError as exc:
+        LOGGER.warning("Malformed webhook payload: %s", exc)
+        return _response(400, {"message": str(exc)})
+
+    event_type = normalized.event_type
     if event_type not in ALLOWED_EVENTS:
         LOGGER.info("Ignoring unsupported webhook event", extra={"event_type": event_type})
         return _response(202, {"ignored": True})
 
     if event_type == "jira:issue_deleted":
-        result = _handle_delete(payload)
+        result = _handle_delete(normalized)
     else:
-        result = _handle_upsert(payload)
+        result = _handle_upsert(normalized)
+
+    correlation = {}
+    if result.get("success"):
+        correlation = recompute_correlation(events=[normalized])
 
     status = 202 if result.get("success") else result.get("status", 500)
     body = {
         "ok": result.get("success", False),
+        "received_at": phoenix_now().isoformat(timespec="seconds"),
+        "event_id": normalized.delivery_id,
         **{k: v for k, v in result.items() if k != "success"},
     }
+    if correlation:
+        body["correlation_artifact"] = correlation.get("artifact_path")
     return _response(status, body)
 
 
@@ -92,16 +111,28 @@ def _header(event: Dict[str, Any], key: str) -> Optional[str]:
     return None
 
 
-def _parse_body(event: Dict[str, Any]) -> Dict[str, Any]:
-    raw_body = event.get("body") or ""
+def _raw_body(event: Dict[str, Any]) -> bytes:
+    raw_body = event.get("body") or b""
     if event.get("isBase64Encoded"):
         raw_body = base64.b64decode(raw_body)
     if isinstance(raw_body, bytes):
-        raw_body = raw_body.decode("utf-8")
+        return raw_body
+    if isinstance(raw_body, str):
+        return raw_body.encode("utf-8")
+    return json.dumps(raw_body).encode("utf-8")
+
+
+def _parse_body(raw_body: bytes) -> Dict[str, Any]:
     if not raw_body:
         return {}
     try:
-        return json.loads(raw_body)
+        text = raw_body.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("Invalid encoding") from exc
+    if not text.strip():
+        return {}
+    try:
+        return json.loads(text)
     except json.JSONDecodeError as exc:
         raise ValueError("Invalid JSON") from exc
 
@@ -144,21 +175,16 @@ def _extract_secret_string(secret_string: str) -> Optional[str]:
     return None
 
 
-def _handle_upsert(payload: Dict[str, Any]) -> Dict[str, Any]:
-    issue = payload.get("issue") or {}
-    issue_key = issue.get("key") or issue.get("id")
+def _handle_upsert(event: JiraWebhookEvent) -> Dict[str, Any]:
+    issue = event.issue
+    issue_key = event.issue_key
     if not issue_key:
-        LOGGER.error("Webhook payload missing issue identifier", extra={"payload": payload})
+        LOGGER.error("Webhook payload missing issue identifier", extra={"payload": event.payload})
         return {"success": False, "status": 400, "message": "Missing issue identifier"}
 
-    issue_id = str(issue.get("id") or issue_key)
-    issue_fields = issue.get("fields") or {}
-    updated_at = (
-        _normalize_timestamp(
-            issue_fields.get("updated") or issue_fields.get("created") or payload.get("timestamp")
-        )
-        or _now_iso()
-    )
+    issue_id = event.issue_id
+    issue_fields = event.fields or {}
+    updated_at = event.updated_at or _now_iso()
     fix_versions = [
         fv.get("name") for fv in issue_fields.get("fixVersions") or [] if fv.get("name")
     ]
@@ -168,7 +194,7 @@ def _handle_upsert(payload: Dict[str, Any]) -> Dict[str, Any]:
         (issue_fields.get("assignee") or {}).get("displayName")
     )
 
-    idempotency_key = _compute_idempotency_key(payload, issue_key, updated_at)
+    idempotency_key = _compute_idempotency_key(event, issue_key, updated_at)
 
     item = {
         "issue_key": issue_key,
@@ -182,7 +208,7 @@ def _handle_upsert(payload: Dict[str, Any]) -> Dict[str, Any]:
         "received_at": _now_iso(),
         "issue": issue,
         "deleted": False,
-        "last_event_type": payload.get("webhookEvent"),
+        "last_event_type": event.event_type,
         "idempotency_key": idempotency_key,
     }
 
@@ -201,23 +227,23 @@ def _handle_upsert(payload: Dict[str, Any]) -> Dict[str, Any]:
             "issue_key": issue_key,
             "issue_id": issue_id,
             "fix_version": primary_fix_version,
+            "event_id": event.delivery_id,
         },
     )
     return {"success": True, "issue_key": issue_key, "issue_id": issue_id}
 
 
-def _handle_delete(payload: Dict[str, Any]) -> Dict[str, Any]:
-    issue = payload.get("issue") or {}
-    issue_key = issue.get("key") or issue.get("id")
+def _handle_delete(event: JiraWebhookEvent) -> Dict[str, Any]:
+    issue_key = event.issue_key
     if not issue_key:
-        LOGGER.error("Delete webhook missing issue id", extra={"payload": payload})
+        LOGGER.error("Delete webhook missing issue id", extra={"payload": event.payload})
         return {"success": False, "status": 400, "message": "Missing issue identifier"}
 
-    updated_at = _normalize_timestamp(payload.get("timestamp")) or _now_iso()
-    idempotency_key = _compute_idempotency_key(payload, issue_key, updated_at)
+    updated_at = event.timestamp or _now_iso()
+    idempotency_key = _compute_idempotency_key(event, issue_key, updated_at)
 
     try:
-        tombstoned = _mark_tombstone(issue_key, updated_at, idempotency_key, payload)
+        tombstoned = _mark_tombstone(event, issue_key, updated_at, idempotency_key)
     except ClientError as exc:
         LOGGER.error(
             "Failed to delete Jira issue",
@@ -225,7 +251,10 @@ def _handle_delete(payload: Dict[str, Any]) -> Dict[str, Any]:
         )
         return {"success": False, "status": 500, "message": "Failed to delete issue"}
 
-    LOGGER.info("Deleted Jira issue", extra={"issue_key": issue_key, "tombstoned": tombstoned})
+    LOGGER.info(
+        "Deleted Jira issue",
+        extra={"issue_key": issue_key, "tombstoned": tombstoned, "event_id": event.delivery_id},
+    )
     return {"success": True, "issue_key": issue_key, "deleted": True}
 
 
@@ -240,10 +269,10 @@ def _put_item_with_retry(item: Dict[str, Any]) -> None:
 
 
 def _mark_tombstone(
+    event: JiraWebhookEvent,
     issue_key: str,
     updated_at: str,
     idempotency_key: str,
-    payload: Dict[str, Any],
 ) -> bool:
     latest = _fetch_latest_issue_item(issue_key)
     now = _now_iso()
@@ -256,7 +285,7 @@ def _mark_tombstone(
             "UpdateExpression": "SET deleted = :deleted, last_event_type = :event, received_at = :now, idempotency_key = :id",  # noqa: E501
             "ExpressionAttributeValues": {
                 ":deleted": True,
-                ":event": payload.get("webhookEvent"),
+                ":event": event.event_type,
                 ":now": now,
                 ":id": idempotency_key,
             },
@@ -264,15 +293,15 @@ def _mark_tombstone(
         _execute_with_backoff(_TABLE.update_item, update_params)
         return True
 
-    issue_payload = payload.get("issue") or {}
-    issue_fields = issue_payload.get("fields") or {}
+    issue_payload = event.issue or {}
+    issue_fields = event.fields or {}
     fix_versions = [
         fv.get("name") for fv in issue_fields.get("fixVersions") or [] if fv.get("name")
     ]
     item = {
         "issue_key": issue_key,
         "updated_at": updated_at,
-        "issue_id": str(issue_payload.get("id") or issue_key),
+        "issue_id": event.issue_id,
         "project_key": (issue_fields.get("project") or {}).get("key"),
         "status": (issue_fields.get("status") or {}).get("name", "UNKNOWN"),
         "assignee": (issue_fields.get("assignee") or {}).get("accountId")
@@ -283,7 +312,7 @@ def _mark_tombstone(
         "received_at": now,
         "issue": issue_payload,
         "deleted": True,
-        "last_event_type": payload.get("webhookEvent"),
+        "last_event_type": event.event_type,
         "idempotency_key": idempotency_key,
     }
     _put_item_with_retry(item)
@@ -306,12 +335,13 @@ def _fetch_latest_issue_item(issue_key: str) -> Optional[Dict[str, Any]]:
     return items[0]
 
 
-def _compute_idempotency_key(payload: Dict[str, Any], issue_key: str, updated_at: str) -> str:
+def _compute_idempotency_key(event: JiraWebhookEvent, issue_key: str, updated_at: str) -> str:
+    payload = event.payload
     for key in ("deliveryId", "delivery_id", "eventId", "event_id"):
         value = payload.get(key)
         if value:
             return str(value)
-    changelog = payload.get("changelog") or {}
+    changelog = event.changelog or {}
     if isinstance(changelog, dict):
         identifier = changelog.get("id")
         if identifier:
@@ -319,7 +349,7 @@ def _compute_idempotency_key(payload: Dict[str, Any], issue_key: str, updated_at
     timestamp = payload.get("timestamp")
     if timestamp:
         return f"{issue_key}:{timestamp}"
-    return f"{issue_key}:{updated_at}:{payload.get('webhookEvent')}"
+    return f"{issue_key}:{updated_at}:{event.event_type}"
 
 
 def _execute_with_backoff(action, params: Dict[str, Any]) -> None:
@@ -367,7 +397,7 @@ def _normalize_timestamp(raw: Any) -> Optional[str]:
 
 
 def _now_iso() -> str:
-    return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+    return phoenix_now().isoformat(timespec="seconds")
 
 
 def _response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:

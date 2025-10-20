@@ -8,8 +8,8 @@ cd "${ROOT_DIR}"
 echo "[watchdog] Running ruff autofix..."
 ruff check --fix .
 
-echo "[watchdog] Formatting with black..."
-black .
+echo "[watchdog] Formatting with ruff..."
+ruff format .
 
 echo "[watchdog] Running targeted pytest suite..."
 if [ "$#" -gt 0 ];

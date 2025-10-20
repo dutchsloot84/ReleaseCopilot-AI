@@ -6,10 +6,10 @@ import json
 from pathlib import Path
 
 import pytest
-from src.cli import app
-from src.ops.health import ReadinessOptions, ReadinessReport
 
 from config.loader import load_defaults
+from src.cli import app
+from src.ops.health import ReadinessOptions, ReadinessReport
 
 
 @pytest.fixture(name="defaults")

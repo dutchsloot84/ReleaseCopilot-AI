@@ -1242,7 +1242,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--since",
         default="7d",
-        help=("Relative format like '7d'/'24h' or ISO timestamp " "(YYYY-MM-DDTHH:MM:SSZ)"),
+        help=("Relative format like '7d'/'24h' or ISO timestamp (YYYY-MM-DDTHH:MM:SSZ)"),
     )
     parser.add_argument(
         "--until",

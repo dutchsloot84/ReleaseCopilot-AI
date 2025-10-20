@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from aws_cdk import App
 from aws_cdk.assertions import Template
+
 from infra.cdk.core_stack import CoreStack
 
 
