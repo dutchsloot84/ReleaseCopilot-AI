@@ -157,14 +157,14 @@ def handler(event, context):
 
         for it in issues:
             # Save RAW with a timestamped key
-            raw_key = f'raw/jira/{it["key"]}/{it["id"]}-{it["fields"]["updated"].replace(":","").replace(" ","_")}.json'
+            raw_key = f"raw/jira/{it['key']}/{it['id']}-{it['fields']['updated'].replace(':', '').replace(' ', '_')}.json"
             _put_s3_json(raw_key, it)
 
             # Build normalized doc
             norm = _normalize_issue(
                 it, {"acceptance_criteria": ac_id, "deployment_notes": dn_id}, base_url
             )
-            _put_s3_json(f'normalized/jira/{it["key"]}.json', norm)
+            _put_s3_json(f"normalized/jira/{it['key']}.json", norm)
 
             last_seen = it["fields"]["updated"]
             total_processed += 1

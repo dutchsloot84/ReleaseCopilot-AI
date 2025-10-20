@@ -143,9 +143,7 @@ class _StructuredFormatter(logging.Formatter):
             datefmt="%Y-%m-%dT%H:%M:%S",
         )
 
-    def formatTime(
-        self, record: logging.LogRecord, datefmt: str | None = None
-    ) -> str:  # noqa: D401, N802
+    def formatTime(self, record: logging.LogRecord, datefmt: str | None = None) -> str:  # noqa: D401, N802
         dt = datetime.fromtimestamp(record.created, tz=timezone.utc)
         return dt.strftime(self.datefmt or "%Y-%m-%dT%H:%M:%S")
 

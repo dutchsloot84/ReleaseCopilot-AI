@@ -175,7 +175,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     if not prompt_dirs:
         print(
-            "No prompt directories discovered. Use --prompts-dir or --waves to" " specify targets.",
+            "No prompt directories discovered. Use --prompts-dir or --waves to specify targets.",
             file=sys.stderr,
         )
         return 1
