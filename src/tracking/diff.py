@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Mapping, Sequence
+from typing import Any, Dict, List, Mapping, Sequence, cast
 
 
 def _is_sequence(value: object) -> bool:
@@ -10,9 +10,10 @@ def _is_sequence(value: object) -> bool:
 
 
 def _story_index(run: Mapping[str, object]) -> Dict[str, Mapping[str, object]]:
-    stories = run.get("stories")
-    if not _is_sequence(stories):
+    stories_raw = run.get("stories")
+    if not _is_sequence(stories_raw):
         return {}
+    stories = cast(Sequence[Any], stories_raw)
     index: Dict[str, Mapping[str, object]] = {}
     for story in stories:  # type: ignore[assignment]
         if isinstance(story, Mapping):
@@ -23,9 +24,10 @@ def _story_index(run: Mapping[str, object]) -> Dict[str, Mapping[str, object]]:
 
 
 def _story_commit_ids(story: Mapping[str, object]) -> List[str]:
-    commit_ids = story.get("commitIds")
-    if not _is_sequence(commit_ids):
+    commit_ids_raw = story.get("commitIds")
+    if not _is_sequence(commit_ids_raw):
         return []
+    commit_ids = cast(Sequence[Any], commit_ids_raw)
     values: List[str] = []
     for commit_id in commit_ids:  # type: ignore[assignment]
         if isinstance(commit_id, str):
@@ -34,16 +36,19 @@ def _story_commit_ids(story: Mapping[str, object]) -> List[str]:
 
 
 def _orphans(run: Mapping[str, object]) -> List[str]:
-    commits = run.get("commits")
-    if not _is_sequence(commits):
+    commits_raw = run.get("commits")
+    if not _is_sequence(commits_raw):
         return []
+    commits = cast(Sequence[Any], commits_raw)
     orphan_ids: List[str] = []
     for commit in commits:  # type: ignore[assignment]
         if not isinstance(commit, Mapping):
             continue
         linked = commit.get("linkedStoryKeys")
-        if _is_sequence(linked) and len(linked) > 0:
-            continue
+        if _is_sequence(linked):
+            linked_keys = cast(Sequence[Any], linked)
+            if len(linked_keys) > 0:
+                continue
         if isinstance(linked, (str, bytes, bytearray)) and linked:
             continue
         commit_id = commit.get("id")
@@ -95,8 +100,8 @@ def _diff_commit_lists(
         if commit_ids:
             removed.append({"key": key, "commit_ids": commit_ids})
 
-    added.sort(key=lambda item: item.get("key", ""))
-    removed.sort(key=lambda item: item.get("key", ""))
+    added.sort(key=lambda item: str(item.get("key", "")))
+    removed.sort(key=lambda item: str(item.get("key", "")))
 
     return added, removed
 
