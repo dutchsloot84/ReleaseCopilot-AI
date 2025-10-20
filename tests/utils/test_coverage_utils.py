@@ -99,6 +99,7 @@ def test_load_totals_subset_ignores_paths_outside_tracked_roots(tmp_path: Path) 
             "src/module_a.py",
             "tests/test_module_a.py",
             "tools/helper.py",
+            "config/settings.py",
         ],
     )
 
