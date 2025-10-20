@@ -7,9 +7,10 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
-from typing import Iterable, Mapping, MutableMapping, Sequence
+from typing import Any, Iterable, Mapping, MutableMapping, Sequence
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 from clients.bitbucket_client import BitbucketClient
 
@@ -19,6 +20,9 @@ from releasecopilot.ingest.storage import CommitStorage
 from releasecopilot.logging_config import configure_logging
 from releasecopilot.utils.coverage import enforce_threshold
 from releasecopilot.utils.coverage_comment import COMMENT_MARKER, build_comment
+from tracking.correlation import build_correlation_document, write_correlation_artifact
+
+PHOENIX_TZ = ZoneInfo("America/Phoenix")
 
 
 def _github_request(
@@ -198,11 +202,90 @@ def _add_ingest_parser(subparsers) -> None:
     )
 
 
+def _coerce_mappings(items: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    values: list[dict[str, Any]] = []
+    for item in items:
+        if isinstance(item, Mapping):
+            values.append({str(key): value for key, value in item.items()})
+    return values
+
+
+def _load_collection(path: Path, key: str) -> list[dict[str, Any]]:
+    if not path.exists():
+        raise SystemExit(f"Input file not found: {path}")
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+
+    if isinstance(payload, list):
+        return _coerce_mappings(item for item in payload if isinstance(item, Mapping))
+
+    if isinstance(payload, Mapping):
+        candidates = (
+            key,
+            key.rstrip("s"),
+            f"{key}_list",
+            "items",
+            "payload",
+            "data",
+            "values",
+        )
+        for candidate in candidates:
+            collection = payload.get(candidate)
+            if isinstance(collection, list):
+                return _coerce_mappings(item for item in collection if isinstance(item, Mapping))
+    raise SystemExit(f"Unable to locate {key} collection in {path}")
+
+
+def _add_matcher_parser(subparsers) -> None:
+    matcher = subparsers.add_parser("matcher", help="Correlation helpers")
+    matcher_sub = matcher.add_subparsers(dest="topic", required=True)
+
+    correlate = matcher_sub.add_parser(
+        "correlate",
+        help="Correlate issues and commits and persist Phoenix-aware artifacts",
+    )
+    correlate.add_argument(
+        "--issues",
+        type=Path,
+        default=Path("data/jira_issues.json"),
+        help="Path to a JSON file containing Jira issues",
+    )
+    correlate.add_argument(
+        "--commits",
+        type=Path,
+        default=Path("data/bitbucket_commits.json"),
+        help="Path to a JSON file containing commit metadata",
+    )
+    correlate.add_argument(
+        "--artifact-dir",
+        type=Path,
+        default=Path("artifacts/issues/wave3/correlation"),
+        help="Directory for correlation artifacts",
+    )
+    correlate.add_argument(
+        "--window-hours",
+        type=int,
+        default=None,
+        help="Optional lookback window (hours) to record in run metadata",
+    )
+    correlate.add_argument(
+        "--run-id",
+        default=None,
+        help="Optional run identifier (defaults to generated UUID)",
+    )
+    correlate.add_argument(
+        "--git-sha",
+        default=None,
+        help="Optional override for the git SHA recorded in artifacts",
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
     _add_pr_comment_parser(subparsers)
     _add_ingest_parser(subparsers)
+    _add_matcher_parser(subparsers)
     return parser
 
 
@@ -313,6 +396,39 @@ def _handle_ingest_bitbucket_scan(args: argparse.Namespace) -> dict[str, object]
     return summary
 
 
+def _handle_matcher_correlate(args: argparse.Namespace) -> dict[str, Any]:
+    issues = _load_collection(args.issues, "issues")
+    commits = _load_collection(args.commits, "commits")
+
+    run_args: dict[str, Any] = {
+        "issues_path": str(args.issues),
+        "commits_path": str(args.commits),
+    }
+    if args.window_hours is not None:
+        run_args["window_hours"] = args.window_hours
+
+    document = build_correlation_document(
+        issues=issues,
+        commits=commits,
+        args=run_args,
+        run_id=args.run_id,
+        git_sha=args.git_sha,
+        generated_at=datetime.now(tz=PHOENIX_TZ),
+        tz=PHOENIX_TZ,
+    )
+
+    artifact_path = write_correlation_artifact(document, artifact_dir=args.artifact_dir)
+
+    result = {
+        "artifact": str(artifact_path),
+        "run_id": document.get("run_id"),
+        "git_sha": document.get("git_sha"),
+        "summary": document.get("summary"),
+    }
+    print(json.dumps(result, indent=2))
+    return result
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -324,6 +440,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.command == "ingest" and args.topic == "bitbucket-scan":
         _handle_ingest_bitbucket_scan(args)
+        return 0
+    if args.command == "matcher" and args.topic == "correlate":
+        _handle_matcher_correlate(args)
         return 0
 
     parser.error("Unsupported command")

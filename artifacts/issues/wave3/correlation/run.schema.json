@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Wave 3 correlation run artifact",
+  "type": "object",
+  "required": [
+    "run_id",
+    "git_sha",
+    "generated_at",
+    "timezone",
+    "args",
+    "summary",
+    "matched",
+    "stories_without_commits",
+    "commits_without_story"
+  ],
+  "properties": {
+    "run_id": {"type": "string"},
+    "git_sha": {"type": "string"},
+    "generated_at": {"type": "string"},
+    "timezone": {"type": "string", "const": "America/Phoenix"},
+    "args": {"type": "object"},
+    "summary": {"type": "object"},
+    "matched": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "stories_without_commits": {"$ref": "#/$defs/gap"},
+    "commits_without_story": {"$ref": "#/$defs/gap"}
+  },
+  "$defs": {
+    "gap": {
+      "type": "object",
+      "required": [
+        "run_id",
+        "git_sha",
+        "generated_at",
+        "timezone",
+        "args",
+        "payload"
+      ],
+      "properties": {
+        "run_id": {"type": "string"},
+        "git_sha": {"type": "string"},
+        "generated_at": {"type": "string"},
+        "timezone": {"type": "string", "const": "America/Phoenix"},
+        "args": {"type": "object"},
+        "payload": {
+          "type": "array",
+          "items": {"type": "object"}
+        }
+      }
+    }
+  }
+}

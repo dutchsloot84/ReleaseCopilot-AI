@@ -6,8 +6,7 @@ from datetime import datetime
 from typing import Any, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
-from processors.audit_processor import STORY_KEY_RE
-
+from matcher.link_rules import extract_story_keys
 from releasecopilot.logging_config import get_logger
 
 from .bitbucket_scanner import PHOENIX_TZ
@@ -30,24 +29,6 @@ def _header(headers: Mapping[str, Any] | None, key: str) -> str | None:
         if header.lower() == target and isinstance(value, str):
             return value
     return None
-
-
-def extract_story_keys(
-    message: str | None,
-    branch: str | None = None,
-    pr_title: str | None = None,
-) -> tuple[str, ...]:
-    """Return unique story keys preferring message > branch > PR title."""
-
-    ordered: list[str] = []
-    for source in (message, branch, pr_title):
-        if not source:
-            continue
-        matches = STORY_KEY_RE.findall(source.upper())
-        for match in matches:
-            if match not in ordered:
-                ordered.append(match)
-    return tuple(ordered)
 
 
 def _normalize_files(entries: Iterable[Mapping[str, Any]] | None) -> tuple[str, ...]:
@@ -100,7 +81,11 @@ def handle_push(event: Mapping[str, Any]) -> list[CommitUpsert]:
             if commit_hash in seen:
                 continue
             seen.add(commit_hash)
-            story_keys = extract_story_keys(commit.get("message"), branch)
+            story_keys = extract_story_keys(
+                message=commit.get("message"),
+                branch=branch,
+                pr_title=None,
+            )
             commits.append(
                 CommitUpsert(
                     hash=commit_hash,
@@ -172,7 +157,11 @@ def handle_pull_request(event: Mapping[str, Any]) -> list[CommitUpsert]:
         if commit_hash in seen:
             continue
         seen.add(commit_hash)
-        story_keys = extract_story_keys(commit.get("message"), branch, title)
+        story_keys = extract_story_keys(
+            message=commit.get("message"),
+            branch=branch,
+            pr_title=title,
+        )
         commits.append(
             CommitUpsert(
                 hash=commit_hash,
