@@ -1,5 +1,4 @@
 """Streamlit dashboard for browsing audit outputs."""
-
 from __future__ import annotations
 
 import json

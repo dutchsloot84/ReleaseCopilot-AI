@@ -1,5 +1,4 @@
 """Synchronization helpers for Jira webhook deliveries."""
-
 from __future__ import annotations
 
 from datetime import datetime
