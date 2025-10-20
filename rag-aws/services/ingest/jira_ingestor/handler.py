@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 import json
 import logging
 import os
 import time
-from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List, Optional
 
 import boto3

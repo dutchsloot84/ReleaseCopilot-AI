@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from exporters.excel_exporter import ExcelExporter
 import pytest
 
-from exporters.excel_exporter import ExcelExporter
 from tests.helpers.schema_validation import assert_excel_columns, assert_json_schema
 
 SCHEMA_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "schemas"

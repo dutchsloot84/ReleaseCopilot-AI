@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Iterable, Mapping
+import json
 from pathlib import Path
-from typing import Any, Dict
-from typing import Mapping as TypingMapping
+from typing import Any, Dict, Mapping as TypingMapping
 
 from exporters.excel_exporter import ExcelExporter
 from exporters.json_exporter import JSONExporter

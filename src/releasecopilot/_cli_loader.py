@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
-import sys
 from pathlib import Path
+import sys
 from types import ModuleType
 
 _CLI_CACHE_KEY = "releasecopilot._cli_module"

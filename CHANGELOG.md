@@ -12,6 +12,11 @@
 **Decision:** Strengthen Jira/Bitbucket tests using cached payloads and schema contracts (see `artifacts/issues/wave3/tests-mocked-jira-bitbucket-e2e-with-cached-payloads.md`).
 **Note:** Cached fixtures must be updated alongside API changes to prevent drift.
 **Action:** Added pagination/retry client tests, offline audit E2E coverage, and schema validators guarding JSON/Excel outputs.
+
+### Changed
+- **Decision:** Automate import hygiene fixes in CI so ruff/isort guards always run before reviews.
+- **Note:** Auto-fix commits are pushed with `[skip ci]` from the GitHub Actions bot and reference America/Phoenix scheduling expectations.
+- **Action:** Updated `.github/workflows/ci.yml`, `.pre-commit-config.yaml`, and `pyproject.toml` to apply ruff check --fix + black, auto-commit results, and fail if additional diffs appear.
 ### Added
 - **Decision:** Adopt `python main.py generate --timezone America/Phoenix` as the source of truth for Wave 3 artifacts.
 - **Note:** `./scripts/ci/check_generator_drift.sh` reruns the generator and compares `docs/mop/mop_wave3.md`, `docs/sub-prompts/wave3/`, `artifacts/issues/wave3/`, and `artifacts/manifests/wave3_subprompts.json` against the manifest entry.

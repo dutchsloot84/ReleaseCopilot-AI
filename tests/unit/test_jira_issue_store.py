@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-import pytest
 from botocore.exceptions import ClientError
-
 from clients.jira_store import JiraIssueStore
+import pytest
 
 
 class FakeTable:

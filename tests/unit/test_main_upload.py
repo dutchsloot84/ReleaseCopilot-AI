@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import importlib
-import types
 from datetime import datetime
+import importlib
 from pathlib import Path
+import types
 
 import pytest
 

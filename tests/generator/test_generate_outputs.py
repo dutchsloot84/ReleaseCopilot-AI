@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
-import shutil
 from pathlib import Path
+import shutil
 
 import pytest
-
 from tools.generator.generator import (
     PHOENIX_TZ,
     generate_from_yaml,

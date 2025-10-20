@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import json
 import logging
 import os
 import sys
 import threading
-import uuid
-from datetime import datetime, timezone
-from email.utils import parsedate_to_datetime
 from typing import Any, Iterable
+import uuid
 
 _CONFIG_LOCK = threading.Lock()
 _CONFIGURED = False

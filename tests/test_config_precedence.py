@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from src.config.loader import ConfigurationError, load_config
+from config.loader import ConfigurationError, load_config
 from tests.helpers_config import StubCredentialStore, write_defaults
 
 

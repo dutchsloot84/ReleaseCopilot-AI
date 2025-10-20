@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import json
 from functools import lru_cache
+import json
 from typing import Any, Dict, Optional
 
 try:  # pragma: no cover - boto3 optional at import time

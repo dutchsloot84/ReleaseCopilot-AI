@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 
 import pytest
-from cli.orchestrator import register_orchestrator_parser, run_orchestrator_command
 
+from cli.orchestrator import register_orchestrator_parser, run_orchestrator_command
 from config.loader import Defaults
 
 

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import os
-import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import os
+import time
 from typing import Any, Dict, Iterable, List, Optional
 
 import boto3

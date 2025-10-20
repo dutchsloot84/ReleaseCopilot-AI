@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 import sys
 import types
-from pathlib import Path
 from typing import Any, Iterable
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,12 +20,12 @@ if "config.settings" not in sys.modules:
     sys.modules.setdefault("config", config_pkg)
     sys.modules.setdefault("config.settings", config_settings)
 
-import pytest  # noqa: E402
-
 import main as main_module  # noqa: E402
+import pytest  # noqa: E402
 import releasecopilot_bootstrap  # noqa: F401,E402  # ensures src on sys.path
-from releasecopilot.errors import JiraJQLFailed  # noqa: E402
 from src.cli.shared import AuditConfig  # noqa: E402
+
+from releasecopilot.errors import JiraJQLFailed  # noqa: E402
 
 
 class _FailingIssueProvider:

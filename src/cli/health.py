@@ -7,9 +7,7 @@ import json
 import os
 from pathlib import Path
 
-from releasecopilot.logging_config import get_logger
-
-from ..config.loader import (
+from config.loader import (
     Defaults,
     get_aws_region,
     get_dynamodb_table,
@@ -17,6 +15,8 @@ from ..config.loader import (
     get_secrets_mapping,
     load_config,
 )
+from releasecopilot.logging_config import get_logger
+
 from ..ops.health import ReadinessOptions, run_readiness
 
 LOGGER = get_logger(__name__)

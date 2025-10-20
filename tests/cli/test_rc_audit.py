@@ -6,9 +6,9 @@ import json
 from pathlib import Path
 
 import pytest
-
 from src.cli import app
-from src.config.loader import load_defaults
+
+from config.loader import load_defaults
 
 
 @pytest.fixture(name="defaults")

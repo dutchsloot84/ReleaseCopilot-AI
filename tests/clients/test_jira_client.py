@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
+import time
 from typing import Iterator
 
+from clients.jira_client import JiraClient
 import pytest
 import requests
 
-from clients.jira_client import JiraClient
 from releasecopilot.errors import JiraQueryError
 
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "jira"

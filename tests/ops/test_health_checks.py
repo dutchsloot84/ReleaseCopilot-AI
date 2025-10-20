@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import json
 from contextlib import ExitStack
+import json
 
 import boto3
-import pytest
 from botocore.stub import ANY, Stubber
-
+import pytest
 from src.ops.health import ReadinessClients, ReadinessOptions, run_readiness
 
 

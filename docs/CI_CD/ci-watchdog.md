@@ -23,7 +23,7 @@ The workflow lives at `.github/workflows/ci-watchdog.yml` and uses the
   triage.
 - **autofix** – runs only when explicitly gated by `/watchdog autofix`
   (see below). It invokes `scripts/github/run_watchdog_autofix.sh` to run
-  `ruff --fix`, `black`, and a targeted `pytest` selection, all without
+  `ruff check --fix`, `black`, and a targeted `pytest` selection, all without
   network access.
 
 ## Rollback plan

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
+
 from tracking import api as tracking_api
 from tracking.diff import diff_runs, render_diff_markdown
 

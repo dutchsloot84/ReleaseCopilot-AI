@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 from aws_cdk import App, Environment
 from aws_cdk.assertions import Match, Template
-
 from infra.cdk.core_stack import CoreStack
+import pytest
 
 ACCOUNT = "123456789012"
 REGION = "us-west-2"

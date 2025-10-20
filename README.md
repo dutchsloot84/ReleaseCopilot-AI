@@ -31,6 +31,15 @@ when scheduling helper or orchestrator checkpoints.
 - Upload artifacts to Amazon S3 and leverage Secrets Manager for credentials.
 - Ready for container deployment or invocation via AWS Lambda.
 
+### Wave 3 Bitbucket ingest timeline
+
+Wave 3 enables Phoenix-aware Bitbucket ingest across scheduled scans and
+webhook deltas. Use `rc ingest bitbucket-scan --hours 4` to backfill commits
+within a configurable window and register the `/webhooks/bitbucket` endpoint via
+`services/webhooks/bitbucket.py` for push / PR events. Each run stores metadata
+in `data/bitbucket/commits.db` and emits artifacts under
+`artifacts/issues/wave3/bitbucket/` stamped in America/Phoenix.
+
 ## Project Layout
 
 ```
@@ -112,7 +121,7 @@ pytest --cov=src --cov-report=term
 - Any test that needs custom configuration should patch helpers on the imported module (for example `main.load_settings`) rather than performing ad-hoc bootstrapping.
 - Attempts to open outbound sockets raise a `RuntimeError` so network regressions fail fast both locally and in CI.
 
-The pre-commit hooks run `ruff --fix`, `black`, and `mypy` locally, catching formatting drifts before CI. Wave 3 automation expects hook output timestamps in America/Phoenix (no DST), matching the Mission Outline Plan.
+The pre-commit hooks run `ruff check --fix`, `black`, and `mypy` locally, catching formatting drifts before CI. Wave 3 automation expects hook output timestamps in America/Phoenix (no DST), matching the Mission Outline Plan.
 
 ## Contributing & Quality Gates
 

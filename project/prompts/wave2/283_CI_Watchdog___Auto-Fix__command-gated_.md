@@ -18,7 +18,7 @@
   - `collect_failures(repo: str, max_age_hours: int)` returning deterministic data structures (sorted by PR number).
   - `render_report(failures)` generating Markdown tables (without secrets) and Phoenix timestamp headers.
   - `should_autofix(event)` verifying the command source, labels (`automation`), and gating approvals.
-- Add `scripts/github/run_watchdog_autofix.sh` orchestrating lint/format commands (`ruff --fix`, `black`, targeted `pytest`) for flagged PRs; ensure no network access.
+- Add `scripts/github/run_watchdog_autofix.sh` orchestrating lint/format commands (`ruff check --fix`, `black`, targeted `pytest`) for flagged PRs; ensure no network access.
 
 ## Testing Expectations
 - Unit tests under `tests/github/test_ci_watchdog.py` mocking GitHub responses (use fixture JSON under `tests/fixtures/github/watchdog/`). Cover: no failures, stale failures, autofix gating.

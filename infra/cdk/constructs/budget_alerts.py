@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from typing import Iterable, Sequence
 
-from aws_cdk import aws_budgets as budgets
-from aws_cdk import aws_iam as iam
-from aws_cdk import aws_sns as sns
+from aws_cdk import aws_budgets as budgets, aws_iam as iam, aws_sns as sns
 from constructs import Construct
 
 

@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 import logging
 import os
-from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
-
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)

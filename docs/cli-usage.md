@@ -21,7 +21,7 @@ traceability.
 ## Defaults and configuration
 
 Both the CLI and the Lambda entry points rely on the shared defaults loader in
-[`src/config/loader.py`](../src/config/loader.py). The loader resolves the
+[`config/loader.py`](../config/loader.py). The loader resolves the
 project root, cache directory, artifact directory, and reports directory by
 looking at environment overrides first and falling back to conventional
 locations:

@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-import time
 from datetime import datetime, timedelta
 from pathlib import Path
+import time
 from types import SimpleNamespace
 from typing import Any, Iterable
 
+from clients.bitbucket_client import BitbucketClient
+from clients.jira_client import JiraClient
+import main
 import pytest
 import requests
 
-import main
-from clients.bitbucket_client import BitbucketClient
-from clients.jira_client import JiraClient
 from releasecopilot.errors import (
     BitbucketRequestError,
     JiraJQLFailed,

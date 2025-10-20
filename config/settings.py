@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from typing import Any, Mapping
 
-from src.config.loader import DEFAULT_OVERRIDE_PATH, load_config
+from config.loader import DEFAULT_OVERRIDE_PATH, load_config
 
 logger = logging.getLogger(__name__)
 

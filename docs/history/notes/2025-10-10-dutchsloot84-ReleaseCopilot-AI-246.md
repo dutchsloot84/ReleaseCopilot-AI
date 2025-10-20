@@ -24,7 +24,7 @@ _Source:_ https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/246
   [View comment](https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/246#issuecomment-3368513336) <!-- digest:2af184fd4075fef33fba7a74e6464057f164a16fdf853829aca897e894f988bf -->
 
 - Action (Uncategorized) — 2025-10-04 by @dutchsloot84
-  Update src/config/loader.py and src/ops/health.py to resolve table and round-trip composite sentinels.
+  Update config/loader.py and src/ops/health.py to resolve table and round-trip composite sentinels.
   [View comment](https://github.com/dutchsloot84/ReleaseCopilot-AI/pull/246#issuecomment-3368513336) <!-- digest:1877ead62af2c47dc0bece143eade8e6218068319d574030db70efc195e555aa -->
 
 - Action (Uncategorized) — 2025-10-04 by @dutchsloot84

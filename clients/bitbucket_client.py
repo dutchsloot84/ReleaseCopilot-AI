@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, Dict, Iterable, List, Optional
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -23,7 +24,7 @@ class BitbucketClient(BaseAPIClient):
         self,
         *,
         workspace: str,
-        cache_dir: str,
+        cache_dir: Path | str,
         username: Optional[str] = None,
         app_password: Optional[str] = None,
         access_token: Optional[str] = None,
@@ -96,6 +97,84 @@ class BitbucketClient(BaseAPIClient):
                 all_commits.extend(commits)
         return all_commits, cache_keys
 
+    def iter_commits(
+        self,
+        *,
+        repo: str,
+        since: datetime,
+        branches: Sequence[str] | None = None,
+        page_len: int = 50,
+    ) -> Iterator[Dict[str, Any]]:
+        """Yield commits updated on or after ``since`` for the given repository.
+
+        The Bitbucket API surfaces ``modified_on`` timestamps that reflect when a
+        commit was last touched (for example via force pushes). To respect
+        Phoenix-aware scheduling upstream, this helper simply receives the
+        already-normalised ``since`` datetime and translates it into the query
+        Bitbucket expects. Pagination is handled transparently while ensuring a
+        deterministic page length so scanners can remain idempotent.
+        """
+
+        if since.tzinfo is None:
+            window_start = since.replace(tzinfo=timezone.utc)
+        else:
+            window_start = since.astimezone(timezone.utc)
+
+        base_params: Dict[str, Any] = {
+            "pagelen": page_len,
+            "q": f'modified_on >= "{window_start.isoformat()}"',
+        }
+        if branches:
+            base_params["include"] = list(branches)
+
+        url = f"{self.BASE_URL}/repositories/{self.workspace}/{repo}/commits"
+        params: Dict[str, Any] | None = base_params
+        while url:
+            response = self._request_with_retry(
+                session=self.session,
+                method="GET",
+                url=url,
+                logger_context={
+                    "service": "bitbucket",
+                    "repository": repo,
+                    "endpoint": "commits",
+                },
+                params=params,
+                headers=self._get_auth_headers(),
+                auth=self._get_auth(),
+                timeout=30,
+            )
+
+            try:
+                response.raise_for_status()
+            except requests.RequestException as exc:
+                snippet = response.text[:200]
+                context = {
+                    "service": "bitbucket",
+                    "repository": repo,
+                    "status_code": response.status_code,
+                    "snippet": snippet,
+                }
+                logger.error("Bitbucket HTTP error", extra=context)
+                raise BitbucketRequestError(
+                    "Failed to fetch Bitbucket commits", context=context
+                ) from exc
+
+            payload = response.json()
+            values = payload.get("values", [])
+            for commit in values:
+                commit.setdefault("repository", repo)
+                # Normalise branch information when available. Bitbucket commit
+                # payloads often expose it through ``target``.
+                if "branch" not in commit:
+                    branch_name = (commit.get("target") or {}).get("branch", {}).get("name")
+                    if branch_name:
+                        commit["branch"] = branch_name
+                yield commit
+
+            url = payload.get("next")
+            params = None  # Subsequent requests rely on the ``next`` cursor
+
     def _fetch_commits_for_branch(
         self,
         repo_slug: str,
@@ -104,7 +183,7 @@ class BitbucketClient(BaseAPIClient):
         end: datetime,
     ) -> List[Dict[str, Any]]:
         url = f"{self.BASE_URL}/repositories/{self.workspace}/{repo_slug}/commits/{branch}"
-        params = {
+        params: Dict[str, Any] | None = {
             "pagelen": 100,
             "q": f"date >= '{start.isoformat()}' AND date <= '{end.isoformat()}'",
         }
@@ -146,5 +225,6 @@ class BitbucketClient(BaseAPIClient):
                 commit.setdefault("branch", branch)
             commits.extend(values)
             url = payload.get("next")
-            params = None  # Subsequent requests include pagination cursor
+            if url:
+                params = None  # Subsequent requests include pagination cursor
         return commits

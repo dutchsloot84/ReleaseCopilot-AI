@@ -27,6 +27,10 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   python-checks:
     name: Python checks
@@ -35,6 +39,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -49,6 +54,24 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Auto-fix imports
+        run: |
+          ruff check --fix .
+          black .
+
+      - name: Commit autofixes
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "style: organize imports (ruff isort) [skip ci]"
+            git push origin HEAD:${GITHUB_HEAD_REF}
+          fi
 
       - name: Determine coverage scope
         run: |
@@ -76,6 +99,15 @@ jobs:
       - name: Pre-commit (ruff, black, mypy)
         run: scripts/ci/run_precommit.sh
         shell: bash
+
+      - name: Verify clean working tree after linting
+        run: |
+          if ! git diff --quiet; then
+            echo "Linting produced changes after the auto-fix commit." >&2
+            echo "Please run 'ruff check --fix .' and 'black .' locally before pushing." >&2
+            git status
+            exit 1
+          fi
 
       - name: Pytest
         run: |

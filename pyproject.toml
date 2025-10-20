@@ -4,6 +4,7 @@ target-version = ["py311"]
 
 [tool.ruff]
 line-length = 100
+src = ["src"]
 target-version = "py311"
 
 [tool.ruff.lint]
@@ -11,4 +12,6 @@ select = ["E", "F", "I", "B"]
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["releasecopilot", "src"]
+known-first-party = ["releasecopilot", "config"]
+combine-as-imports = true
+force-sort-within-sections = true

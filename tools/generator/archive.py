@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import io
-import json
-import tarfile
 from dataclasses import dataclass
 from datetime import datetime
+import io
+import json
 from pathlib import Path
+import tarfile
 from typing import Final
 from zoneinfo import ZoneInfo
 

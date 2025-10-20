@@ -5,13 +5,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
 from pathlib import Path
+import sys
 from typing import Iterable
 
+from config.loader import Defaults, load_defaults
 from releasecopilot.logging_config import configure_logging, get_logger
 
-from ..config.loader import Defaults, load_defaults
 from .audit import AuditInputError, AuditOptions, AuditResult, run_audit
 from .health import HealthCommandError, register_health_parser, run_health_command
 from .orchestrator import (

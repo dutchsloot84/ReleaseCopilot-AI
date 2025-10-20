@@ -4,10 +4,10 @@
 from __future__ import annotations
 
 import os
-import sys
-import xml.etree.ElementTree as ET
 from pathlib import Path
+import sys
 from typing import List, Tuple
+import xml.etree.ElementTree as ET
 
 THRESHOLD = float(os.environ.get("COVERAGE_THRESHOLD", "70"))
 
