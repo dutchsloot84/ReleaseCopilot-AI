@@ -12,6 +12,18 @@ ignore = []
 fixable = ["ALL"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["releasecopilot"]
+known-first-party = [
+    "releasecopilot",
+    "cli",
+    "clients",
+    "config",
+    "export",
+    "matcher",
+    "ops",
+    "processors",
+    "services",
+    "tracking",
+    "ui",
+]
 combine-as-imports = true
 force-sort-within-sections = true
