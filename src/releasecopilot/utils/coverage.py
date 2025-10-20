@@ -97,7 +97,7 @@ def _parse_json_subset(data: Any, include: Iterable[str]) -> CoverageTotals:
         summary = coverage_by_path.get(path)
         if summary is None:
             root = _root_for(path)
-            if root not in _IGNORED_ROOTS and root in covered_roots:
+            if root not in _IGNORED_ROOTS and (not covered_roots or root in covered_roots):
                 missing.append(path)
             continue
 
