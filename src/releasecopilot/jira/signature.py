@@ -1,5 +1,3 @@
-"""HMAC helpers for validating Jira webhook signatures."""
-
 """HMAC signature validation utilities for Jira webhooks."""
 
 from __future__ import annotations

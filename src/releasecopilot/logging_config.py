@@ -99,7 +99,9 @@ class _JsonFormatter(logging.Formatter):
             "correlation_id": getattr(record, "correlation_id", _CORRELATION_ID),
             "run_id": getattr(record, "run_id", _CORRELATION_ID),
             "event_id": getattr(record, "event_id", None),
-            "generated_at": getattr(record, "generated_at", phoenix_time.isoformat(timespec="seconds")),
+            "generated_at": getattr(
+                record, "generated_at", phoenix_time.isoformat(timespec="seconds")
+            ),
             "timezone": "America/Phoenix",
         }
         for key, value in record.__dict__.items():

@@ -11,7 +11,7 @@ from releasecopilot.jira.signature import verify_signature
 
 @pytest.mark.parametrize("secret", ["topsecret", b"topsecret"])
 def test_verify_signature_accepts_valid_payload(secret):
-    body = b"{\"hello\": \"world\"}"
+    body = b'{"hello": "world"}'
     digest = hmac.new(
         secret if isinstance(secret, bytes) else secret.encode("utf-8"),
         body,

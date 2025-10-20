@@ -6,8 +6,9 @@ from pathlib import Path
 
 from aws_cdk import App, Environment
 from aws_cdk.assertions import Match, Template
-from infra.cdk.core_stack import CoreStack
 import pytest
+
+from infra.cdk.core_stack import CoreStack
 
 ACCOUNT = "123456789012"
 REGION = "us-west-2"

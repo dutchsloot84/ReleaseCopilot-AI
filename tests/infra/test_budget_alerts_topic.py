@@ -2,6 +2,7 @@
 
 from aws_cdk import App, Stack
 from aws_cdk.assertions import Template
+
 from infra.cdk.constructs.budget_alerts import BudgetAlerts
 
 

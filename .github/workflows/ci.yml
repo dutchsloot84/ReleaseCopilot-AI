@@ -26,6 +26,11 @@ on:
         description: 'Fix version to use when running the uploader'
         required: false
         type: string
+      run_import_autofix:
+        description: 'Run Ruff autofix for import hygiene (E402/F404/I)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -55,23 +60,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: Auto-fix imports
+      - name: Ruff (optional import autofix)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_import_autofix == true }}
         run: |
-          ruff check --fix .
-          black .
+          ruff check --output-format=github --select E402,F404,I --fix .
+          ruff format .
 
-      - name: Commit autofixes
-        if: ${{ github.event_name == 'pull_request' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Ruff (import hygiene check)
         run: |
-          if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add -A
-            git commit -m "style: organize imports (ruff isort) [skip ci]"
-            git push origin HEAD:${GITHUB_HEAD_REF}
-          fi
+          ruff check --output-format=github --select E402,F404,I .
 
       - name: Determine coverage scope
         run: |

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Compose least-privilege IAM policies from captured stack resources."""
+
 from __future__ import annotations
 
 import argparse

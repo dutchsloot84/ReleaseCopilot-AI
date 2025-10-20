@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import importlib
-import sys
 import json
+import sys
 from typing import Any, Dict
 
 import pytest
@@ -117,7 +117,9 @@ def test_handler_response_includes_phoenix_timestamp(monkeypatch: pytest.MonkeyP
     handler = _reload()
 
     monkeypatch.setattr(handler, "_put_item_with_retry", lambda item: None)
-    monkeypatch.setattr(handler, "recompute_correlation", lambda events: {"artifact_path": "art.json"})
+    monkeypatch.setattr(
+        handler, "recompute_correlation", lambda events: {"artifact_path": "art.json"}
+    )
 
     event = {
         "httpMethod": "POST",

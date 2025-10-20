@@ -12,7 +12,6 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from clients.bitbucket_client import BitbucketClient
-
 from config.settings import load_settings
 from releasecopilot.ingest.bitbucket_scanner import BitbucketScanner
 from releasecopilot.ingest.storage import CommitStorage

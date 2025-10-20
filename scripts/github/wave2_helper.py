@@ -16,8 +16,9 @@ import uuid
 import click
 from jinja2 import Environment, FileSystemLoader
 from slugify import slugify
-from tools.generator.generator import TimezoneLabel, format_timezone_label
 import yaml
+
+from tools.generator.generator import TimezoneLabel, format_timezone_label
 
 try:
     from releasecopilot.logging_config import get_logger

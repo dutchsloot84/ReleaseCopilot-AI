@@ -1,4 +1,8 @@
 ## [Unreleased]
+### Ruff Import Hygiene
+**Decision:** Standardize import hygiene with Ruff (E402/F404/I) across local and CI gates.
+**Note:** See `docs/runbook/linting.md` for Phoenix-aware workflows using `pre-commit run --all-files`.
+**Action:** Updated `pyproject.toml`, `.pre-commit-config.yaml`, `.github/workflows/ci.yml`, and reorganized imports to keep lint findings at zero.
 ### Hardened CI Quality Gate
 **Decision:** Enforce linting, formatting, typing, and coverage thresholds directly in CI with Phoenix-aligned guidance for contributors.
 **Note:** Local and CI runs now share the `ruff check .`, `black --check .`, `mypy --config-file mypy.ini`, and `pytest --cov=src` sequence with America/Phoenix (UTC-7) timeboxing.
