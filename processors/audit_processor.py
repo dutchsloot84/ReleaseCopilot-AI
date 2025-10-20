@@ -5,12 +5,11 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 import logging
-import re
 from typing import Any, Dict, Iterable, List
 
-logger = logging.getLogger(__name__)
+from matcher.link_rules import story_keys_from_commit
 
-STORY_KEY_RE = re.compile(r"[A-Z][A-Z0-9]+-\d+")
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -34,8 +33,7 @@ class AuditProcessor:
         orphan_commits: List[Dict[str, Any]] = []
 
         for commit in self.commits:
-            message = commit.get("message") or commit.get("summary") or ""
-            keys = set(STORY_KEY_RE.findall(message))
+            keys = story_keys_from_commit(commit)
             if not keys:
                 orphan_commits.append(commit)
                 continue
