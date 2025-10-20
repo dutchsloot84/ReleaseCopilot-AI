@@ -9,9 +9,7 @@ class StubS3Client:
     def __init__(self) -> None:
         self.calls: list[dict] = []
 
-    def upload_file(
-        self, filename: str, bucket: str, key: str, ExtraArgs: dict
-    ) -> None:  # noqa: N802 - boto3 signature
+    def upload_file(self, filename: str, bucket: str, key: str, ExtraArgs: dict) -> None:  # noqa: N802 - boto3 signature
         self.calls.append(
             {
                 "filename": filename,

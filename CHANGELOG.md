@@ -1,7 +1,15 @@
 ## [Unreleased]
+### Ruff Import Hygiene
+**Decision:** Standardize import hygiene with Ruff (E402/F404/I) across local and CI gates.
+**Note:** See `docs/runbook/linting.md` for Phoenix-aware workflows using `pre-commit run --all-files`.
+**Action:** Updated `pyproject.toml`, `.pre-commit-config.yaml`, `.github/workflows/ci.yml`, and reorganized imports to keep lint findings at zero.
+### Ruff Formatting Standardization
+**Decision:** Adopt Ruff format as the sole Python formatter and retire Black hooks across local and CI tooling.
+**Note:** Pre-commit and GitHub Actions run Ruff lint/format alongside mypy and pytest gates using America/Phoenix scheduling cues.
+**Action:** Removed Black configuration, refreshed contributor docs, and ran `ruff format .` to normalize the codebase.
 ### Hardened CI Quality Gate
 **Decision:** Enforce linting, formatting, typing, and coverage thresholds directly in CI with Phoenix-aligned guidance for contributors.
-**Note:** Local and CI runs now share the `ruff check .`, `black --check .`, `mypy --config-file mypy.ini`, and `pytest --cov=src` sequence with America/Phoenix (UTC-7) timeboxing.
+**Note:** Local and CI runs now share the `ruff check .`, `ruff format --check .`, `mypy --config-file mypy.ini`, and `pytest --cov=src` sequence with America/Phoenix (UTC-7) timeboxing.
 **Action:** Added tooling configuration in `pyproject.toml`, centralized network/config stubs in `tests/conftest.py`, hardened `.github/workflows/ci.yml` with explicit lint/type/coverage steps, surfaced coverage summaries via `scripts/ci/coverage_gate.py`, and refreshed README/runbook guidance.
 ### Wave 3 Onboarding and Validation
 **Decision:** Document Wave 3 generator onboarding so contributors can translate `backlog/wave3.yaml` into sub-prompts deterministically.
@@ -16,7 +24,7 @@
 ### Changed
 - **Decision:** Automate import hygiene fixes in CI so ruff/isort guards always run before reviews.
 - **Note:** Auto-fix commits are pushed with `[skip ci]` from the GitHub Actions bot and reference America/Phoenix scheduling expectations.
-- **Action:** Updated `.github/workflows/ci.yml`, `.pre-commit-config.yaml`, and `pyproject.toml` to apply ruff check --fix + black, auto-commit results, and fail if additional diffs appear.
+- **Action:** Updated `.github/workflows/ci.yml`, `.pre-commit-config.yaml`, and `pyproject.toml` to apply ruff check --fix + ruff format, auto-commit results, and fail if additional diffs appear.
 ### Added
 - **Decision:** Adopt `python main.py generate --timezone America/Phoenix` as the source of truth for Wave 3 artifacts.
 - **Note:** `./scripts/ci/check_generator_drift.sh` reruns the generator and compares `docs/mop/mop_wave3.md`, `docs/sub-prompts/wave3/`, `artifacts/issues/wave3/`, and `artifacts/manifests/wave3_subprompts.json` against the manifest entry.

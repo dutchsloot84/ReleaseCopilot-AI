@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Sequence, Tuple
+from collections.abc import Iterable, Sequence
+from typing import Any, Dict, List, Tuple
 
 from processors.audit_processor import AuditProcessor
 
@@ -12,12 +13,23 @@ Orphans = List[Dict[str, Any]]
 Summary = Dict[str, Any]
 
 
+def _materialize(
+    values: Sequence[Dict[str, Any]] | Iterable[Dict[str, Any]],
+) -> Sequence[Dict[str, Any]]:
+    if isinstance(values, Sequence):
+        return values
+    return list(values)
+
+
 def match(
     issues: Sequence[Dict[str, Any]] | Iterable[Dict[str, Any]],
     commits: Sequence[Dict[str, Any]] | Iterable[Dict[str, Any]],
 ) -> Tuple[Matched, Missing, Orphans, Summary]:
     """Run the audit processor and normalise the results for tests and tooling."""
-    processor = AuditProcessor(issues=issues, commits=commits)
+    issues_seq = _materialize(issues)
+    commits_seq = _materialize(commits)
+
+    processor = AuditProcessor(issues=issues_seq, commits=commits_seq)
     result = processor.process()
 
     matched: Matched = []
@@ -32,7 +44,7 @@ def match(
             )
 
     summary: Summary = dict(result.summary)
-    summary.setdefault("total_issues", summary.get("total_stories", len(issues)))
+    summary.setdefault("total_issues", summary.get("total_stories", len(issues_seq)))
 
     return (
         matched,

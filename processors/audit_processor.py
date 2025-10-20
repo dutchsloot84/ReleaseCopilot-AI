@@ -28,7 +28,11 @@ class AuditProcessor:
         self.commits = list(commits)
 
     def process(self) -> AuditResult:
-        issues_by_key = {issue.get("key"): issue for issue in self.issues}
+        issues_by_key = {
+            issue_key: issue
+            for issue in self.issues
+            if isinstance(issue_key := issue.get("key"), str)
+        }
         mapping: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
         orphan_commits: List[Dict[str, Any]] = []
 

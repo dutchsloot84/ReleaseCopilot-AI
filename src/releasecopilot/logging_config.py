@@ -11,6 +11,7 @@ import sys
 import threading
 from typing import Any, Iterable
 import uuid
+from zoneinfo import ZoneInfo
 
 _CONFIG_LOCK = threading.Lock()
 _CONFIGURED = False
@@ -18,6 +19,10 @@ _CORRELATION_ID = os.getenv("RC_CORR_ID") or str(uuid.uuid4())
 
 _SENSITIVE_KEYS = {"token", "secret", "password", "key", "authorization"}
 _SENSITIVE_PATTERNS = tuple(value.lower() for value in _SENSITIVE_KEYS)
+
+
+def _phoenix_now() -> datetime:
+    return datetime.now(ZoneInfo("America/Phoenix"))
 
 
 def get_correlation_id() -> str:
@@ -32,6 +37,10 @@ class _CorrelationIdFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:  # noqa: D401
         if not hasattr(record, "correlation_id") or not record.correlation_id:
             record.correlation_id = _CORRELATION_ID
+        if not hasattr(record, "run_id") or not record.run_id:
+            record.run_id = _CORRELATION_ID
+        if not hasattr(record, "generated_at"):
+            record.generated_at = _phoenix_now().isoformat(timespec="seconds")
         return True
 
 
@@ -81,12 +90,19 @@ class _JsonFormatter(logging.Formatter):
     """Formatter that outputs structured JSON payloads."""
 
     def format(self, record: logging.LogRecord) -> str:  # noqa: D401
+        phoenix_time = _phoenix_now()
         payload: dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
             "correlation_id": getattr(record, "correlation_id", _CORRELATION_ID),
+            "run_id": getattr(record, "run_id", _CORRELATION_ID),
+            "event_id": getattr(record, "event_id", None),
+            "generated_at": getattr(
+                record, "generated_at", phoenix_time.isoformat(timespec="seconds")
+            ),
+            "timezone": "America/Phoenix",
         }
         for key, value in record.__dict__.items():
             if key in {
@@ -127,9 +143,7 @@ class _StructuredFormatter(logging.Formatter):
             datefmt="%Y-%m-%dT%H:%M:%S",
         )
 
-    def formatTime(
-        self, record: logging.LogRecord, datefmt: str | None = None
-    ) -> str:  # noqa: D401, N802
+    def formatTime(self, record: logging.LogRecord, datefmt: str | None = None) -> str:  # noqa: D401, N802
         dt = datetime.fromtimestamp(record.created, tz=timezone.utc)
         return dt.strftime(self.datefmt or "%Y-%m-%dT%H:%M:%S")
 

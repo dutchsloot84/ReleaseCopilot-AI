@@ -111,8 +111,8 @@ jobs:
       - name: Ruff
         run: ruff check .
 
-      - name: Black
-        run: black --check .
+      - name: Ruff format
+        run: ruff format --check .
 
       - name: Mypy
         run: mypy tools/validate_prompts.py tools/render_actions_comment.py

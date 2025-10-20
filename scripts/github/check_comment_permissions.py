@@ -22,6 +22,7 @@ variables from the GitHub REST API (for example via a scheduled job that
 creates a file consumed by the workflow). Unit tests intentionally avoid any
 network traffic by supplying synthetic payloads and environment variables.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

@@ -94,7 +94,7 @@ def build_comment(
     timestamp = datetime.now(PHOENIX_TZ).strftime("%Y-%m-%d %H:%M MST")
     header = [COMMENT_MARKER, f"{COMMENT_TITLE}", ""]
     metadata = [
-        f"Run metadata (git: `{git_sha}`, args: `{ ' '.join(sys.argv[1:]) or 'default' }`, time: {timestamp}).",
+        f"Run metadata (git: `{git_sha}`, args: `{' '.join(sys.argv[1:]) or 'default'}`, time: {timestamp}).",
     ]
     body_lines: List[str] = []
     if actions:

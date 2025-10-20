@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Bootstrap and deploy the audit CDK stacks for a given environment."""
+
 from __future__ import annotations
 
 import argparse
