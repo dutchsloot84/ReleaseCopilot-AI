@@ -43,6 +43,9 @@ def test_json_logging_mode(
     payload = json.loads(capsys.readouterr().out.strip())
     assert payload["message"] == "structured message"
     assert payload["correlation_id"] == logging_module.get_correlation_id()
+    assert payload["run_id"] == logging_module.get_correlation_id()
+    assert payload["timezone"] == "America/Phoenix"
+    assert payload["generated_at"].endswith("-07:00")
 
 
 def test_secret_redaction(

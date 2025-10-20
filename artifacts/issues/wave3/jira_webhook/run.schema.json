@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Wave 3 Jira webhook correlation artifact",
+  "type": "object",
+  "required": [
+    "run_id",
+    "git_sha",
+    "generated_at",
+    "timezone",
+    "issues",
+    "correlation"
+  ],
+  "properties": {
+    "run_id": {"type": "string"},
+    "git_sha": {"type": "string"},
+    "generated_at": {"type": "string"},
+    "timezone": {"const": "America/Phoenix"},
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["issue_key", "updated_at", "phoenix_updated_at", "event_type"],
+        "properties": {
+          "issue_key": {"type": "string"},
+          "updated_at": {"type": "string"},
+          "phoenix_updated_at": {"type": "string"},
+          "event_type": {"type": "string"}
+        }
+      }
+    },
+    "correlation": {
+      "type": "object",
+      "required": ["matched", "missing", "orphans", "summary"],
+      "properties": {
+        "matched": {"type": "array"},
+        "missing": {"type": "array"},
+        "orphans": {"type": "array"},
+        "summary": {"type": "object"}
+      }
+    }
+  }
+}

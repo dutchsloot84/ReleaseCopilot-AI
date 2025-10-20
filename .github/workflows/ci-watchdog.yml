@@ -176,7 +176,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install tooling
-        run: python -m pip install --upgrade pip black ruff pytest
+        run: python -m pip install --upgrade pip ruff pytest
 
       - name: Evaluate autofix gating
         id: gating

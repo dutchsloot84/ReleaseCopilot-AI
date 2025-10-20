@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from botocore.exceptions import ClientError
-from clients.jira_store import JiraIssueStore
 import pytest
+
+from clients.jira_store import JiraIssueStore
 
 
 class FakeTable:

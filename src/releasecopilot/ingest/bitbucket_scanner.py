@@ -10,7 +10,6 @@ import uuid
 from zoneinfo import ZoneInfo
 
 from clients.bitbucket_client import BitbucketClient
-
 from releasecopilot.logging_config import get_logger
 
 from .storage import CommitStorage, CommitUpsert
