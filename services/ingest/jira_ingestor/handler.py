@@ -3,8 +3,8 @@ import json
 import os
 import time
 
-import boto3
 from adf_md import to_markdown
+import boto3
 from jira_api import (
     discover_field_map,
     get_all_comments_if_needed,

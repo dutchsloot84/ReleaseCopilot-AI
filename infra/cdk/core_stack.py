@@ -10,47 +10,19 @@ from aws_cdk import (
     Duration,
     RemovalPolicy,
     Stack,
-)
-from aws_cdk import (
     aws_apigateway as apigateway,
-)
-from aws_cdk import (
     aws_cloudwatch as cw,
-)
-from aws_cdk import (
     aws_cloudwatch_actions as actions,
-)
-from aws_cdk import (
     aws_dynamodb as dynamodb,
-)
-from aws_cdk import (
     aws_events as events,
-)
-from aws_cdk import (
     aws_events_targets as targets,
-)
-from aws_cdk import (
     aws_iam as iam,
-)
-from aws_cdk import (
     aws_lambda as _lambda,
-)
-from aws_cdk import (
     aws_logs as logs,
-)
-from aws_cdk import (
     aws_s3 as s3,
-)
-from aws_cdk import (
     aws_secretsmanager as secretsmanager,
-)
-from aws_cdk import (
     aws_sns as sns,
-)
-from aws_cdk import (
     aws_sns_subscriptions as subs,
-)
-from aws_cdk import (
     aws_sqs as sqs,
 )
 from constructs import Construct

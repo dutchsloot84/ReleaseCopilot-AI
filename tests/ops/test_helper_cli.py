@@ -3,10 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import yaml
 from click.testing import CliRunner
-
 from scripts.github.wave2_helper import cli
+import yaml
 
 
 def _write_temp_config(tmp_path: Path) -> Path:

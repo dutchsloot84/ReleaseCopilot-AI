@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime
+import json
 from pathlib import Path
 
 import pytest
-
 from scripts.promptops import human_actions
 
 

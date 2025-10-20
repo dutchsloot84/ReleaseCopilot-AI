@@ -5,8 +5,8 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import sys
 from pathlib import Path
+import sys
 from typing import Any, Dict, Iterable
 
 from src.export.exporter import build_export_payload, export_all

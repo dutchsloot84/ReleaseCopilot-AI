@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
-
 from tools import render_actions_comment
 
 

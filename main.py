@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 import json
+from logging import Logger
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from datetime import datetime
-from logging import Logger
-from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -23,7 +23,6 @@ from typing import (
 from zoneinfo import ZoneInfo
 
 import click
-
 import releasecopilot_bootstrap  # noqa: F401  # ensures src/ is on sys.path
 
 try:  # pragma: no cover - best effort optional dependency
@@ -34,10 +33,13 @@ except Exception:  # pragma: no cover - ignore missing dependency
 from clients.bitbucket_client import BitbucketClient
 from clients.jira_client import JiraClient, compute_fix_version_window
 from clients.jira_store import JiraIssueStore
-from config.settings import load_settings
 from exporters.excel_exporter import ExcelExporter
 from exporters.json_exporter import JSONExporter
 from processors.audit_processor import AuditProcessor
+from src.cli.shared import AuditConfig, finalize_run, handle_dry_run, parse_args
+from tools.generator.generator import run_cli as run_generator_cli
+
+from config.settings import load_settings
 from releasecopilot import uploader
 from releasecopilot.errors import JiraJQLFailed, ReleaseCopilotError
 from releasecopilot.logging_config import configure_logging, get_logger
@@ -45,8 +47,6 @@ from releasecopilot.utils.jira_csv_loader import (
     JiraCSVLoaderError,
     load_issues_from_csv,
 )
-from src.cli.shared import AuditConfig, finalize_run, handle_dry_run, parse_args
-from tools.generator.generator import run_cli as run_generator_cli
 
 
 def _load_local_dotenv() -> None:

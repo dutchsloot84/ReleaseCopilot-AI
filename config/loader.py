@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import copy
+from dataclasses import dataclass
 import json
 import os
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Mapping, MutableMapping, Sequence, Tuple
 
-import yaml
-
 from clients.secrets_manager import CredentialStore, SecretsManager
+import yaml
 
 __all__ = [
     "Defaults",
@@ -23,7 +22,7 @@ __all__ = [
     "get_secrets_mapping",
 ]
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "config" / "defaults.yml"
 DEFAULT_OVERRIDE_PATH = REPO_ROOT / "config" / "settings.yaml"
 
@@ -145,7 +144,7 @@ def load_defaults(env: Mapping[str, str] | None = None) -> Defaults:
     """
 
     env = env or os.environ
-    project_root = Path(_env(env, "RC_ROOT", str(Path(__file__).resolve().parents[2]))).resolve()
+    project_root = Path(_env(env, "RC_ROOT", str(Path(__file__).resolve().parents[1]))).resolve()
     cache_dir = Path(_env(env, "RC_CACHE_DIR", str(project_root / "temp_data"))).resolve()
     artifact_dir = Path(_env(env, "RC_ARTIFACT_DIR", str(project_root / "dist"))).resolve()
     reports_dir = Path(_env(env, "RC_REPORTS_DIR", str(project_root / "reports"))).resolve()

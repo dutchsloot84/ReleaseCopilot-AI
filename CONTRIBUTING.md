@@ -29,3 +29,26 @@ Note: Retry `cdk list` with `--verbose` if the default invocation flakes.
 
 > **Tip:** Inline style is great for scratch notes or quick comments, but block style is the preferred format for PR reviews, RFC feedback, and any thread where you are communicating multiple decisions or follow-up items.
 
+## Import hygiene skill (quick start)
+
+Decision:
+- Keep ruff/isort as the source of truth for organizing imports across all Python modules.
+
+Note (2025-02-14 America/Phoenix):
+- CI will auto-fix import ordering on pull requests and push a `[skip ci]` commit titled `style: organize imports (ruff isort)` if required.
+
+Action:
+- Run `pre-commit install` once so the ruff and black hooks execute locally before each commit.
+
+Follow these steps whenever you touch imports:
+
+1. Format and sort locally with `ruff --fix .` followed by `black .`.
+2. Run `pre-commit run --all-files` to confirm there are no lingering lint adjustments.
+3. If CI still reports import changes, fetch the bot's auto-fix commit, rebase, and push again.
+
+Troubleshooting tips:
+
+- If ruff raises module grouping errors (I001), ensure the module belongs to one of the configured sections: stdlib, third-party, `config`/`releasecopilot`, then relative imports.
+- When a PR originates from a fork, GitHub Actions cannot push auto-fix commits. In that situation the workflow fails with a reminder—run the commands above locally and push manually.
+- Verify `python -m pip install -r requirements-dev.txt` so the local hooks share the same versions as CI.
+

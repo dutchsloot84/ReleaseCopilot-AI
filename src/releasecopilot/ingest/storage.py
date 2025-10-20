@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import json
-import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timezone, tzinfo
+import json
 from pathlib import Path
+import sqlite3
 from typing import Iterable, Sequence
 
 from releasecopilot.logging_config import get_logger

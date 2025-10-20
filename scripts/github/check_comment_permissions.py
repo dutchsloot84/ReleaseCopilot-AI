@@ -24,12 +24,12 @@ network traffic by supplying synthetic payloads and environment variables.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 import os
+from pathlib import Path
 import re
 import sys
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterable, Set
 
 

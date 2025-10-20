@@ -8,10 +8,10 @@ fixtures and saved artifacts remain stable between runs.
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict, dataclass
 import datetime as _dt
 import json
 import os
-from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence
 from zoneinfo import ZoneInfo

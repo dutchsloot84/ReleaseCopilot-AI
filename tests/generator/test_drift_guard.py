@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from pathlib import Path
+import subprocess
 
 from scripts.github import wave2_helper as generator
 

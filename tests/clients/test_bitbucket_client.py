@@ -4,10 +4,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterator
 
+from clients.bitbucket_client import BitbucketClient
 import pytest
 import requests
 
-from clients.bitbucket_client import BitbucketClient
 from releasecopilot.errors import BitbucketRequestError
 
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "bitbucket"

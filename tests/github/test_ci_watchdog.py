@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Any, Dict
 
 import pytest
-
 from scripts.github import ci_watchdog
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "github" / "watchdog"

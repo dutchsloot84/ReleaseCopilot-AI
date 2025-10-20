@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import base64
+from dataclasses import dataclass
+from datetime import datetime, timezone
 import json
 import os
 import time
-from dataclasses import dataclass
-from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 from urllib import error, parse, request
 

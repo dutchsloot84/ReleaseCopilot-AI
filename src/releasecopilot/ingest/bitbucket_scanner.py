@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-import json
-import uuid
 from datetime import datetime, timedelta
+import json
 from pathlib import Path
 from typing import Callable, Sequence
+import uuid
 from zoneinfo import ZoneInfo
 
 from clients.bitbucket_client import BitbucketClient
+
 from releasecopilot.logging_config import get_logger
 
 from .storage import CommitStorage, CommitUpsert

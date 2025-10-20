@@ -2,23 +2,22 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+from datetime import datetime
 import json
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-import uuid
-from dataclasses import dataclass, field
-from datetime import datetime
-from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
+import uuid
 
 import click
-import yaml
 from jinja2 import Environment, FileSystemLoader
 from slugify import slugify
-
 from tools.generator.generator import TimezoneLabel, format_timezone_label
+import yaml
 
 try:
     from releasecopilot.logging_config import get_logger

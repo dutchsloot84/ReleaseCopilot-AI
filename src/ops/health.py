@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import time
-import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import time
 from typing import Any, Dict, Mapping, MutableMapping
+import uuid
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
