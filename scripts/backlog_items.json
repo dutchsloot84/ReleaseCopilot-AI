@@ -1,5 +1,47 @@
 [
   {
+    "title": "PR template + orchestration docs",
+    "body": "**Area:** Quality  \n**Priority:** Medium  \n### Acceptance Criteria\n- PR template enforces D/N/A markers, ≥70% coverage, ruff/black/mypy  \n- Docs page explaining slash-commands, runbook, Phoenix TZ note  \n### Notes\nImproves consistency and auditability.",
+    "url": null,
+    "status": "Backlog",
+    "updatedAt": null
+  },
+  {
+    "title": "Project Board mapping and snapshots",
+    "body": "**Area:** DX  \n**Priority:** Medium  \n### Acceptance Criteria\n- Issues auto-added to Project v2 with Priority/Status mapping  \n- Commit `artifacts/backlog.json` and `artifacts/top_issues.json`  \n### Notes\nSet ORG_LOGIN + project number; verify fields.",
+    "url": null,
+    "status": "Backlog",
+    "updatedAt": null
+  },
+  {
+    "title": "Promotion guardrails (protected env + promote.yml)",
+    "body": "**Area:** Security  \n**Priority:** High  \n### Acceptance Criteria\n- `promote.yml` targets protected `prod` env with required reviewers  \n- Preflight fails if required Human ACKs are missing  \n### Notes\nKeeps human gate on deploys; least-privilege enforced.",
+    "url": null,
+    "status": "Backlog",
+    "updatedAt": null
+  },
+  {
+    "title": "LLM patcher stub with guardrails",
+    "body": "**Area:** CI  \n**Priority:** Medium  \n### Acceptance Criteria\n- `scripts/llm_make_patch.py` outputs unified diff only; no secrets in logs  \n- Reject patches touching sensitive paths unless labeled for human review  \n### Notes\nProvider-agnostic; minimal context (trim logs) to manage token costs.",
+    "url": null,
+    "status": "Backlog",
+    "updatedAt": null
+  },
+  {
+    "title": "Metrics & budgets for CI Auto-Fix",
+    "body": "**Area:** Process  \n**Priority:** Low  \n### Acceptance Criteria\n- Comment summary per PR: attempts, pass-rate, est. tokens  \n- Config for MAX_ATTEMPTS and optional spend cap; doc guidance  \n### Notes\nMeasure ROI before scaling beyond manual-trigger.",
+    "url": null,
+    "status": "Backlog",
+    "updatedAt": null
+  },
+  {
+    "title": "[Pre-Commit Hooks] Ruff, Black, Mypy",
+    "body": "**Description:**  \nAdd `.pre-commit-config.yaml` with ruff, black, and mypy hooks. Ensure contributors auto-format code.\n\n**Codex Prompt:**  \nCreate `.pre-commit-config.yaml`. Update `README.md` with installation instructions.  \n\n**Acceptance Criteria:**  \n- `pre-commit run --all-files` passes.  \n- Contributors auto-format with pre-commit.",
+    "url": null,
+    "status": "Backlog",
+    "updatedAt": null
+  },
+  {
     "title": "Jira Webhook-based Sync (Epic)",
     "body": "The initial Jira webhook pipeline was introduced in **PR #80** with DynamoDB-backed storage. This Epic extends that work by making the pipeline production-grade: adding schema validation, idempotency, metrics, and developer documentation.\n\n### Acceptance Criteria\n- Webhook receiver (API Gateway + Lambda) remains deployed via CDK.\n- Signature/HMAC validation enforced for all incoming events.\n- Payloads normalized into schema `{issue_key, fields, changelog, updated_at, version}`.\n- Idempotent writes into DynamoDB (dedup by issue ID + updated timestamp).\n- Structured logging and retries re-use patterns from **PR #79**.\n- Metrics (success/failure counts, dedup events) published to CloudWatch.\n- Documentation updated to include webhook setup and troubleshooting.\n\n### Codex Prompt\nYou are a senior DevOps engineer and Python developer.  \n\n**Issue Reference: Epic: Jira Webhook-based Sync**  \n\nEnhance the Jira webhook ingestion pipeline introduced in PR #80.  \n\n**Core Tasks**\n1. Extend existing Lambda handler:\n   - Validate HMAC signatures (use shared secret from Secrets Manager).\n   - Enforce normalized schema and idempotent writes into DynamoDB.\n2. Add structured logging (building on #79).\n3. Add CloudWatch metrics for ingestion (processed, deduped, failed).\n4. Update CDK stack to enforce least-privilege IAM for DynamoDB, Secrets, and Logs.\n5. Write integration tests using sample webhook payloads.\n\n**Acceptance Criteria**\n- Valid Jira webhooks ingested into DynamoDB consistently.\n- Duplicate webhook deliveries do not produce duplicates.\n- CloudWatch metrics visible for success/failure.\n- Tests pass with recorded sample events.",
     "url": null,
@@ -7,22 +49,8 @@
     "updatedAt": null
   },
   {
-    "title": "[Jira] Initial Bootstrap Load via JQL → Cache Store",
-    "body": "The Jira webhook ingestion pipeline (introduced in PR #80) writes issue events into a DynamoDB-backed cache.  \nHowever, webhooks only capture **future** changes. Since no audits have been run yet, the cache must be **seeded with a baseline set of Jira issues** before the first audit can succeed.  \n\nThis one-time bootstrap job will use Jira JQL queries to fetch all relevant issues and populate the cache in the same schema used by the webhook pipeline.\n\n## Description\n\nImplement a bootstrap mechanism to load existing Jira issues into the DynamoDB cache so that the very first audits have complete data coverage.  \n\n- Run JQL queries (scoped by project, fixVersion, or release labels).  \n- Normalize results into schema:  \n  `{issue_key, fields, changelog, updated_at, version}`  \n- Store normalized items into the DynamoDB table.  \n- Support resumable execution (checkpointing).  \n- Provide summary reporting at completion.  \n\n## Acceptance Criteria\n\n- [ ] CLI or Lambda job runs JQL queries and writes results to DynamoDB.  \n- [ ] Data written in the same schema as webhook ingestion (PR #80).  \n- [ ] Job supports checkpointing to resume after interruption.  \n- [ ] Structured logging and retry/backoff logic reused from PR #79.  \n- [ ] Summary report displays issues loaded, skipped, and failed.  \n- [ ] First audit can run successfully with complete dataset.  \n\n## Codex Prompt\n\nYou are a senior Python engineer with Jira API experience.  \n\n**Issue Reference:** Initial Bootstrap Load via JQL → Cache Store (#102)  \n\nYour task is to implement a bootstrap mechanism to seed the Jira cache with existing issues before the first audits run.  \n\n### Core Tasks\n1. Implement a CLI or Lambda job that fetches Jira issues via JQL in pages.  \n2. Normalize each issue into schema `{issue_key, fields, changelog, updated_at, version}`.  \n3. Write normalized issues into the DynamoDB cache used by webhook ingestion.  \n4. Add checkpointing to resume after failure or interruption.  \n5. Apply structured logging and retry/backoff utilities introduced in PR #79.  \n6. Print a clear summary report (loaded, skipped, failed counts).  \n\n### Acceptance Criteria\n- DynamoDB cache populated with all Jira issues in release scope.  \n- Job can be safely resumed after a partial run.  \n- Schema matches webhook ingestion pipeline (PR #80).  \n- First audit runs against a complete, correct dataset.  ",
-    "url": null,
-    "status": "Backlog",
-    "updatedAt": null
-  },
-  {
     "title": "Nightly Reconciliation (EventBridge) for Drift",
     "body": "PR #66 added optional EventBridge schedules, and PR #58 added CloudWatch alarms. This issue formalizes reconciliation: ensuring cached Jira data matches ground truth via JQL.\n\n### Acceptance Criteria\n- EventBridge nightly trigger runs Lambda reconciliation job.\n- Job compares sampled JQL results against DynamoDB entries.\n- Drift report generated: missing, outdated, inconsistent.\n- Auto-healing configurable (repair vs report only).\n- Metrics emitted (drift count, repairs attempted).\n- Alerts reused from PR #58 (CloudWatch alarms).\n\n### Codex Prompt\nYou are a senior SRE specializing in AWS.  \n\n**Issue Reference: Nightly Reconciliation (EventBridge) for Drift**  \n\nImplement a nightly drift reconciliation between Jira and the DynamoDB cache.  \n\n**Core Tasks**\n1. Add CDK EventBridge rule to run nightly (extend PR #66).\n2. Lambda function:\n   - Fetch JQL slice from Jira.\n   - Compare with cached items in DynamoDB.\n   - Generate drift report.\n   - Optionally repair drift.\n3. Publish metrics (drift detected, drift healed).\n4. Integrate CloudWatch alarms from PR #58.\n\n**Acceptance Criteria**\n- Nightly drift report generated.\n- Cache auto-heals if enabled.\n- Alerts fire if drift exceeds threshold.",
-    "url": null,
-    "status": "Backlog",
-    "updatedAt": null
-  },
-  {
-    "title": "Guardrails: Retries, DLQ, Poison-pill, Alarms",
-    "body": "PR #79 added retries and structured errors. This task extends reliability with DLQ, poison-pill handling, and replay.\n\n### Acceptance Criteria\n- Retry/backoff policies applied consistently (building on PR #79).\n- DLQ (SQS) attached to webhook Lambda.\n- Malformed events quarantined (poison-pill detection).\n- CLI or Lambda tool to replay DLQ items.\n- CloudWatch alarms added for DLQ depth, error rate, latency.\n\n### Codex Prompt\nYou are a senior platform engineer.  \n\n**Issue Reference: Guardrails: Retries, DLQ, Poison-pill, Alarms**  \n\nHarden the webhook ingestion system with recovery mechanisms.  \n\n**Core Tasks**\n1. Extend Lambda configuration with DLQ (SQS).\n2. Implement poison-pill detection logic in Lambda.\n3. Provide replay utility for DLQ items.\n4. Add CloudWatch alarms for DLQ depth, error rate, latency.\n5. Ensure retry/backoff logic from PR #79 remains intact.\n\n**Acceptance Criteria**\n- Failed events routed to DLQ and replayable.\n- Malformed events quarantined safely.\n- Alerts fire on error thresholds.\n- Ingestion pipeline continues processing unaffected.",
     "url": null,
     "status": "Backlog",
     "updatedAt": null
@@ -98,13 +126,6 @@
     "updatedAt": null
   },
   {
-    "title": "[Pre-Commit Hooks] Ruff, Black, Mypy",
-    "body": "**Description:**  \nAdd `.pre-commit-config.yaml` with ruff, black, and mypy hooks. Ensure contributors auto-format code.\n\n**Codex Prompt:**  \nCreate `.pre-commit-config.yaml`. Update `README.md` with installation instructions.  \n\n**Acceptance Criteria:**  \n- `pre-commit run --all-files` passes.  \n- Contributors auto-format with pre-commit.",
-    "url": null,
-    "status": "Backlog",
-    "updatedAt": null
-  },
-  {
     "title": "[CI Matrix] Python 3.10 & 3.11",
     "body": "**Description:**  \nEnsure compatibility with Python 3.10 and 3.11 via CI job matrix.\n\n**Codex Prompt:**  \nUpdate `.github/workflows/ci.yml` to define matrix strategy for Python 3.10 and 3.11. Run lint + pytest for both.  \n\n**Acceptance Criteria:**  \n- CI runs jobs on both Python versions. ",
     "url": null,
@@ -126,27 +147,6 @@
     "updatedAt": null
   },
   {
-    "title": "[AWS] OIDC for GitHub Actions → Least-Privilege Deploy",
-    "body": "**Acceptance Criteria**  \n- IAM role trust policy allows GH org/repo/env (branch/tag) via OIDC.  \n- Inline/attached policies scoped to CDK deploy needs (DDB table, Secrets read, Logs, S3 prefixes).  \n- CI uses `aws-actions/configure-aws-credentials` with `role-to-assume`.  \n- No static AWS keys stored in GitHub secrets.  \n- Short runbook notes in `docs/`.\n\n**Manual AWS Steps**  \n1. In AWS Console → IAM → Roles → “Create Role”.  \n2. Choose **Web Identity** → Provider = GitHub.  \n3. Enter audience `sts.amazonaws.com`.  \n4. Add condition limiting `sub` to your repo (e.g. `repo:dutchsloot84/ReleaseCopilot-AI:*`).  \n5. Attach **minimal** policies (start with CloudWatch, DynamoDB table, Secrets).  \n6. Save role ARN.  \n7. Test in your workflow using `aws-actions/configure-aws-credentials`.\n\n**Codex Prompt**  \n“Create IAM role for GitHub OIDC (least privilege) and wire in `cdk-ci.yml`. Scope permissions to only DDB, S3, Secrets, Logs needed for deploy.”",
-    "url": null,
-    "status": "Backlog",
-    "updatedAt": null
-  },
-  {
-    "title": "[Secrets] Create & Wire Jira/Bitbucket/Webhook Secrets (SM)",
-    "body": "**Acceptance Criteria**  \n- Secrets in SM: `releasecopilot/jira/oauth`, `releasecopilot/bitbucket/token`, `releasecopilot/jira/webhook_secret`.  \n- CDK grants read to specific Lambda(s) only.  \n- `.env.example` documents secret names.  \n- Smoke test proves Lambda can read secrets.  \n- No secrets logged.\n\n**Manual AWS Steps**  \n1. AWS Console → Secrets Manager → “Store a new secret.”  \n2. Select “Other type of secret” → enter key/value pairs.  \n3. Name secrets with prefix `releasecopilot/...`.  \n4. Save, copy ARN.  \n5. Update Lambda execution role policy to allow `secretsmanager:GetSecretValue` on these ARNs.  \n6. Verify in Lambda test that secret loads (don’t log actual secret).  \n\n**Codex Prompt**  \n“Add AWS SM secrets + CDK wiring. Update Lambda to fetch secrets at init with cache. Add smoke test and redact secrets in logs.”",
-    "url": null,
-    "status": "Backlog",
-    "updatedAt": null
-  },
-  {
-    "title": "[DynamoDB] Table Readiness + Idempotency Keys",
-    "body": "**Acceptance Criteria**  \n- Table with `PK=issue_key`, `SK=updated_at`.  \n- PITR enabled.  \n- CDK exports table name/ARN.  \n- Idempotency key strategy documented.\n\n**Manual AWS Steps**  \n1. AWS Console → DynamoDB → Create Table.  \n2. Partition Key: `issue_key` (String). Sort Key: `updated_at` (String).  \n3. Enable point-in-time recovery.  \n4. Optional: Create GSI if you need by `updated_at`.  \n5. Test insert via CLI.  \n\n**Codex Prompt**  \n“Ensure DDB schema supports webhook/bootstraps. Add PITR, least-privilege IAM, and doc on idempotency keys.”",
-    "url": null,
-    "status": "Backlog",
-    "updatedAt": null
-  },
-  {
     "title": "SQS DLQ] for Webhook Lambda + Replay Utility",
     "body": "**Acceptance Criteria**  \n- SQS DLQ attached to webhook Lambda.  \n- Replay CLI/Lambda with metrics.  \n- CloudWatch alarm on DLQ depth.  \n- Runbook for replay steps.\n\n**Manual AWS Steps**  \n1. AWS Console → SQS → Create Queue → Standard. Name: `releasecopilot-dlq`.  \n2. In Lambda → Configuration → Asynchronous invocation → DLQ → select queue.  \n3. Test: push invalid event → check DLQ message.  \n4. Manually replay with AWS CLI.  \n\n**Codex Prompt**  \n“Attach DLQ to webhook Lambda + implement replay tool. Add alarms on DLQ depth and docs for replay.”",
     "url": null,
@@ -156,27 +156,6 @@
   {
     "title": "[EventBridge] Phoenix-time Cron + Reconciliation Slot",
     "body": "**Acceptance Criteria**  \n- EventBridge rule fires nightly aligned to Phoenix time.  \n- Target wired to reconciliation Lambda.  \n- Dry run log proof.  \n- DST behavior noted.\n\n**Manual AWS Steps**  \n1. AWS Console → EventBridge → Rules → Create rule.  \n2. Choose Schedule → Cron expression for midnight Phoenix time.  \n3. Target = reconciliation Lambda.  \n4. Save and test run.  \n5. Check CloudWatch logs.  \n\n**Codex Prompt**  \n“Create nightly EventBridge schedule (Phoenix) to invoke reconciliation Lambda; log schedule metadata.”",
-    "url": null,
-    "status": "Backlog",
-    "updatedAt": null
-  },
-  {
-    "title": "[IAM] Policy Review & Resource-Level Scoping (CDK)",
-    "body": "**Acceptance Criteria**  \n- Policies scoped to exact resources.  \n- Exceptions documented.  \n- cdk-nag optional.\n\n**Manual AWS Steps**  \n1. AWS Console → IAM → Roles → select Lambda role.  \n2. Check inline/attached policies.  \n3. Remove `*` resources, replace with specific ARNs.  \n4. Test Lambda still functions.  \n\n**Codex Prompt**  \n“Review/limit IAM in CDK to resource-level ARNs. Add cdk-nag with annotated suppressions.”",
-    "url": null,
-    "status": "Backlog",
-    "updatedAt": null
-  },
-  {
-    "title": "[Logging] Retention, PII Guard, and Structure",
-    "body": "**Acceptance Criteria**  \n- Log retention set (14–30 days).  \n- Structured JSON logs.  \n- Redaction middleware.  \n\n**Manual AWS Steps**  \n1. AWS Console → CloudWatch Logs → Log groups.  \n2. Set retention = 30 days.  \n3. Verify logs are JSON structured.  \n4. Confirm no secrets/PII in logs.  \n\n**Codex Prompt**  \n“Enforce CW retention, structured JSON logs, and redaction middleware. Provide tests for redaction.”",
-    "url": null,
-    "status": "Backlog",
-    "updatedAt": null
-  },
-  {
-    "title": "[Budget/Alarms] Low-Ceiling Budget + SNS Notice",
-    "body": "**Acceptance Criteria**  \n- AWS Budgets with 50/80/100% alerts.  \n- SNS/email recipients.  \n- Budget names include env.\n\n**Manual AWS Steps**  \n1. AWS Console → Billing → Budgets → Create budget.  \n2. Choose Cost budget, set low value.  \n3. Add SNS/email recipients.  \n4. Verify notification delivery.  \n\n**Codex Prompt**  \n“Add AWS Budgets with SNS/email alerts; document recipients and thresholds.”",
     "url": null,
     "status": "Backlog",
     "updatedAt": null
@@ -203,15 +182,15 @@
     "updatedAt": null
   },
   {
-    "title": "[S3 Artifact Bucket] Block-Public + Lifecycle + Prefixes",
-    "body": "**Acceptance Criteria**  \n- Block Public ON.  \n- SSE-S3 encryption.  \n- Lifecycle to IA/Glacier.  \n- Prefix convention.  \n\n**Manual AWS Steps**  \n1. AWS Console → S3 → Create bucket.  \n2. Enable Block Public Access.  \n3. Enable encryption = SSE-S3.  \n4. Add lifecycle rule: IA after 30 days, Glacier after 90.  \n5. Add prefix naming scheme.  \n\n**Codex Prompt**  \n“Provision S3 artifacts bucket with block-public, encryption, versioning, lifecycle; define prefix conventions and IAM.”",
+    "title": "[Custom Domain/TLS] API GW Custom Domain + ACM",
+    "body": "**Acceptance Criteria**  \n- ACM cert created.  \n- API GW custom domain + mapping.  \n- Route53 record.  \n- Doc on cert rotation.  \n\n**Manual AWS Steps**  \n1. AWS Console → ACM → Request cert for domain.  \n2. Validate DNS in Route53.  \n3. API Gateway → Custom Domain → Add mapping.  \n4. Add Route53 alias record.  \n5. Confirm HTTPS works.  \n\n**Codex Prompt**  \n“Add API Gateway custom domain with ACM cert + Route53 mapping; document cert rotation.”  ",
     "url": null,
     "status": "Backlog",
     "updatedAt": null
   },
   {
-    "title": "[Custom Domain/TLS] API GW Custom Domain + ACM",
-    "body": "**Acceptance Criteria**  \n- ACM cert created.  \n- API GW custom domain + mapping.  \n- Route53 record.  \n- Doc on cert rotation.  \n\n**Manual AWS Steps**  \n1. AWS Console → ACM → Request cert for domain.  \n2. Validate DNS in Route53.  \n3. API Gateway → Custom Domain → Add mapping.  \n4. Add Route53 alias record.  \n5. Confirm HTTPS works.  \n\n**Codex Prompt**  \n“Add API Gateway custom domain with ACM cert + Route53 mapping; document cert rotation.”  ",
+    "title": "feat(docs): Publish MkDocs Material site via GitHub Actions (GitHub Pages)",
+    "body": "## Summary\nSet up an automated documentation pipeline that builds the MkDocs Material site from `docs/` on every push to `main` and publishes it to **GitHub Pages** using **GitHub Actions**. Target URL:\n\n- **https://dutchsloot84.github.io/ReleaseCopilot-AI/**\n\nThis keeps built assets out of `main`, gives us fast/consistent deploys, and makes it trivial for contributors to update docs by editing Markdown.\n\n---\n\n## Why this matters (Concepts)\n- **Single source of truth:** Docs live next to code and are auto-published to a stable URL.\n- **Frictionless authoring:** Contributors edit Markdown in `docs/` only; no local build steps required.\n- **Traceability:** Each deploy ties back to a commit and is visible in the Actions history.\n- **CI parity:** Same toolchain runs locally (`mkdocs serve`) and in CI (`mkdocs build`).\n\n---\n\n## Scope (what’s included)\n1. A GitHub Actions workflow at `.github/workflows/docs.yml` that:\n   - Installs Python + MkDocs Material (and common plugins),\n   - Builds the site into `site/`,\n   - Publishes to GitHub Pages with the official `actions/deploy-pages` flow.\n2. A minimal, working `mkdocs.yml` in the repo root.\n3. A starter `docs/` structure with at least `index.md` (and placeholders for CLI & Architecture pages).\n4. Project README update: add the public docs URL and a short authoring section (how to preview and contribute).\n\n---\n\n## Out of scope\n- Content writing beyond placeholders.\n- Versioned docs (we can add `mike` later).\n- Custom domain configuration (CNAME/DNS).\n\n---\n\n## Implementation plan (Practical steps)\n### 1) Create the GitHub Actions workflow\nCreate `.github/workflows/docs.yml`:\n```yaml\nname: docs\n\non:\n  push:\n    branches: [ main ]\n  workflow_dispatch:\n\npermissions:\n  contents: read\n  pages: write\n  id-token: write\n\nconcurrency:\n  group: \"pages\"\n  cancel-in-progress: true\n\njobs:\n  build:\n    name: Build MkDocs site\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n\n      - uses: actions/setup-python@v5\n        with:\n          python-version: \"3.x\"\n\n      - name: Install MkDocs + theme\n        run: |\n          python -m pip install --upgrade pip\n          pip install mkdocs-material mkdocs-minify-plugin mkdocs-git-revision-date-localized-plugin\n          if [ -f requirements-docs.txt ]; then pip install -r requirements-docs.txt; fi\n\n      - name: Build\n        run: mkdocs build --strict\n\n      - name: Upload Pages artifact\n        uses: actions/upload-pages-artifact@v3\n        with:\n          path: site\n\n  deploy:\n    name: Deploy to GitHub Pages\n    needs: build\n    runs-on: ubuntu-latest\n    environment:\n      name: github-pages\n      url: ${{ steps.deployment.outputs.page_url }}\n    steps:\n      - id: deployment\n        uses: actions/deploy-pages@v4\n```\n\n### 2) Add base `mkdocs.yml` to repo root\n```yaml\nsite_name: ReleaseCopilot-AI\nsite_url: https://dutchsloot84.github.io/ReleaseCopilot-AI/\nrepo_url: https://github.com/dutchsloot84/ReleaseCopilot-AI\nedit_uri: edit/main/docs/\n\ntheme:\n  name: material\n  features:\n    - navigation.instant\n    - content.code.copy\n    - search.suggest\n    - search.highlight\n\nnav:\n  - Home: index.md\n  - CLI: cli.md\n  - Architecture: architecture.md\n\nplugins:\n  - search\n  - minify\n  - git-revision-date-localized:\n      fallback_to_build_date: true\n```\n\n### 3) Seed `docs/` content\nCreate minimal files:\n```\ndocs/\n├─ index.md\n├─ cli.md\n└─ architecture.md\n```\nExample `docs/index.md`:\n```markdown\n# ReleaseCopilot-AI\n\nWelcome! This site documents ReleaseCopilot-AI — a tool that automates release audits by correlating Jira stories with Bitbucket commits and exporting results (JSON/Excel), with optional S3 publishing.\n\n## Quick links\n- CLI usage: [CLI](./cli/)\n- Architecture overview: [Architecture](./architecture/)\n\n## Contributing\nEdit Markdown under `docs/` and open a PR. To preview locally:\n\n```bash\npip install mkdocs-material\nmkdocs serve\n```\n```\n\n### 4) Configure Pages\n- Repo → **Settings → Pages**  \n  - **Source:** *GitHub Actions* (keep as-is).  \n- First publish occurs on the next push to `main` after the workflow is merged.\n\n### 5) README update\nAdd a **Documentation** section with:\n- Public URL: `https://dutchsloot84.github.io/ReleaseCopilot-AI/`\n- “How to edit docs” (point to `docs/`, `mkdocs serve`), and link to this Issue for the deploy workflow.\n\n---\n\n## Acceptance criteria\n- [ ] Workflow file exists at `.github/workflows/docs.yml` and passes in Actions.\n- [ ] `mkdocs.yml` present at repo root; `docs/index.md` renders without build errors.\n- [ ] Pages environment shows “Active” and the site is reachable at **https://dutchsloot84.github.io/ReleaseCopilot-AI/**.\n- [ ] README includes a Documentation section with the live URL and local preview instructions.\n- [ ] Screenshots or run link attached in PR comment confirming a successful Pages deployment.\n\n---\n\n## Risks & mitigations (Learning callout)\n- **Plugin mismatch** → Keep plugin list in sync with `mkdocs.yml`; install missing plugins in the workflow.\n- **Empty docs** → `mkdocs build --strict` fails if nav references missing files. Start minimal and grow.\n- **Pages mis-config** → Ensure “Source = GitHub Actions” and environment is created by the first successful deploy.\n- **Cache busting** → Material already fingerprints assets; no special headers needed for Pages.\n\n---\n\n## Testing & verification\n- Local: `pip install mkdocs-material && mkdocs serve` → open `http://127.0.0.1:8000`.\n- CI: Confirm the **docs** workflow is green and that the `Deploy to GitHub Pages` step reports a public URL.\n- Browser: Load the site, use search, and click “Edit this page” to verify repo linkage.\n\n---\n\n## Rollback\n- Revert the workflow commit or disable the **docs** workflow in Actions.\n- Pages will retain the last successful artifact; disabling the workflow stops future publishes.\n\n---\n\n## Developer prompt for Codex (generate PR changes)\n> Paste the following into Codex (or your LLM assistant) to create the branch, files, and PR.\n\n```\nYou are an expert GitHub + MkDocs automation assistant.\n\nGoal:\nImplement automated MkDocs Material docs publishing for the repo \"ReleaseCopilot-AI\" using GitHub Actions → GitHub Pages, with minimal configuration and a working starter docs set.\n\nDeliverables (create in a new branch docs/gh-pages-pipeline):\n1) Add `.github/workflows/docs.yml` exactly as specified in the Issue.\n2) Add a base `mkdocs.yml` at the repo root exactly as specified in the Issue.\n3) Create `docs/index.md`, `docs/cli.md`, and `docs/architecture.md` with minimal placeholder content.\n4) Update `README.md` to include:\n   - Documentation URL: https://dutchsloot84.github.io/ReleaseCopilot-AI/\n   - Local preview instructions: `pip install mkdocs-material && mkdocs serve`\n   - A one-liner about the deploy pipeline (GitHub Actions → Pages).\n\nBranch & PR:\n- Create branch `docs/gh-pages-pipeline`.\n- Commit changes with messages:\n  - \"ci(docs): add MkDocs → GitHub Pages workflow\"\n  - \"docs: add mkdocs.yml and seed docs/ content\"\n  - \"docs(readme): link published docs + local preview instructions\"\n- Open a PR titled: \"docs(ci): publish MkDocs site to GitHub Pages via Actions\"\n- Include a checklist referencing the Acceptance Criteria from the Issue.\n- After merging, push a trivial change to `docs/index.md` to confirm an automatic redeploy.\n\nNotes:\n- Keep dependencies minimal. Do not introduce Poetry or lock files for docs-only.\n- If a `requirements-docs.txt` exists, install it in the workflow in addition to mkdocs-material.\n- Ensure the workflow uses `actions/deploy-pages@v4` with the Pages permissions enabled.\n```\n\n---\n\n## Historian markers\nDecision:\n- Use GitHub Actions (build) → GitHub Pages (deploy) with `actions/deploy-pages@v4` to publish MkDocs Material from `docs/` on pushes to `main`.\n\nAction:\n- (Owner: Shayne) Merge the PR that adds `.github/workflows/docs.yml`, `mkdocs.yml`, and seed `docs/` files; then verify the site is live at the expected URL.\n\nNote:\n- Versioned docs (via `mike`) and custom domain (CNAME) are deferred; keep scope minimal to land a working pipeline first.\n",
     "url": null,
     "status": "Backlog",
     "updatedAt": null
