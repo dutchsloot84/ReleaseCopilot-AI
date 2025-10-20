@@ -57,7 +57,7 @@ jobs:
 
       - name: Auto-fix imports
         run: |
-          ruff --fix .
+          ruff check --fix .
           black .
 
       - name: Commit autofixes
@@ -104,7 +104,7 @@ jobs:
         run: |
           if ! git diff --quiet; then
             echo "Linting produced changes after the auto-fix commit." >&2
-            echo "Please run 'ruff --fix .' and 'black .' locally before pushing." >&2
+            echo "Please run 'ruff check --fix .' and 'black .' locally before pushing." >&2
             git status
             exit 1
           fi

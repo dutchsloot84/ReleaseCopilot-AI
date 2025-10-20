@@ -6,7 +6,7 @@ ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "${ROOT_DIR}"
 
 echo "[watchdog] Running ruff autofix..."
-ruff --fix .
+ruff check --fix .
 
 echo "[watchdog] Formatting with black..."
 black .

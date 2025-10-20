@@ -42,7 +42,7 @@ Action:
 
 Follow these steps whenever you touch imports:
 
-1. Format and sort locally with `ruff --fix .` followed by `black .`.
+1. Format and sort locally with `ruff check --fix .` followed by `black .`.
 2. Run `pre-commit run --all-files` to confirm there are no lingering lint adjustments.
 3. If CI still reports import changes, fetch the bot's auto-fix commit, rebase, and push again.
 

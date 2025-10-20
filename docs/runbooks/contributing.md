@@ -19,7 +19,7 @@ The Wave 3 Mission Outline Plan codified our contributor workflow, including the
 
 ## What the hooks enforce
 
-- `ruff --fix` applies lint fixes and flags style regressions.
+- `ruff check --fix` applies lint fixes and flags style regressions.
 - `black` formats Python code deterministically.
 - `mypy` performs static type checks using the repository configuration.
 
