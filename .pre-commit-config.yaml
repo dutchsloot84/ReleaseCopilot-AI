@@ -15,7 +15,7 @@ repos:
           - "-p"
           - "releasecopilot"
           - "-p"
-          - "cli"
+          - "src.cli"
           - "-p"
           - "clients"
         pass_filenames: false
@@ -28,12 +28,15 @@ repos:
       - id: codespell
         args:
           - "--ignore-words-list=crate,te,ser"
+          - "--"
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
+        args: ["--"]
       - id: trailing-whitespace
+        args: ["--"]
       - id: detect-private-key
         args: ["--"]
   - repo: local

@@ -51,4 +51,3 @@ Troubleshooting tips:
 - If ruff raises module grouping errors (I001), ensure the module belongs to one of the configured sections: stdlib, third-party, `config`/`releasecopilot`, then relative imports.
 - When a PR originates from a fork, GitHub Actions cannot push auto-fix commits. In that situation the workflow fails with a reminder—run the commands above locally and push manually.
 - Verify `python -m pip install -r requirements-dev.txt` so the local hooks share the same versions as CI.
-

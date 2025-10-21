@@ -37,6 +37,7 @@ def _import_projects_client() -> "type[ProjectsV2Client]":
 
         return client_cls
 
+
 LOGGER = logging.getLogger(__name__)
 ISO_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 

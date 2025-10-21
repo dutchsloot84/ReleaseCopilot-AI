@@ -73,9 +73,7 @@ def register_jira_webhook(app: Any) -> Any:
             raw_body = await request.body()
             secret = _resolve_secret()
             signature = _extract_signature(request.headers)
-            if secret and not verify_signature(
-                secret=secret, body=raw_body, signature=signature
-            ):
+            if secret and not verify_signature(secret=secret, body=raw_body, signature=signature):
                 raise HTTPException(status_code=401, detail="invalid signature")
 
             payload = await request.json()

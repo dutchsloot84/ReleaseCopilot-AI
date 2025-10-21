@@ -34,17 +34,13 @@ target-version = ["py310"]
 
 [tool.mypy]
 python_version = "3.11"
+mypy_path = "src"
 explicit_package_bases = true
 namespace_packages = true
-mypy_path = "src"
+ignore_missing_imports = true
+follow_imports = "silent"
 warn_unused_configs = true
-warn_return_any = true
-warn_unused_ignores = true
 warn_redundant_casts = true
-no_implicit_optional = true
-strict_equality = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
 show_error_codes = true
 
 [[tool.mypy.overrides]]

@@ -42,8 +42,8 @@ in `data/bitbucket/commits.db` and emits artifacts under
 
 ### Wave 3 correlation & gaps
 
-**Decision:** Update link precedence and expose Phoenix-stamped gaps endpoints.  
-**Note:** Artifacts now include input args; document expected payload for consumers.  
+**Decision:** Update link precedence and expose Phoenix-stamped gaps endpoints.
+**Note:** Artifacts now include input args; document expected payload for consumers.
 **Action:** Ship matcher updates, persist metadata, and document new endpoints.
 
 Run `rc matcher correlate --issues data/jira_issues.json --commits data/bitbucket_commits.json`

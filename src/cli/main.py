@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import sys
-from typing import Iterable
+from typing import Sequence
 
 try:
     from main import run_audit
@@ -39,7 +39,7 @@ def _load_environment() -> None:
         logger.debug("Failed to load .env file", exc_info=True)
 
 
-def main(argv: Iterable[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     _load_environment()
     args, config = parse_args(argv)
     configure_logging(args.log_level)

@@ -1,7 +1,7 @@
 # Correlation & Gaps Engine
 
-**Decision:** Update link precedence and expose Phoenix-stamped gaps endpoints.  
-**Note:** Artifacts now include input args; document expected payload for consumers.  
+**Decision:** Update link precedence and expose Phoenix-stamped gaps endpoints.
+**Note:** Artifacts now include input args; document expected payload for consumers.
 **Action:** Ship matcher updates, persist metadata, and document new endpoints.
 
 Wave 3 introduces a Phoenix-aware correlation workflow that resolves story links by

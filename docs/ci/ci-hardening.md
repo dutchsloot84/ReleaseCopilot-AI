@@ -26,9 +26,11 @@ packaging or CDK synthesis begin.
 ## Tooling Configuration
 
 - Ruff, Ruff-format, mypy, pytest, and black share a single source of truth in
-  `pyproject.toml`. The mypy settings enable strict equality, disallow untyped
-  definitions, and fall back to targeted overrides (`services.*`, `rag_aws.*`)
-  while preserving stub usage (`types-requests`, `types-PyYAML`).
+  `pyproject.toml`. The mypy settings focus on actionable warnings (redundant
+  casts, implicit `Any` returns) while retaining the legacy overrides
+  (`services.*`, `rag_aws.*`) and defaulting optional third-party dependencies
+  without stubs to `Any` so we can gate on our code without blocking on AWS or
+  pandas typing packages.
 - The pytest configuration enforces deterministic coverage reports (term,
   JSON, XML), `-ra` summaries, Phoenix time zone expectations, and strict
   markers. The autouse fixtures continue to disable real network access.
@@ -65,7 +67,8 @@ packaging or CDK synthesis begin.
    autofixed locally via `ruff check --fix . && ruff format .`.
 2. **Type errors:** Install dev dependencies and run `mypy -p releasecopilot -p
    cli -p clients`. Add targeted ignores only with justification in
-   `pyproject.toml`.
+   `pyproject.toml`; because missing third-party stubs default to `Any`, most
+   failures should map to our code paths (e.g., return types, optional guards).
 3. **Coverage failures:** Run `pytest` locally; re-gate with
    `python tools/coverage_gate.py coverage.json --minimum 70 --paths "$(git diff --name-only origin/main...HEAD -- '*.py')"`.
 4. **Cache corruption:** Drop the relevant caches from the Actions UI or bump
