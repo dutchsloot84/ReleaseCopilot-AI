@@ -14,17 +14,29 @@ from pathlib import Path
 import re
 import subprocess
 import sys
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 import requests
 import yaml
 
-# Path safeguard for local/CI runs when PYTHONPATH is unset.
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.github import ProjectsV2Client  # noqa: E402
+if TYPE_CHECKING:  # pragma: no cover - import for typing only
+    from scripts.github import ProjectsV2Client
+
+
+def _import_projects_client() -> "type[ProjectsV2Client]":
+    try:
+        from scripts.github import ProjectsV2Client as client_cls
+
+        return client_cls
+    except ModuleNotFoundError:
+        if str(REPO_ROOT) not in sys.path:
+            sys.path.insert(0, str(REPO_ROOT))
+        from scripts.github import ProjectsV2Client as client_cls
+
+        return client_cls
+
 
 LOGGER = logging.getLogger(__name__)
 ISO_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -1139,7 +1151,8 @@ def render_history(args: argparse.Namespace) -> HistoryDocument:
             (in_progress_cfg.get("project_v2", {}).get("enabled"))
             or (backlog_cfg.get("project_v2", {}).get("enabled"))
         ):
-            projects_client = ProjectsV2Client(token)
+            ProjectsClient = _import_projects_client()
+            projects_client = ProjectsClient(token)
     except Exception as exc:  # noqa: BLE001
         LOGGER.warning("Failed to initialize Projects v2 client: %s", exc)
 

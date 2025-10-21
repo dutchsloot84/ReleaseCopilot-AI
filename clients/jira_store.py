@@ -116,7 +116,7 @@ class JiraIssueStore:
     def _paginate_query(self, *, fix_version: str) -> Iterable[Dict[str, Any]]:
         if not fix_version:
             logger.warning("Empty fix version provided to JiraIssueStore; returning no items")
-            return []
+            return
 
         params: Dict[str, Any] = {
             "IndexName": self._query_config.index_name,
@@ -143,7 +143,8 @@ class JiraIssueStore:
         attempt = 1
         while True:
             try:
-                return self._table.query(**params)
+                response: Dict[str, Any] = self._table.query(**params)
+                return response
             except ClientError as exc:
                 if not self._should_retry(exc) or attempt >= max_attempts:
                     raise

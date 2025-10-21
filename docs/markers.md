@@ -40,4 +40,3 @@ It is fine to mix styles in the same comment. For example, you might open with a
 ## Configuration reference
 
 The default marker list lives in `config/defaults.yml` under `historian.sources.notes.comment_markers`. Update that list if your team adds new marker types.
-

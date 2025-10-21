@@ -1,4 +1,8 @@
 ## [Unreleased]
+### CI Matrix Hardening Refresh
+**Decision:** Split GitHub Actions into cached lint, type-check, and test jobs on Python 3.10/3.11 while enforcing pre-commit, mypy, and coverage thresholds via `pyproject.toml`.
+**Note:** See `docs/ci/ci-hardening.md` for workflow topology, caching keys, Phoenix timestamp policy, and rollback guidance.
+**Action:** Updated `.github/workflows/ci.yml`, `.pre-commit-config.yaml`, `pyproject.toml`, and supporting tests/docs to remove `mypy.ini`/`pytest.ini`, remediate E402 suppressions, and document the new CI expectations.
 ### Ruff Import Hygiene
 **Decision:** Standardize import hygiene with Ruff (E402/F404/I) across local and CI gates.
 **Note:** See `docs/runbook/linting.md` for Phoenix-aware workflows using `pre-commit run --all-files`.
@@ -9,7 +13,7 @@
 **Action:** Removed Black configuration, refreshed contributor docs, and ran `ruff format .` to normalize the codebase.
 ### Hardened CI Quality Gate
 **Decision:** Enforce linting, formatting, typing, and coverage thresholds directly in CI with Phoenix-aligned guidance for contributors.
-**Note:** Local and CI runs now share the `ruff check .`, `ruff format --check .`, `mypy --config-file mypy.ini`, and `pytest --cov=src` sequence with America/Phoenix (UTC-7) timeboxing.
+**Note:** Local and CI runs now share the `ruff check .`, `ruff format --check .`, `mypy -p releasecopilot -p src.cli -p clients`, and `pytest --cov=src` sequence with America/Phoenix (UTC-7) timeboxing.
 **Action:** Added tooling configuration in `pyproject.toml`, centralized network/config stubs in `tests/conftest.py`, hardened `.github/workflows/ci.yml` with explicit lint/type/coverage steps, surfaced coverage summaries via `scripts/ci/coverage_gate.py`, and refreshed README/runbook guidance.
 ### Wave 3 Onboarding and Validation
 **Decision:** Document Wave 3 generator onboarding so contributors can translate `backlog/wave3.yaml` into sub-prompts deterministically.

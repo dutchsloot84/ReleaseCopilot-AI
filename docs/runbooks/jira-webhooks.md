@@ -26,7 +26,7 @@ The `/webhooks/jira` endpoint ingests Atlassian webhook deliveries, validates HM
 - API responses include a `received_at` timestamp in Phoenix for traceability.
 
 ## Troubleshooting
-- **Signature validation failures:** Confirm the Atlassian secret matches AWS Secrets Manager and that requests include the `X-Atlassian-Webhook-Signature` header.
+- **Signature validation failures:** Confirm the Atlassian secret matches AWS Secrets Manager and that requests include the `X-Atlassian-Webhook-Signature` (or legacy `X-Atlassian-Signature`) header.
 - **Repeated deliveries:** Artifacts capture `idempotency_key` usage; ensure DynamoDB conditional writes remain idempotent.
 - **Correlation loops:** Check `artifacts/issues/wave3/jira_webhook/*.json` for the latest `run_id` metadata and the Phoenix `generated_at` timestamp. Use structured logs to inspect retries/backoff attempts.
 

@@ -120,9 +120,10 @@ class JiraClient(BaseAPIClient):
                 return cached_payload["issues"], cache_file
 
         jql = f"fixVersion = '{fix_version}' ORDER BY key"
+        max_results = 100
         params = {
             "jql": jql,
-            "maxResults": 100,
+            "maxResults": max_results,
             "fields": (
                 ",".join(fields)
                 if fields
@@ -176,9 +177,10 @@ class JiraClient(BaseAPIClient):
 
             batch = payload.get("issues", [])
             issues.extend(batch)
-            if len(batch) == 0 or start_at + params["maxResults"] >= payload.get("total", 0):
+            total = payload.get("total", 0) or 0
+            if len(batch) == 0 or start_at + max_results >= int(total):
                 break
-            start_at += params["maxResults"]
+            start_at += max_results
 
         cached_payload = {
             "retrieved_at": datetime.utcnow().isoformat(),

@@ -77,6 +77,8 @@ def _write_text(path: Path, content: str) -> Path:
         existing = path.read_text(encoding="utf-8")
         if existing == content:
             return path
+    if not content.endswith("\n"):
+        content = f"{content}\n"
     path.write_text(content, encoding="utf-8")
     return path
 
