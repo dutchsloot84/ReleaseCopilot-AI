@@ -128,7 +128,7 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy -p releasecopilot -p cli -p clients
+          mypy -p releasecopilot -p src.cli -p clients
 
   tests:
     name: Tests (Python ${{ matrix.python-version }})

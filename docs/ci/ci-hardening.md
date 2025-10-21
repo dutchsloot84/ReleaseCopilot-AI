@@ -66,7 +66,7 @@ packaging or CDK synthesis begin.
 1. **Lint failures:** Re-run `pre-commit run --all-files`. Ruff findings can be
    autofixed locally via `ruff check --fix . && ruff format .`.
 2. **Type errors:** Install dev dependencies and run `mypy -p releasecopilot -p
-   cli -p clients`. Add targeted ignores only with justification in
+   src.cli -p clients`. Add targeted ignores only with justification in
    `pyproject.toml`; because missing third-party stubs default to `Any`, most
    failures should map to our code paths (e.g., return types, optional guards).
 3. **Coverage failures:** Run `pytest` locally; re-gate with
@@ -87,7 +87,7 @@ retaining this document for historical context. The previous single-job
 ```bash
 python -m pip install -r requirements-dev.txt
 pre-commit run --all-files
-mypy -p releasecopilot -p cli -p clients
+mypy -p releasecopilot -p src.cli -p clients
 pytest
 python tools/coverage_gate.py coverage.json --minimum 70
 ```

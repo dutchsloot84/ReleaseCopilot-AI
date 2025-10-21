@@ -13,7 +13,7 @@
 **Action:** Removed Black configuration, refreshed contributor docs, and ran `ruff format .` to normalize the codebase.
 ### Hardened CI Quality Gate
 **Decision:** Enforce linting, formatting, typing, and coverage thresholds directly in CI with Phoenix-aligned guidance for contributors.
-**Note:** Local and CI runs now share the `ruff check .`, `ruff format --check .`, `mypy -p releasecopilot`, and `pytest --cov=src` sequence with America/Phoenix (UTC-7) timeboxing.
+**Note:** Local and CI runs now share the `ruff check .`, `ruff format --check .`, `mypy -p releasecopilot -p src.cli -p clients`, and `pytest --cov=src` sequence with America/Phoenix (UTC-7) timeboxing.
 **Action:** Added tooling configuration in `pyproject.toml`, centralized network/config stubs in `tests/conftest.py`, hardened `.github/workflows/ci.yml` with explicit lint/type/coverage steps, surfaced coverage summaries via `scripts/ci/coverage_gate.py`, and refreshed README/runbook guidance.
 ### Wave 3 Onboarding and Validation
 **Decision:** Document Wave 3 generator onboarding so contributors can translate `backlog/wave3.yaml` into sub-prompts deterministically.

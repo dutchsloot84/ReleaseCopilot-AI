@@ -23,7 +23,7 @@ The Wave 3 Mission Outline Plan codified our contributor workflow, including the
 - `ruff format` keeps Python code deterministic without relying on Black.
 - `mypy` performs static type checks using the repository configuration in `pyproject.toml`.
 
-The `.github/workflows/ci.yml` pipeline now runs the same tooling directly—`pre-commit run --all-files`, `ruff check .`, `ruff format --check .`, `mypy -p releasecopilot -p cli -p clients`, and `pytest` (with the coverage gate) before packaging/CDK jobs begin. Any failure blocks packaging and deployment jobs downstream.
+The `.github/workflows/ci.yml` pipeline now runs the same tooling directly—`pre-commit run --all-files`, `ruff check .`, `ruff format --check .`, `mypy -p releasecopilot -p src.cli -p clients`, and `pytest` (with the coverage gate) before packaging/CDK jobs begin. Any failure blocks packaging and deployment jobs downstream.
 
 ### Test isolation policies
 

@@ -11,9 +11,9 @@
 3. `ruff check --fix .`
 4. `ruff format .`
 5. `pre-commit run --all-files`
-6. `mypy -p releasecopilot -p cli -p clients`
+6. `mypy -p releasecopilot -p src.cli -p clients`
 7. `pytest`
 
 ## CI mirrors
 
-GitHub Actions executes `pre-commit run --all-files --show-diff-on-failure`, followed by `ruff check .`, `ruff format --check .`, `mypy -p releasecopilot -p cli -p clients`, and `pytest` with the 70% coverage gate. Failures must be resolved locally before merging.
+GitHub Actions executes `pre-commit run --all-files --show-diff-on-failure`, followed by `ruff check .`, `ruff format --check .`, `mypy -p releasecopilot -p src.cli -p clients`, and `pytest` with the 70% coverage gate. Failures must be resolved locally before merging.

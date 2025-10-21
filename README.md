@@ -121,7 +121,7 @@ Quick spot checks without the hook wrapper mirror the CI workflow:
 ```bash
 ruff check . && \
 ruff format --check . && \
-mypy -p releasecopilot -p cli -p clients && \
+mypy -p releasecopilot -p src.cli -p clients && \
 pytest
 ```
 
