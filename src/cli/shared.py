@@ -9,7 +9,12 @@ import os
 from pathlib import Path
 import shutil
 import sys
-from typing import Iterable, Mapping, MutableMapping, Optional, TextIO, Tuple
+from typing import Mapping, MutableMapping, Optional, Sequence, TextIO, Tuple
+
+if __name__ == "cli.shared":  # pragma: no cover - import alias for legacy paths
+    sys.modules.setdefault("src.cli.shared", sys.modules[__name__])
+elif __name__ == "src.cli.shared":  # pragma: no cover - import alias for legacy paths
+    sys.modules.setdefault("cli.shared", sys.modules[__name__])
 
 
 @dataclass
@@ -61,12 +66,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def parse_args(
-    argv: Optional[Iterable[str]] = None,
+    argv: Optional[Sequence[str]] = None,
 ) -> Tuple[argparse.Namespace, AuditConfig]:
     """Parse CLI arguments and construct the :class:`AuditConfig` payload."""
 
     parser = build_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(list(argv) if argv is not None else None)
     config = AuditConfig(
         fix_version=args.fix_version,
         repos=list(args.repos),

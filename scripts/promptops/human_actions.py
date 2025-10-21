@@ -4,7 +4,14 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
-from datetime import UTC, datetime, time, timedelta
+from datetime import datetime, time, timedelta
+
+try:  # Python < 3.11 fallback
+    from datetime import UTC
+except ImportError:  # pragma: no cover - exercised on older runtimes
+    from datetime import timezone
+
+    UTC = timezone.utc
 import hashlib
 import json
 from pathlib import Path

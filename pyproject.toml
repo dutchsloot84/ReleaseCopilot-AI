@@ -1,6 +1,6 @@
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py310"
 src = ["src", "."]
 
 [tool.ruff.lint]
@@ -24,3 +24,51 @@ known-first-party = [
 ]
 combine-as-imports = true
 force-sort-within-sections = true
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+explicit_package_bases = true
+namespace_packages = true
+ignore_missing_imports = true
+follow_imports = "silent"
+warn_unused_configs = true
+warn_redundant_casts = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = "rag_aws.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "services.*"
+ignore_errors = true
+
+[tool.pytest.ini_options]
+addopts = [
+    "-q",
+    "-ra",
+    "--maxfail=1",
+    "--disable-warnings",
+    "--import-mode=importlib",
+    "--cov=src",
+    "--cov=clients",
+    "--cov-report=term-missing",
+    "--cov-report=json:coverage.json",
+    "--cov-report=xml:coverage.xml",
+]
+markers = [
+    "integration: integration-level recovery tool tests",
+    "network: tests that require live network access",
+]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+tmp_path_retention_count = 3
+tmp_path_retention_policy = "failed"

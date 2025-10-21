@@ -119,7 +119,10 @@ def export_all(
         outputs["excel"] = excel_exporter.export(payload, excel_path.name)
 
     summary_path = resolved["summary"]
-    summary_path.write_text(json.dumps(payload["summary"], indent=2), encoding="utf-8")
+    summary_payload = json.dumps(payload["summary"], indent=2)
+    if not summary_payload.endswith("\n"):
+        summary_payload = f"{summary_payload}\n"
+    summary_path.write_text(summary_payload, encoding="utf-8")
     outputs["summary"] = summary_path
 
     return outputs

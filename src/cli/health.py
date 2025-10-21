@@ -130,8 +130,7 @@ def _resolve_bucket(value: str | None, config: dict) -> tuple[str | None, str | 
             return trimmed, None
         return value, None
 
-    bucket, prefix = get_s3_destination(config)
-    return bucket, prefix
+    return get_s3_destination(config)
 
 
 def _select_secrets(override: str | None, configured: dict[str, str]) -> dict[str, str]:

@@ -7,7 +7,7 @@ import json
 import os
 from pathlib import Path
 import sys
-from typing import Iterable
+from typing import Sequence
 
 from config.loader import Defaults, load_defaults
 from releasecopilot.logging_config import configure_logging, get_logger
@@ -120,10 +120,10 @@ def _default_region() -> str | None:
     return None
 
 
-def main(argv: Iterable[str] | None = None, *, defaults: Defaults | None = None) -> int:
+def main(argv: Sequence[str] | None = None, *, defaults: Defaults | None = None) -> int:
     defaults = defaults or load_defaults()
     parser = build_parser(defaults)
-    args = parser.parse_args(argv)
+    args = parser.parse_args(list(argv) if argv is not None else None)
 
     configure_logging(getattr(args, "log_level", "INFO"))
     LOGGER.debug("Parsed arguments", extra={"command": args.command})

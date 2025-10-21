@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Optional
+from typing import Any, Optional
 
 try:
     import boto3
@@ -33,7 +33,7 @@ def get_secret(name: str) -> Optional[str]:
         return None
 
     try:
-        response = client.get_secret_value(SecretId=name)
+        response: dict[str, Any] = client.get_secret_value(SecretId=name)
     except (ClientError, BotoCoreError):
         return None
 
