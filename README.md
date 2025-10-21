@@ -40,6 +40,17 @@ within a configurable window and register the `/webhooks/bitbucket` endpoint via
 in `data/bitbucket/commits.db` and emits artifacts under
 `artifacts/issues/wave3/bitbucket/` stamped in America/Phoenix.
 
+### Wave 3 correlation & gaps
+
+**Decision:** Update link precedence and expose Phoenix-stamped gaps endpoints.  
+**Note:** Artifacts now include input args; document expected payload for consumers.  
+**Action:** Ship matcher updates, persist metadata, and document new endpoints.
+
+Run `rc matcher correlate --issues data/jira_issues.json --commits data/bitbucket_commits.json`
+to produce a Phoenix-aware correlation artifact at `artifacts/issues/wave3/correlation/`. Each
+run records `run_id`, `git_sha`, `generated_at`, and CLI args in the America/Phoenix timezone
+while surfacing gap payloads for `stories_without_commits` and `commits_without_story`.
+
 ## Project Layout
 
 ```

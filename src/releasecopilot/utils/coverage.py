@@ -88,6 +88,7 @@ def _parse_json_subset(data: Any, include: Iterable[str]) -> CoverageTotals:
     coverage_by_path: dict[str, dict[str, Any]] = {
         _normalize(path): details for path, details in files.items() if isinstance(details, dict)
     }
+    covered_roots = {_root_for(path) for path in coverage_by_path}
     covered = 0.0
     total = 0.0
     missing: list[str] = []
@@ -96,7 +97,7 @@ def _parse_json_subset(data: Any, include: Iterable[str]) -> CoverageTotals:
         summary = coverage_by_path.get(path)
         if summary is None:
             root = _root_for(path)
-            if root not in _IGNORED_ROOTS:
+            if root not in _IGNORED_ROOTS and (not covered_roots or root in covered_roots):
                 missing.append(path)
             continue
 
