@@ -9,11 +9,33 @@ repos:
     rev: v1.11.2
     hooks:
       - id: mypy
-        args: ["--config-file", "mypy.ini", "-p", "releasecopilot"]
+        args:
+          - "--config-file"
+          - "pyproject.toml"
+          - "-p"
+          - "releasecopilot"
+          - "-p"
+          - "cli"
+          - "-p"
+          - "clients"
         pass_filenames: false
         additional_dependencies:
           - types-PyYAML==6.0.12.20240808
           - types-requests==2.32.0.20241016
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
+        args:
+          - "--ignore-words-list=crate,te,ser"
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-private-key
+        args: ["--"]
   - repo: local
     hooks:
       - id: check-generated-wave
@@ -21,8 +43,3 @@ repos:
         entry: make check-generated
         language: system
         pass_filenames: false
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
-    hooks:
-      - id: detect-private-key
-        args: ["--"]

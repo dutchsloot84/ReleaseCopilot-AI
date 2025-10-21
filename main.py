@@ -31,6 +31,7 @@ try:  # pragma: no cover - best effort optional dependency
 except Exception:  # pragma: no cover - ignore missing dependency
     load_dotenv = None
 
+from cli.shared import AuditConfig, finalize_run, handle_dry_run, parse_args
 from clients.bitbucket_client import BitbucketClient
 from clients.jira_client import JiraClient, compute_fix_version_window
 from clients.jira_store import JiraIssueStore
@@ -45,7 +46,6 @@ from releasecopilot.utils.jira_csv_loader import (
     JiraCSVLoaderError,
     load_issues_from_csv,
 )
-from src.cli.shared import AuditConfig, finalize_run, handle_dry_run, parse_args
 from tools.generator.generator import run_cli as run_generator_cli
 
 

@@ -121,8 +121,8 @@ Quick spot checks without the hook wrapper mirror the CI workflow:
 ```bash
 ruff check . && \
 ruff format --check . && \
-mypy --config-file mypy.ini -p releasecopilot && \
-pytest --cov=src --cov-report=term
+mypy -p releasecopilot -p cli -p clients && \
+pytest
 ```
 
 ### Import hygiene & test isolation
@@ -137,7 +137,7 @@ The pre-commit hooks run `ruff check --fix`, `ruff format`, and `mypy` locally, 
 ## Contributing & Quality Gates
 
 - Pull request descriptions must begin with **Decision:**, **Note:**, and **Action:** summaries that align with the generated manifest entry and reference Phoenix (America/Phoenix) scheduling where applicable.
-- Confirm ≥70% test coverage on touched code by running `pytest` (coverage configuration is enforced via `pytest.ini`), then gate the result locally with `python tools/coverage_gate.py coverage.json --minimum 70 --paths $(git diff --name-only origin/main...HEAD -- '*.py')` before requesting review.
+- Confirm ≥70% test coverage on touched code by running `pytest` (configuration lives in `pyproject.toml`), then gate the result locally with `python tools/coverage_gate.py coverage.json --minimum 70 --paths $(git diff --name-only origin/main...HEAD -- '*.py')` before requesting review.
 - Acknowledge the lint/type gates explicitly by running `ruff`, `ruff format`, and `mypy` before submitting the PR template checklist.
 - Document updates belong alongside code changes; orchestrator-related pull requests should cross-reference [`docs/runbooks/orchestrator.md`](docs/runbooks/orchestrator.md) so reviewers can validate Phoenix-aware plan and dispatch flows.
 - Phoenix time (America/Phoenix, UTC-7 year-round) is the canonical timezone for orchestration—include Phoenix-local timestamps in new artifacts and note deviations in the **Note:** section of the PR template.

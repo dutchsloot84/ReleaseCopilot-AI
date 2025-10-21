@@ -19,20 +19,28 @@ except ModuleNotFoundError:
 
 try:  # pragma: no cover - optional dependency loading
     from dotenv import load_dotenv
+except Exception:  # pragma: no cover - dependency unavailable
+    load_dotenv = None  # type: ignore[assignment]
 
-    load_dotenv()
-except Exception:  # pragma: no cover
-    pass
-
-from releasecopilot.errors import ReleaseCopilotError  # noqa: E402
-from releasecopilot.logging_config import configure_logging, get_logger  # noqa: E402
+from releasecopilot.errors import ReleaseCopilotError
+from releasecopilot.logging_config import configure_logging, get_logger
 
 from .shared import finalize_run, handle_dry_run, parse_args
 
 logger = get_logger(__name__)
 
 
+def _load_environment() -> None:
+    if load_dotenv is None:
+        return
+    try:  # pragma: no cover - defensive guard
+        load_dotenv()
+    except Exception:  # pragma: no cover - tolerate .env issues
+        logger.debug("Failed to load .env file", exc_info=True)
+
+
 def main(argv: Iterable[str] | None = None) -> int:
+    _load_environment()
     args, config = parse_args(argv)
     configure_logging(args.log_level)
     logger.info(

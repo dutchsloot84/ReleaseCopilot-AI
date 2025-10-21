@@ -3,29 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-import sys
-import types
 from typing import Any, Iterable
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+import pytest
 
-if "config.settings" not in sys.modules:
-    config_pkg = types.ModuleType("config")
-    config_pkg.__path__ = [str(ROOT / "config")]  # type: ignore[attr-defined]
-    config_settings = types.ModuleType("config.settings")
-    config_settings.load_settings = lambda overrides=None: {}  # type: ignore[assignment]
-    config_pkg.settings = config_settings  # type: ignore[attr-defined]
-    sys.modules.setdefault("config", config_pkg)
-    sys.modules.setdefault("config.settings", config_settings)
-
-import pytest  # noqa: E402
-
-import main as main_module  # noqa: E402
-from releasecopilot.errors import JiraJQLFailed  # noqa: E402
-import releasecopilot_bootstrap  # noqa: F401,E402  # ensures src on sys.path
-from src.cli.shared import AuditConfig  # noqa: E402
+from cli.shared import AuditConfig
+import main as main_module
+from releasecopilot.errors import JiraJQLFailed
 
 
 class _FailingIssueProvider:

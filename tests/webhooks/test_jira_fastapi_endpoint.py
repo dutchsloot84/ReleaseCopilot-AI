@@ -4,17 +4,30 @@ import base64
 import hashlib
 import hmac
 import json
+import os
 from types import SimpleNamespace
 
 import pytest
 
-pytest.importorskip("fastapi")
-pytest.importorskip("fastapi.testclient")
+try:  # pragma: no cover - optional dependency guard
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+except ModuleNotFoundError:  # pragma: no cover - handled via pytestmark
+    FastAPI = None  # type: ignore[assignment]
+    TestClient = None  # type: ignore[assignment]
 
-from fastapi import FastAPI  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
+os.environ.setdefault("TABLE_NAME", "jira-sync-tests")
+os.environ.setdefault("AWS_REGION", "us-west-2")
+os.environ.setdefault("AWS_DEFAULT_REGION", "us-west-2")
+os.environ.setdefault("AWS_ACCESS_KEY_ID", "test")
+os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "test")
 
 from services.webhooks import jira as webhook_module
+
+pytestmark = pytest.mark.skipif(
+    FastAPI is None or TestClient is None,
+    reason="fastapi test client is unavailable",
+)
 
 
 def _make_signature(body: bytes, secret: str) -> str:
