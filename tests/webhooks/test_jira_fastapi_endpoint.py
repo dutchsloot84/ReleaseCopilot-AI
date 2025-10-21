@@ -8,11 +8,16 @@ from types import SimpleNamespace
 
 import pytest
 
-pytest.importorskip("fastapi")
-pytest.importorskip("fastapi.testclient")
+# FastAPI is optional in certain environments, so guard the imports and skip
+# the tests when it is not available instead of deferring imports with noqa.
+try:
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+except ImportError:  # pragma: no cover - exercised by environments without FastAPI
+    FastAPI = TestClient = None  # type: ignore[assignment]
 
-from fastapi import FastAPI  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
+if FastAPI is None or TestClient is None:  # pragma: no cover - executed when FastAPI missing
+    pytest.skip("fastapi is required for these tests", allow_module_level=True)
 
 from services.webhooks import jira as webhook_module
 
