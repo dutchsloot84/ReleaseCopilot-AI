@@ -3,16 +3,16 @@ name: Validate Prompt Waves
 on:
   pull_request:
     paths:
-      - 'project/prompts/**'
-      - 'tools/**'
-      - 'actions/**'
-      - 'docs/**'
-      - 'tests/**'
-      - '.github/workflows/validate_prompts.yml'
-      - 'pyproject.toml'
-      - 'pytest.ini'
-      - 'requirements*.txt'
-      - 'CHANGELOG.md'
+      - "project/prompts/**"
+      - "tools/**"
+      - "actions/**"
+      - "docs/**"
+      - "tests/**"
+      - ".github/workflows/validate_prompts.yml"
+      - "pyproject.toml"
+      - "pytest.ini"
+      - "requirements*.txt"
+      - "CHANGELOG.md"
 
 jobs:
   detect-waves:
@@ -101,7 +101,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |

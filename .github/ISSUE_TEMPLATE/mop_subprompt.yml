@@ -5,11 +5,16 @@ labels: ["mop", "sub-prompt"]
 body:
   - type: input
     id: mop
-    attributes: { label: MOP file (path), placeholder: prompts/mop_wave1_security.md }
+    attributes:
+      { label: MOP file (path), placeholder: prompts/mop_wave1_security.md }
     validations: { required: true }
   - type: input
     id: prtitle
-    attributes: { label: PR Title, placeholder: "[Budget/Alarms] Low-Ceiling Budget + SNS Notice" }
+    attributes:
+      {
+        label: PR Title,
+        placeholder: "[Budget/Alarms] Low-Ceiling Budget + SNS Notice",
+      }
     validations: { required: true }
   - type: textarea
     id: extras

@@ -14,7 +14,7 @@ pytest.importorskip("fastapi.testclient")
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from services.webhooks import jira as webhook_module
+from services.webhooks import jira as webhook_module  # noqa: E402
 
 
 def _make_signature(body: bytes, secret: str) -> str:

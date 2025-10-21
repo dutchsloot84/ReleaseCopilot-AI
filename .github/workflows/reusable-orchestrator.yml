@@ -10,7 +10,7 @@ on:
       allowed-users:
         required: false
         type: string
-        default: ''
+        default: ""
     secrets:
       orchestrator-bot-token:
         required: true
@@ -39,7 +39,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install orchestrator dependencies
         run: |

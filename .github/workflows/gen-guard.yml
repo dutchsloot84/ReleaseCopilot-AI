@@ -3,16 +3,16 @@ name: Wave Generator Drift Guard
 on:
   pull_request:
     paths:
-      - 'backlog/**'
-      - 'templates/**'
-      - 'scripts/github/wave2_helper.py'
-      - 'docs/mop/**'
-      - 'docs/sub-prompts/**'
-      - 'artifacts/**'
-      - 'Makefile'
-      - '.github/workflows/gen-guard.yml'
-      - 'requirements.txt'
-      - 'tests/**'
+      - "backlog/**"
+      - "templates/**"
+      - "scripts/github/wave2_helper.py"
+      - "docs/mop/**"
+      - "docs/sub-prompts/**"
+      - "artifacts/**"
+      - "Makefile"
+      - ".github/workflows/gen-guard.yml"
+      - "requirements.txt"
+      - "tests/**"
 
 jobs:
   gen-wave:
@@ -23,7 +23,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip

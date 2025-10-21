@@ -8,26 +8,26 @@ on:
   push:
     branches:
       - main
-      - 'feature/**'
-      - 'codex/**'
+      - "feature/**"
+      - "codex/**"
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   pull_request:
     branches:
       - main
   workflow_dispatch:
     inputs:
       run_uploader:
-        description: 'Run the optional release uploader'
+        description: "Run the optional release uploader"
         required: false
         default: false
         type: boolean
       fix_version:
-        description: 'Fix version to use when running the uploader'
+        description: "Fix version to use when running the uploader"
         required: false
         type: string
       run_import_autofix:
-        description: 'Run Ruff autofix for import hygiene (E402/F404/I)'
+        description: "Run Ruff autofix for import hygiene (E402/F404/I)"
         required: false
         default: false
         type: boolean
@@ -49,8 +49,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
           cache-dependency-path: |
             requirements.txt
             requirements-dev.txt
@@ -135,8 +135,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
           cache-dependency-path: |
             requirements.txt
             requirements-dev.txt
@@ -190,8 +190,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
           cache-dependency-path: |
             requirements.txt
             infra/cdk/requirements.txt
@@ -208,7 +208,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: "20.x"
 
       - name: Verify Node.js runtime
         run: node --version
@@ -250,8 +250,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
           cache-dependency-path: |
             requirements.txt
             requirements-optional.txt
