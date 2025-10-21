@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, Mapping
 
 from clients.secrets_manager import CredentialStore
 from releasecopilot.jira import (
@@ -41,9 +41,27 @@ def _resolve_secret() -> str | None:
     return None
 
 
+def _extract_signature(headers: Mapping[str, Any] | None) -> str | None:
+    if not headers:
+        return None
+    if hasattr(headers, "items"):
+        items = headers.items()
+    else:  # pragma: no cover - defensive
+        items = []
+    for key, value in items:
+        if not value:
+            continue
+        if str(key).lower() in {
+            "x-atlassian-webhook-signature",
+            "x-atlassian-signature",
+        }:
+            return str(value)
+    return None
+
+
 def register_jira_webhook(app: Any) -> Any:
     if _is_fastapi_app(app):
-        from fastapi import APIRouter, Header, HTTPException, Request
+        from fastapi import APIRouter, HTTPException, Request
         from fastapi.responses import JSONResponse
 
         router = APIRouter()
@@ -51,12 +69,12 @@ def register_jira_webhook(app: Any) -> Any:
         @router.post("/webhooks/jira")
         async def jira_webhook(
             request: Request,
-            x_atlassian_webhook_signature: str = Header(None),
         ) -> Any:  # pragma: no cover - framework wiring
             raw_body = await request.body()
             secret = _resolve_secret()
+            signature = _extract_signature(request.headers)
             if secret and not verify_signature(
-                secret=secret, body=raw_body, signature=x_atlassian_webhook_signature
+                secret=secret, body=raw_body, signature=signature
             ):
                 raise HTTPException(status_code=401, detail="invalid signature")
 
@@ -103,10 +121,11 @@ def register_jira_webhook(app: Any) -> Any:
         def jira_webhook() -> Any:  # pragma: no cover - framework wiring
             raw_body = request.get_data(cache=False)
             secret = _resolve_secret()
+            signature = _extract_signature(request.headers)
             if secret and not verify_signature(
                 secret=secret,
                 body=raw_body,
-                signature=request.headers.get("X-Atlassian-Webhook-Signature"),
+                signature=signature,
             ):
                 return jsonify({"detail": "invalid signature"}), 401
 
