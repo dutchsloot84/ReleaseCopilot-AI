@@ -1,4 +1,8 @@
 ## [Unreleased]
+### CI Hardening Runbook
+**Decision:** Capture the hardened CI design covering matrix orchestration, caching, coverage enforcement, and Phoenix timing.
+**Note:** See `docs/ci/ci-hardening.md` for the full runbook, rollback playbook, and contributor guidance.
+**Action:** Documented matrixed workflows, tooling alignment, caching strategy, coverage gates, timestamp policy, and rollback operations.
 ### Ruff Import Hygiene
 **Decision:** Standardize import hygiene with Ruff (E402/F404/I) across local and CI gates.
 **Note:** See `docs/runbook/linting.md` for Phoenix-aware workflows using `pre-commit run --all-files`.
