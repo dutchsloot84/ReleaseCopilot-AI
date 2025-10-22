@@ -15,9 +15,8 @@ from config.loader import (
     get_secrets_mapping,
     load_config,
 )
+from ops.health import ReadinessOptions, run_readiness
 from releasecopilot.logging_config import get_logger
-
-from ..ops.health import ReadinessOptions, run_readiness
 
 LOGGER = get_logger(__name__)
 

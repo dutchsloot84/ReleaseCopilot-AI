@@ -35,9 +35,7 @@ def test_group_release_notes_groups_by_issue_type() -> None:
     assert set(grouped.keys()) == {"Story", "Bug", "Enhancement"}
     assert [note.issue_key for note in grouped["Story"]] == ["APP-1"]
     assert [note.issue_key for note in grouped["Bug"]] == ["APP-2"]
-    assert [note.url for note in grouped["Enhancement"]] == [
-        "https://example.invalid/browse/APP-3"
-    ]
+    assert [note.url for note in grouped["Enhancement"]] == ["https://example.invalid/browse/APP-3"]
 
     serialised = serialise_grouped_notes(grouped)
     assert serialised["Story"][0]["summary"] == "Add login endpoint"

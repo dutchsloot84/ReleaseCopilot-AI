@@ -12,12 +12,6 @@ repos:
         args:
           - "--config-file"
           - "pyproject.toml"
-          - "-p"
-          - "releasecopilot"
-          - "-p"
-          - "src.cli"
-          - "-p"
-          - "clients"
         pass_filenames: false
         additional_dependencies:
           - types-PyYAML==6.0.12.20240808

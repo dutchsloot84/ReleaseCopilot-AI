@@ -21,7 +21,9 @@ def _discover_latest(directory: Path, suffix: str) -> Path | None:
     latest = directory / f"latest{suffix}"
     if latest.exists():
         return latest
-    candidates = sorted(directory.glob(f"*{suffix}"), key=lambda file: file.stat().st_mtime, reverse=True)
+    candidates = sorted(
+        directory.glob(f"*{suffix}"), key=lambda file: file.stat().st_mtime, reverse=True
+    )
     return candidates[0] if candidates else None
 
 

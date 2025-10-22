@@ -36,6 +36,7 @@ Decision:
 
 Note (2025-02-14 America/Phoenix):
 - CI will auto-fix import ordering on pull requests and push a `[skip ci]` commit titled `style: organize imports (ruff isort)` if required.
+- The project enforces a single `src` package root. Imports should never be prefixed with `src.`; rely on the package names (`cli`, `export`, `releasecopilot`, etc.) instead.
 
 Action:
 - Run `pre-commit install` once so the ruff hooks execute locally before each commit.

@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import importlib
+from pathlib import Path
 import sys
 import types
-from pathlib import Path
 
 import pytest
 
@@ -45,14 +45,18 @@ def component_context(monkeypatch: pytest.MonkeyPatch) -> tuple[_StreamlitStub, 
     return stub, component
 
 
-def test_panel_disables_buttons_when_missing(tmp_path: Path, component_context: tuple[_StreamlitStub, types.ModuleType]) -> None:
+def test_panel_disables_buttons_when_missing(
+    tmp_path: Path, component_context: tuple[_StreamlitStub, types.ModuleType]
+) -> None:
     stub, component = component_context
     component.render_release_artifacts_panel(base_dir=tmp_path)
     assert stub.downloads == []
     assert any("Release artifacts" in caption for caption in stub.captions)
 
 
-def test_panel_enables_downloads(tmp_path: Path, component_context: tuple[_StreamlitStub, types.ModuleType]) -> None:
+def test_panel_enables_downloads(
+    tmp_path: Path, component_context: tuple[_StreamlitStub, types.ModuleType]
+) -> None:
     stub, component = component_context
     release_dir = tmp_path / "release_notes"
     release_dir.mkdir()

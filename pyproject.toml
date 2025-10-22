@@ -4,7 +4,8 @@ target-version = "py310"
 src = ["src", "."]
 
 [tool.ruff.lint]
-select = ["E4", "F", "I"]
+select = ["E4", "F"]
+extend-select = ["I"]
 ignore = []
 fixable = ["ALL"]
 
@@ -34,7 +35,7 @@ target-version = ["py310"]
 
 [tool.mypy]
 python_version = "3.11"
-mypy_path = "src"
+mypy_path = ["src"]
 explicit_package_bases = true
 namespace_packages = true
 ignore_missing_imports = true
@@ -42,6 +43,7 @@ follow_imports = "silent"
 warn_unused_configs = true
 warn_redundant_casts = true
 show_error_codes = true
+files = ["src", "tests"]
 
 [[tool.mypy.overrides]]
 module = "rag_aws.*"
@@ -49,6 +51,10 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "services.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
 ignore_errors = true
 
 [tool.pytest.ini_options]

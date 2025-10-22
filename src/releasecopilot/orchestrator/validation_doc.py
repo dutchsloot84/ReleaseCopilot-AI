@@ -3,8 +3,22 @@
 from __future__ import annotations
 
 from typing import Iterable, Mapping
-
 from zoneinfo import ZoneInfo
+
+from typing_extensions import TypedDict
+
+
+class ValidationDocItem(TypedDict):
+    issue_key: str
+    summary: str
+    deployment_notes: str
+    url: str
+
+
+class ValidationDocPayload(TypedDict):
+    deployment_notes_field_id: str
+    items: list[ValidationDocItem]
+
 
 PHOENIX_TZ = ZoneInfo("America/Phoenix")
 
@@ -71,11 +85,11 @@ def build_validation_doc(
     issues: Iterable[Mapping[str, object]],
     settings: Mapping[str, object] | None,
     base_url: str | None,
-) -> dict[str, object]:
+) -> ValidationDocPayload:
     """Build the validation document payload without run metadata."""
 
     field_id = _resolve_deployment_notes_field(settings)
-    items: list[dict[str, str]] = []
+    items: list[ValidationDocItem] = []
     for issue in issues:
         key = issue.get("key") or issue.get("issue_key")
         if not isinstance(key, str) or not key.strip():
@@ -96,4 +110,9 @@ def build_validation_doc(
     }
 
 
-__all__ = ["build_validation_doc", "PHOENIX_TZ"]
+__all__ = [
+    "ValidationDocItem",
+    "ValidationDocPayload",
+    "build_validation_doc",
+    "PHOENIX_TZ",
+]

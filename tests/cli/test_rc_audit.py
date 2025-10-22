@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from cli import app
 from config.loader import load_defaults
-from src.cli import app
 
 
 @pytest.fixture(name="defaults")

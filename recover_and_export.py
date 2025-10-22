@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 from typing import Any, Dict, Iterable
 
-from src.export.exporter import build_export_payload, export_all
+from export.exporter import build_export_payload, export_all
 
 LOGGER = logging.getLogger("recover")
 

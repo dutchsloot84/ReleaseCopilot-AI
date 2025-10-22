@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 import json
 import os
-import time
-from datetime import datetime
 from pathlib import Path
+import time
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import pytest
-from zoneinfo import ZoneInfo
 
 from config.loader import Defaults
 from releasecopilot.orchestrator.release_exports import run_release_exports
@@ -37,7 +37,9 @@ def _write_report(directory: Path, name: str, payload: dict[str, object], *, mti
     os.utime(path, (mtime, mtime))
 
 
-def test_release_export_writes_artifacts(tmp_path: Path, sample_defaults: Defaults, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_release_export_writes_artifacts(
+    tmp_path: Path, sample_defaults: Defaults, monkeypatch: pytest.MonkeyPatch
+) -> None:
     reports_dir = sample_defaults.reports_dir
     artifact_root = tmp_path / "artifacts"
 
@@ -69,7 +71,10 @@ def test_release_export_writes_artifacts(tmp_path: Path, sample_defaults: Defaul
         "jira": {"base_url": "https://example.invalid"},
         "release": {"validation_doc": {"deployment_notes_field_id": "deployment_notes"}},
     }
-    monkeypatch.setattr("releasecopilot.orchestrator.release_exports.load_settings", lambda *args, **kwargs: settings)
+    monkeypatch.setattr(
+        "releasecopilot.orchestrator.release_exports.load_settings",
+        lambda *args, **kwargs: settings,
+    )
 
     result = run_release_exports(
         reports_dir=reports_dir,

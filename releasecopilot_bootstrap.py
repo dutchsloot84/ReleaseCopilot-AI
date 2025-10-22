@@ -13,7 +13,9 @@ from pathlib import Path
 import sys
 
 _SRC_DIR = Path(__file__).resolve().parent / "src"
-if str(_SRC_DIR) not in sys.path:
-    sys.path.append(str(_SRC_DIR))
+_SRC_STR = str(_SRC_DIR)
+while _SRC_STR in sys.path:
+    sys.path.remove(_SRC_STR)
+sys.path.insert(0, _SRC_STR)
 
 __all__ = ["_SRC_DIR"]

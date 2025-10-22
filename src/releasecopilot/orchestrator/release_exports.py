@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from datetime import datetime
+import json
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -23,7 +23,10 @@ from releasecopilot.orchestrator.artifacts import (
     write_release_notes_artifacts,
     write_validation_artifact,
 )
-from releasecopilot.orchestrator.validation_doc import build_validation_doc
+from releasecopilot.orchestrator.validation_doc import (
+    ValidationDocPayload,
+    build_validation_doc,
+)
 from ui.data_source import load_local_reports
 
 LOGGER = get_logger(__name__)
@@ -141,7 +144,7 @@ def run_release_exports(
     notes_payload = serialise_grouped_notes(grouped_notes)
     note_rows = flatten_grouped_notes(grouped_notes)
 
-    validation_payload = build_validation_doc(
+    validation_payload: ValidationDocPayload = build_validation_doc(
         issues=issues,
         settings=settings,
         base_url=base_url,

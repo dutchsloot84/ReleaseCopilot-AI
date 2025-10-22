@@ -10,10 +10,10 @@ import shutil
 import subprocess
 from typing import Any, Mapping, MutableMapping, Sequence
 import uuid
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 from pandas import ExcelWriter
-from zoneinfo import ZoneInfo
 
 PHOENIX_TZ = ZoneInfo("America/Phoenix")
 
@@ -85,7 +85,9 @@ def _copy_latest(source: Path, destination: Path) -> None:
     try:
         shutil.copyfile(source, destination)
     except OSError as exc:  # pragma: no cover - filesystem guard
-        raise ArtifactWriteError(f"Failed to update latest artifact at {destination}: {exc}") from exc
+        raise ArtifactWriteError(
+            f"Failed to update latest artifact at {destination}: {exc}"
+        ) from exc
 
 
 def _safe_sheet_name(name: str) -> str:

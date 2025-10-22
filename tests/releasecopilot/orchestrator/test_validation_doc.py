@@ -17,13 +17,13 @@ def test_build_validation_doc_uses_configured_field() -> None:
     ]
 
     settings = {
-        "release": {
-            "validation_doc": {"deployment_notes_field_id": "customfield_deploy"}
-        },
+        "release": {"validation_doc": {"deployment_notes_field_id": "customfield_deploy"}},
         "jira": {"base_url": "https://example.invalid"},
     }
 
-    payload = build_validation_doc(issues=issues, settings=settings, base_url=settings["jira"]["base_url"])
+    payload = build_validation_doc(
+        issues=issues, settings=settings, base_url=settings["jira"]["base_url"]
+    )
 
     assert payload["deployment_notes_field_id"] == "customfield_deploy"
     assert payload["items"] == [

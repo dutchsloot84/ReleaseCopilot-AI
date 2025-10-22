@@ -106,7 +106,9 @@ def group_release_notes(
     return dict(grouped)
 
 
-def serialise_grouped_notes(grouped: Mapping[str, Iterable[ReleaseNote]]) -> dict[str, list[dict[str, str]]]:
+def serialise_grouped_notes(
+    grouped: Mapping[str, Iterable[ReleaseNote]],
+) -> dict[str, list[dict[str, str]]]:
     """Convert grouped notes into JSON-friendly dictionaries."""
 
     output: dict[str, list[dict[str, str]]] = {}
@@ -121,12 +123,14 @@ def flatten_grouped_notes(grouped: Mapping[str, Iterable[ReleaseNote]]) -> list[
     rows: list[dict[str, str]] = []
     for change_type, notes in grouped.items():
         for note in notes:
-            rows.append({
-                "change_type": change_type,
-                "issue_key": note.issue_key,
-                "summary": note.summary,
-                "url": note.url,
-            })
+            rows.append(
+                {
+                    "change_type": change_type,
+                    "issue_key": note.issue_key,
+                    "summary": note.summary,
+                    "url": note.url,
+                }
+            )
     return rows
 
 

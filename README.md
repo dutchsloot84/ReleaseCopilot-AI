@@ -121,7 +121,7 @@ Quick spot checks without the hook wrapper mirror the CI workflow:
 ```bash
 ruff check . && \
 ruff format --check . && \
-mypy -p releasecopilot -p src.cli -p clients && \
+mypy --config-file pyproject.toml && \
 pytest
 ```
 
@@ -129,6 +129,7 @@ pytest
 
 - `tests/conftest.py` seeds a `config.settings` stub with the Phoenix timezone and disables network access by patching `socket.socket` and `socket.create_connection` for the entire session.
 - Individual tests must not manipulate `sys.path`, inject modules into `sys.modules`, or import `releasecopilot_bootstrap`; rely on standard imports at the top of the file.
+- Import code directly from its package name (for example `from cli.shared import ...`); avoid `src.`-prefixed imports now that the repository enforces a single `src` package root for mypy and ruff.
 - Any test that needs custom configuration should patch helpers on the imported module (for example `main.load_settings`) rather than performing ad-hoc bootstrapping.
 - Attempts to open outbound sockets raise a `RuntimeError` so network regressions fail fast both locally and in CI.
 
