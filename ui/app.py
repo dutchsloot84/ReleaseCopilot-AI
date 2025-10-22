@@ -14,6 +14,7 @@ import streamlit as st
 from tracking import api as tracking_api
 from tracking.diff import render_diff_markdown
 from ui import transform
+from ui.components import render_release_artifacts_panel
 from ui.data_source import RunRef, load_local_reports, load_s3_json, load_s3_listing
 
 st.set_page_config(page_title="ReleaseCopilot Audit Dashboard", layout="wide")
@@ -263,6 +264,8 @@ with orphan_tab:
             st.caption(
                 f"Excel: s3://{current_bucket}/{current_run_ref.excel_key} (unable to generate presigned URL)"
             )
+
+    render_release_artifacts_panel(base_dir=Path("artifacts"))
 
 with compare_tab:
     if not compare_enabled:

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Validation Document Artifact",
+  "type": "object",
+  "required": [
+    "run_id",
+    "git_sha",
+    "generated_at",
+    "timezone",
+    "deployment_notes_field_id",
+    "items"
+  ],
+  "properties": {
+    "run_id": {"type": "string"},
+    "git_sha": {"type": "string"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "timezone": {"type": "string", "const": "America/Phoenix"},
+    "deployment_notes_field_id": {"type": "string"},
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["issue_key", "summary", "deployment_notes", "url"],
+        "properties": {
+          "issue_key": {"type": "string"},
+          "summary": {"type": "string"},
+          "deployment_notes": {"type": "string"},
+          "url": {"type": "string"}
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

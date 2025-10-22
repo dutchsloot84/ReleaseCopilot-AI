@@ -204,6 +204,16 @@ The command above reads the cached JSON payloads stored in `temp_data/`, writes
 the regenerated JSON and Excel artifacts to `dist/`, and annotates the execution
 scope with the selected fix version.
 
+### Release exports
+
+Run `rc orchestrator release-export` after an audit completes to generate grouped
+release notes and a validation document. The command loads the latest JSON from
+`--reports-dir` (default: `reports/`), stamps the outputs with Phoenix-local
+metadata (`run_id`, `git_sha`, `generated_at`, `timezone`), and writes artifacts
+to `--artifact-root` (default: `artifacts/`). Streamlit surfaces download buttons
+for these files once they exist, enabling stakeholders to retrieve Release Notes
+and Validation Docs directly from the Orphan tab.
+
 ### Available options
 
 | Flag | Description |

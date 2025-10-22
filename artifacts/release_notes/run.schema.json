@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Release Notes Artifact",
+  "type": "object",
+  "required": ["run_id", "git_sha", "generated_at", "timezone", "notes"],
+  "properties": {
+    "run_id": {"type": "string"},
+    "git_sha": {"type": "string"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "timezone": {"type": "string", "const": "America/Phoenix"},
+    "notes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["issue_key", "summary", "change_type", "url"],
+          "properties": {
+            "issue_key": {"type": "string"},
+            "summary": {"type": "string"},
+            "change_type": {"type": "string"},
+            "url": {"type": "string"}
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}
