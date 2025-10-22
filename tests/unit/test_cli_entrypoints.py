@@ -9,9 +9,9 @@ import pytest
 
 @pytest.fixture()
 def main_module():
-    import main
+    from releasecopilot.entrypoints import audit
 
-    return importlib.reload(main)
+    return importlib.reload(audit)
 
 
 @pytest.fixture()

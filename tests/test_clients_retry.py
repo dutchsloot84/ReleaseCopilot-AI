@@ -11,7 +11,7 @@ import requests
 
 from clients.bitbucket_client import BitbucketClient
 from clients.jira_client import JiraClient
-import main
+from releasecopilot.entrypoints import audit as audit_module
 from releasecopilot.errors import (
     BitbucketRequestError,
     JiraJQLFailed,
@@ -282,8 +282,8 @@ def test_run_audit_uses_injected_providers(monkeypatch: pytest.MonkeyPatch, tmp_
 
     data_dir = tmp_path / "data"
     temp_dir = tmp_path / "temp"
-    monkeypatch.setattr(main, "DATA_DIR", data_dir)
-    monkeypatch.setattr(main, "TEMP_DIR", temp_dir)
+    monkeypatch.setattr(audit_module, "DATA_DIR", data_dir)
+    monkeypatch.setattr(audit_module, "TEMP_DIR", temp_dir)
 
     settings = {
         "aws": {"region": "us-east-1"},
@@ -297,7 +297,7 @@ def test_run_audit_uses_injected_providers(monkeypatch: pytest.MonkeyPatch, tmp_
         "jira": {"base_url": "https://example", "credentials": {}},
     }
 
-    monkeypatch.setattr(main, "load_settings", lambda overrides=None: settings)
+    monkeypatch.setattr(audit_module, "load_settings", lambda overrides=None: settings)
 
     def fail_build_jira_store(_: Any) -> None:
         raise AssertionError("build_jira_store should not be called")
@@ -305,8 +305,8 @@ def test_run_audit_uses_injected_providers(monkeypatch: pytest.MonkeyPatch, tmp_
     def fail_build_bitbucket(_: Any) -> None:
         raise AssertionError("build_bitbucket_client should not be called")
 
-    monkeypatch.setattr(main, "build_jira_store", fail_build_jira_store)
-    monkeypatch.setattr(main, "build_bitbucket_client", fail_build_bitbucket)
+    monkeypatch.setattr(audit_module, "build_jira_store", fail_build_jira_store)
+    monkeypatch.setattr(audit_module, "build_bitbucket_client", fail_build_bitbucket)
 
     class DummyAuditProcessor:
         def __init__(self, *, issues: list[dict[str, Any]], commits: list[dict[str, Any]]) -> None:
@@ -331,8 +331,8 @@ def test_run_audit_uses_injected_providers(monkeypatch: pytest.MonkeyPatch, tmp_
             path.write_text("excel", encoding="utf-8")
             return path
 
-    monkeypatch.setattr(main, "AuditProcessor", DummyAuditProcessor)
-    monkeypatch.setattr(main, "ExcelExporter", DummyExcelExporter)
+    monkeypatch.setattr(audit_module, "AuditProcessor", DummyAuditProcessor)
+    monkeypatch.setattr(audit_module, "ExcelExporter", DummyExcelExporter)
 
     uploads: dict[str, Any] = {}
 
@@ -354,14 +354,14 @@ def test_run_audit_uses_injected_providers(monkeypatch: pytest.MonkeyPatch, tmp_
             }
         )
 
-    monkeypatch.setattr(main, "upload_artifacts", capture_uploads)
+    monkeypatch.setattr(audit_module, "upload_artifacts", capture_uploads)
 
-    config = main.AuditConfig(fix_version="1.0.0", use_cache=True)
+    config = audit_module.AuditConfig(fix_version="1.0.0", use_cache=True)
 
     issue_provider = DummyIssueProvider()
     commit_provider = DummyCommitProvider()
 
-    result = main.run_audit(
+    result = audit_module.run_audit(
         config,
         issue_provider=issue_provider,
         commit_provider=commit_provider,
@@ -379,8 +379,8 @@ def test_run_audit_uses_injected_providers(monkeypatch: pytest.MonkeyPatch, tmp_
 def test_run_audit_uses_provider_factories(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
     data_dir = tmp_path / "data"
     temp_dir = tmp_path / "temp"
-    monkeypatch.setattr(main, "DATA_DIR", data_dir)
-    monkeypatch.setattr(main, "TEMP_DIR", temp_dir)
+    monkeypatch.setattr(audit_module, "DATA_DIR", data_dir)
+    monkeypatch.setattr(audit_module, "TEMP_DIR", temp_dir)
 
     settings = {
         "aws": {"region": "us-east-1"},
@@ -394,7 +394,7 @@ def test_run_audit_uses_provider_factories(monkeypatch: pytest.MonkeyPatch, tmp_
         "jira": {"base_url": "https://example", "credentials": {}},
     }
 
-    monkeypatch.setattr(main, "load_settings", lambda overrides=None: settings)
+    monkeypatch.setattr(audit_module, "load_settings", lambda overrides=None: settings)
 
     issue_factory_calls: list[dict[str, Any]] = []
     commit_factory_calls: list[dict[str, Any]] = []
@@ -435,18 +435,18 @@ def test_run_audit_uses_provider_factories(monkeypatch: pytest.MonkeyPatch, tmp_
         return DummyCommitProvider()
 
     monkeypatch.setattr(
-        main,
+        audit_module,
         "build_jira_store",
         lambda settings: (_ for _ in ()).throw(AssertionError("should not build store")),
     )
     monkeypatch.setattr(
-        main,
+        audit_module,
         "build_bitbucket_client",
         lambda settings: (_ for _ in ()).throw(AssertionError("should not build client")),
     )
 
     monkeypatch.setattr(
-        main,
+        audit_module,
         "AuditProcessor",
         lambda *, issues, commits: SimpleNamespace(
             process=lambda: SimpleNamespace(
@@ -468,17 +468,17 @@ def test_run_audit_uses_provider_factories(monkeypatch: pytest.MonkeyPatch, tmp_
             path.write_text("excel", encoding="utf-8")
             return path
 
-    monkeypatch.setattr(main, "ExcelExporter", DummyExcelExporter)
+    monkeypatch.setattr(audit_module, "ExcelExporter", DummyExcelExporter)
 
     monkeypatch.setattr(
-        main,
+        audit_module,
         "upload_artifacts",
         lambda **_: None,
     )
 
-    config = main.AuditConfig(fix_version="2.0.0")
+    config = audit_module.AuditConfig(fix_version="2.0.0")
 
-    result = main.run_audit(
+    result = audit_module.run_audit(
         config,
         issue_provider_factory=issue_factory,
         commit_provider_factory=commit_factory,

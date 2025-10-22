@@ -2,20 +2,10 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import sys
 from typing import Sequence
 
-try:
-    from main import run_audit
-except ModuleNotFoundError:
-    fallback_root = Path(__file__).resolve().parents[2]
-    if str(fallback_root) not in sys.path:
-        sys.path.insert(0, str(fallback_root))
-    fallback_src = fallback_root / "src"
-    if str(fallback_src) not in sys.path:
-        sys.path.insert(1, str(fallback_src))
-    from main import run_audit
+from releasecopilot.entrypoints.audit import run_audit
 
 try:  # pragma: no cover - optional dependency loading
     from dotenv import load_dotenv

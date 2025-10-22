@@ -43,7 +43,7 @@ flowchart TD
 - CI never stores secrets or tokens in logs; GitHub-provided tokens remain masked and are not echoed.
 
 ## Local Development
-1. Install dependencies: `pip install -r requirements-dev.txt`.
+1. Install dependencies: `pip install -e .[dev]`.
 2. Run formatters: `ruff check . && black --check .`.
 3. Type check: `mypy` (modules touched).
 4. Tests: `pytest --cov --cov-report=term-missing` (network calls must be mocked).

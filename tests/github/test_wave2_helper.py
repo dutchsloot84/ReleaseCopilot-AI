@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from releasecopilot.logging_config import get_logger
-from scripts.github.wave2_helper import (
+from releasecopilot.wave.wave2_helper import (
     Issue,
     Wave2Helper,
     Wave2HelperConfig,

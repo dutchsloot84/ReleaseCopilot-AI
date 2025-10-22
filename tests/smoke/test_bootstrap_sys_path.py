@@ -1,30 +1,33 @@
-"""Smoke tests around the bootstrap module's sys.path handling."""
+"""Smoke tests ensuring the new console entry points remain pure."""
 
 from __future__ import annotations
 
 import importlib
-from pathlib import Path
 import sys
 
 import pytest
 
 
-def test_bootstrap_places_src_first(monkeypatch: pytest.MonkeyPatch) -> None:
-    project_root = Path(__file__).resolve().parents[2]
-    expected = str(project_root / "src")
-    original_path = ["alpha", str(project_root), expected, "beta", expected]
-    if monkeypatch is not None:
-        monkeypatch.setattr(sys, "path", original_path.copy())
-    else:
-        sys.path = original_path.copy()
+def test_main_wrapper_import_keeps_sys_path_unchanged(monkeypatch: pytest.MonkeyPatch) -> None:
+    original = list(sys.path)
+    module = importlib.reload(importlib.import_module("main"))
+    assert module.main is not None
+    assert sys.path == original
 
-    module = importlib.import_module("releasecopilot_bootstrap")
-    importlib.reload(module)
 
-    assert sys.path[0] == expected
-    assert sys.path.count(expected) == 1
+def test_wave2_entrypoint_converts_system_exit(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
 
-    importlib.reload(module)
+    def fake_main(*, args: list[str] | None, standalone_mode: bool) -> None:
+        captured["args"] = args
+        captured["standalone_mode"] = standalone_mode
+        raise SystemExit(5)
 
-    assert sys.path[0] == expected
-    assert sys.path.count(expected) == 1
+    monkeypatch.setattr("releasecopilot.entrypoints.wave2.wave2_cli.main", fake_main, raising=True)
+
+    from releasecopilot.entrypoints import wave2
+
+    code = wave2.main(["--dry-run"])
+    assert code == 5
+    assert captured["args"] == ["--dry-run"]
+    assert captured["standalone_mode"] is False
