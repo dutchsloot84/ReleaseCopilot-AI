@@ -61,3 +61,8 @@ Troubleshooting tips:
 - The `check-generated-wave` hook calls `python -m tools.hooks.check_generator_drift` to regenerate Wave artifacts and asserts `docs/mop`, `docs/sub-prompts`, and `artifacts/` match Git history.
 - Set `RELEASECOPILOT_SKIP_GENERATOR=1` when you intentionally skip regeneration (for example, on CI jobs that stage artifacts beforehand).
 - On failure it exits with drift instructions so you can re-run `python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix --archive` and commit the refreshed outputs.
+
+## Tests & coverage
+
+Pytest defaults to `--cov=src` and writes JSON/XML reports so CI can enforce the ≥70% threshold from `pyproject.toml`.
+Infrastructure helpers in `infra/`, `scripts/`, and `tools/` plus entry-point wrappers like `src/**/__main__.py` are omitted from coverage calculations, keeping the gate focused on application code.
