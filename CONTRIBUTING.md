@@ -52,3 +52,9 @@ Troubleshooting tips:
 - If ruff raises module grouping errors (I001), ensure the module belongs to one of the configured sections: stdlib, third-party, `config`/`releasecopilot`, then relative imports.
 - When a PR originates from a fork, pre-commit.ci cannot push auto-fix commits. In that situation the workflow fails with a reminder—run the commands above locally and push manually.
 - Verify `python -m pip install -r requirements-dev.txt` so the local hooks share the same versions as CI.
+
+## Linting & pre-commit.ci
+
+- Local: `pre-commit run --all-files` applies ruff fixes, formatting, mypy, and ancillary checks before you push.
+- Pull requests: [pre-commit.ci](https://pre-commit.ci/) runs the same hooks, may push auto-fix commits, and reruns its checks after applying fixes.
+- GitHub Actions executes the hook suite in check-only mode (`scripts/ci/run_precommit.sh`) with `mypy --config-file pyproject.toml` and `pytest`; Actions never applies auto-fixes.
