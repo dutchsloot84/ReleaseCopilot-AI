@@ -131,7 +131,7 @@ pytest
 
 - Local: `pre-commit run --all-files` applies ruff fixes, formatting, mypy, and ancillary checks before you push.
 - Pull requests: [pre-commit.ci](https://pre-commit.ci/) runs the same hook set, may auto-commit fixes, and reruns its checks once the fixes land.
-- GitHub Actions runs format and lint checks in check-only mode (`scripts/ci/run_precommit.sh`) alongside `mypy --config-file pyproject.toml` and `pytest`; no auto-fixes are applied in Actions.
+- GitHub Actions installs the project editable and runs check-only linting via `scripts/ci/run_precommit.sh` (`ruff format --check .`, `ruff check --output-format=github .`, and `mypy --config-file pyproject.toml`); Actions never applies auto-fixes.
 
 ### Import hygiene & test isolation
 

@@ -57,4 +57,4 @@ Troubleshooting tips:
 
 - Local: `pre-commit run --all-files` applies ruff fixes, formatting, mypy, and ancillary checks before you push.
 - Pull requests: [pre-commit.ci](https://pre-commit.ci/) runs the same hooks, may push auto-fix commits, and reruns its checks after applying fixes.
-- GitHub Actions executes the hook suite in check-only mode (`scripts/ci/run_precommit.sh`) with `mypy --config-file pyproject.toml` and `pytest`; Actions never applies auto-fixes.
+- GitHub Actions installs the repository in editable mode, then runs check-only linting via `scripts/ci/run_precommit.sh` (`ruff format --check .`, `ruff check --output-format=github .`, and `mypy --config-file pyproject.toml`); Actions never applies auto-fixes.
