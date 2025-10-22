@@ -11,7 +11,7 @@ Prompt waves rely on Codex-generated artifacts backed by CI enforcement.
 - **`validate_prompts.yml`**
   - Triggers on pull requests.
   - Uses `project/prompts/waves.json` to determine which waves enforce recipe coverage and executes `tools/validate_prompts.py` for each active wave.
-  - Runs `ruff`, `black --check`, `mypy`, and `pytest --cov=. --cov-report=term-missing --cov-fail-under=70` for consistent linting and coverage gates.
+  - Runs Ruff (lint and format), `mypy`, and `pytest --cov=. --cov-report=term-missing --cov-fail-under=70` for consistent linting and coverage gates.
 - **`actions_comment.yml`**
   - Triggers on PR open and synchronize events.
   - Runs `tools/render_actions_comment.py` to read `actions/pending_actions.json`, render outstanding human actions, and apply labels.
@@ -44,7 +44,7 @@ flowchart TD
 
 ## Local Development
 1. Install dependencies: `pip install -e .[dev]`.
-2. Run formatters: `ruff check . && black --check .`.
+2. Run formatters: `ruff check . && ruff format --check .`.
 3. Type check: `mypy` (modules touched).
 4. Tests: `pytest --cov --cov-report=term-missing` (network calls must be mocked).
 

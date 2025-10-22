@@ -25,7 +25,7 @@ packaging or CDK synthesis begin.
 
 ## Tooling Configuration
 
-- Ruff, Ruff-format, mypy, pytest, and black share a single source of truth in
+- Ruff (lint and format), mypy, and pytest share a single source of truth in
   `pyproject.toml`. The mypy settings focus on actionable warnings (redundant
   casts, implicit `Any` returns) while retaining the legacy overrides
   (`services.*`, `rag_aws.*`) and defaulting optional third-party dependencies
