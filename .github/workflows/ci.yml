@@ -221,9 +221,9 @@ PY
         run: |
           pytest
           if [ -n "$COVERAGE_PATHS" ]; then
-            python tools/coverage_gate.py coverage.json --minimum 70 --paths $COVERAGE_PATHS
+            python tools/coverage_gate.py coverage.json --paths $COVERAGE_PATHS
           else
-            python tools/coverage_gate.py coverage.json --minimum 70
+            python tools/coverage_gate.py coverage.json
           fi
 
       - name: Coverage PR comment
@@ -232,9 +232,9 @@ PY
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -n "$COVERAGE_PATHS" ]; then
-            python -m releasecopilot.cli pr-comment coverage --file coverage.json --minimum 70 --paths $COVERAGE_PATHS
+            python -m releasecopilot.cli pr-comment coverage --file coverage.json --paths $COVERAGE_PATHS
           else
-            python -m releasecopilot.cli pr-comment coverage --file coverage.json --minimum 70
+            python -m releasecopilot.cli pr-comment coverage --file coverage.json
           fi
 
       - name: Upload coverage reports

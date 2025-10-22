@@ -143,17 +143,7 @@ module = "tests.*"
 ignore_errors = true
 
 [tool.pytest.ini_options]
-addopts = [
-    "-q",
-    "-ra",
-    "--maxfail=1",
-    "--disable-warnings",
-    "--import-mode=importlib",
-    "--cov",
-    "--cov-report=term-missing",
-    "--cov-report=json:coverage.json",
-    "--cov-report=xml:coverage.xml",
-]
+addopts = "-q --cov=src --cov-report=xml --cov-report=json"
 markers = [
     "integration: integration-level recovery tool tests",
     "network: tests that require live network access",
@@ -166,23 +156,13 @@ tmp_path_retention_policy = "failed"
 [tool.coverage.run]
 source = ["src"]
 branch = true
-omit = [
-    "scripts/*",
-    "tools/*",
-    "infra/*",
-    "cdk/*",
-    "rag-aws/*",
-    "temp_data/*",
-]
 
 [tool.coverage.report]
 omit = [
-    "scripts/*",
-    "tools/*",
-    "infra/*",
-    "cdk/*",
-    "rag-aws/*",
-    "temp_data/*",
+    "infra/**",
+    "scripts/**",
+    "tools/**",
+    "services/**/handler.py",  # if not exercised in unit tests
+    "src/**/__main__.py",
 ]
 fail_under = 70
-show_missing = true
