@@ -6,7 +6,7 @@ gen-wave3:
 	$(PYTHON) main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix
 
 check-generated:
-	./scripts/ci/check_generator_drift.sh
+	$(PYTHON) -m tools.hooks.check_generator_drift
 
 lint:
 	pre-commit run --all-files --show-diff-on-failure

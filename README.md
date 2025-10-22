@@ -127,11 +127,11 @@ mypy --config-file pyproject.toml && \
 pytest
 ```
 
-### Linting & formatting in CI
+### Linting & pre-commit.ci
 
 - Local: `pre-commit run --all-files` applies ruff fixes, formatting, mypy, and ancillary checks before you push.
-- Pull requests: [pre-commit.ci](https://pre-commit.ci/) auto-applies the same hooks and may push a follow-up commit titled `chore(pre-commit): auto fixes from pre-commit.ci`.
-- GitHub Actions runs check-only linting (`scripts/ci/run_precommit.sh`), `mypy --config-file pyproject.toml`, and `pytest`; if lint fails, rerun the hooks locally or wait for the bot’s commit.
+- Pull requests: [pre-commit.ci](https://pre-commit.ci/) runs the same hook set, may auto-commit fixes, and reruns its checks once the fixes land.
+- GitHub Actions installs the project editable and runs check-only linting via `scripts/ci/run_precommit.sh` (`ruff format --check .`, `ruff check --output-format=github .`, and `mypy --config-file pyproject.toml`); Actions never applies auto-fixes.
 
 ### Import hygiene & test isolation
 
