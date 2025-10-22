@@ -51,7 +51,6 @@ from releasecopilot.utils.jira_csv_loader import (
 )
 from tools.generator.generator import run_cli as run_generator_cli
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 

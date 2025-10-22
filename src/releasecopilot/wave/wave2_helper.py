@@ -17,9 +17,8 @@ from jinja2 import Environment, FileSystemLoader
 from slugify import slugify  # type: ignore[import-untyped]
 import yaml
 
-from tools.generator.generator import TimezoneLabel, format_timezone_label
-
 from releasecopilot.logging_config import get_logger
+from tools.generator.generator import TimezoneLabel, format_timezone_label
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PHOENIX_TZ = "America/Phoenix"
