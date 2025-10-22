@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from scripts.github import wave2_helper as generator
+from releasecopilot.wave import wave2_helper as generator
 
 
 def _seed_mop(previous_wave_root: Path, content: str = "wave2") -> Path:

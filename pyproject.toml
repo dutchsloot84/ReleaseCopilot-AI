@@ -1,3 +1,88 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "releasecopilot-ai"
+version = "0.0.0"
+description = "Release Copilot automation tooling"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "Release Copilot Team"}]
+dependencies = [
+    "boto3>=1.34.0",
+    "click>=8.1.7",
+    "requests>=2.31.0",
+    "pandas>=2.1.0",
+    "openpyxl>=3.1.0",
+    "PyYAML>=6.0.0",
+    "Jinja2>=3.1.0",
+    "python-slugify>=8.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "aws-cdk-lib==2.154.1",
+    "constructs==10.3.0",
+    "python-dotenv>=1.0.0",
+    "ruff==0.6.9",
+    "pytest==8.3.3",
+    "pytest-cov==5.0.0",
+    "jsonschema>=4.23.0",
+    "black==24.10.0",
+    "mypy==1.11.2",
+    "pre-commit==3.8.0",
+    "types-PyYAML==6.0.12.20240808",
+    "types-requests==2.32.0.20241016",
+    "ruamel.yaml==0.18.6",
+]
+docs = [
+    "mkdocs==1.6.1",
+    "mkdocs-material==9.5.39",
+    "pymdown-extensions==10.11.2",
+]
+optional = [
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+rc = "releasecopilot.cli.__main__:main"
+rc-audit = "releasecopilot.entrypoints.audit:main"
+rc-recover = "releasecopilot.entrypoints.recover:main"
+rc-wave2 = "releasecopilot.entrypoints.wave2:main"
+
+[tool.setuptools.packages.find]
+where = ["src", "."]
+include = [
+    "releasecopilot*",
+    "cli*",
+    "export*",
+    "matcher*",
+    "ops*",
+    "tracking*",
+    "clients*",
+    "config*",
+    "exporters*",
+    "processors*",
+    "services*",
+    "ui*",
+    "tools*",
+    "scripts*",
+]
+exclude = [
+    "tests*",
+    "docs*",
+    "backlog*",
+    "artifacts*",
+    "reports*",
+    "dist*",
+    "temp_data*",
+    "rag-aws*",
+    "infra*",
+    "cdk*",
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"

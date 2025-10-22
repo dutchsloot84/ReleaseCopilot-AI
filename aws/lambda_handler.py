@@ -7,7 +7,8 @@ import logging
 import os
 from typing import Any, Dict
 
-from main import AuditConfig, run_audit
+from cli.shared import AuditConfig
+from releasecopilot.entrypoints.audit import run_audit
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

@@ -100,10 +100,10 @@ pip install -r requirements-optional.txt
 
 ## Local development workflow
 
-Install development dependencies (formatter, linters, type checker, and pre-commit integration):
+Install development dependencies (formatter, linters, type checker, and console entry points):
 
 ```bash
-pip install -r requirements.txt -r requirements-dev.txt
+pip install -e .[dev]
 ```
 
 Set up the shared pre-commit hooks so formatting runs automatically before every commit:
@@ -136,12 +136,27 @@ pytest
 ### Import hygiene & test isolation
 
 - `tests/conftest.py` seeds a `config.settings` stub with the Phoenix timezone and disables network access by patching `socket.socket` and `socket.create_connection` for the entire session.
-- Individual tests must not manipulate `sys.path`, inject modules into `sys.modules`, or import `releasecopilot_bootstrap`; rely on standard imports at the top of the file.
+- Individual tests must not manipulate `sys.path` or inject modules into `sys.modules`; rely on standard imports at the top of the file.
 - Import code directly from its package name (for example `from cli.shared import ...`); avoid `src.`-prefixed imports now that the repository enforces a single `src` package root for mypy and ruff.
 - Any test that needs custom configuration should patch helpers on the imported module (for example `main.load_settings`) rather than performing ad-hoc bootstrapping.
 - Attempts to open outbound sockets raise a `RuntimeError` so network regressions fail fast both locally and in CI.
 
 Hook output timestamps should remain in America/Phoenix (no DST), matching the Mission Outline Plan and ensuring determinism across CI and pre-commit.ci runs.
+
+### Console entry points
+
+Editable installs expose first-class console scripts that wrap the src-layout entry
+points:
+
+- `rc-audit` → main Release Copilot orchestration CLI (equivalent to
+  `python -m releasecopilot.entrypoints.audit`).
+- `rc-recover` → regenerate reports from cached payloads (wraps
+  `releasecopilot.entrypoints.recover`).
+- `rc-wave2` → Wave 2 helper automation for Mission Outline Plan upkeep.
+
+Tests and automation should invoke these entry points via the console script name or
+`python -m <module>` form. Direct imports keep runtime behaviour unchanged and no longer
+rely on `sys.path` manipulation.
 
 ## Contributing & Quality Gates
 
@@ -156,7 +171,7 @@ Hook output timestamps should remain in America/Phoenix (no DST), matching the M
 Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CLI renders the Mission Outline Plan (MOP), sub-prompts, issue bodies, and a JSON manifest directly from that spec.
 
 1. Update `backlog/wave3.yaml` with the new wave metadata, constraints, and sequenced PRs.
-2. Run `make gen-wave3` to execute `python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix`.
+2. Run `make gen-wave3` to execute `rc-audit generate --spec backlog/wave3.yaml --timezone America/Phoenix`.
 3. Inspect regenerated files under:
    - `docs/mop/mop_wave3.md`
    - `docs/sub-prompts/wave3/`
@@ -175,12 +190,12 @@ Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CL
 - **Jira JQL failures** – After retries are exhausted, the CLI prompts for a CSV export. Supply the path to a Jira export generated with the default column set; invalid paths or malformed CSVs are rejected with a clear Phoenix-stamped status message before re-prompting.
 - **CI failure “Generator drift detected”** – Run `make gen-wave3` locally (or execute `./scripts/ci/check_generator_drift.sh`) and commit the resulting diffs. The guard script reruns the generator and blocks PRs when artifacts drift.
 - **Archive skipped** – The generator only archives the previous wave MOP once per Phoenix day. Confirm `docs/mop/mop_wave2.md` exists before running the command.
-- **Need issue metadata** – Use the existing Wave 2 helper subcommands (for example `python scripts/github/wave2_helper.py collect`) to download issues, then stitch them into the generated sub-prompts manually.
+- **Need issue metadata** – Use the existing Wave 2 helper subcommands (for example `rc-wave2 collect`) to download issues, then stitch them into the generated sub-prompts manually.
 
 ## Configuration
 
 1. Copy `.env.example` to `.env` for local development and populate the placeholders with test credentials. The file is `.gitignore`d—keep real secrets out of version control.
-2. Install the optional dependency with `pip install -r requirements-optional.txt` to enable automatic loading of the `.env` file.
+2. Install optional extras with `pip install -e .[optional]` to enable automatic loading of the `.env` file.
 3. Review `config/defaults.yml` for the canonical configuration shape. Provide environment-specific overrides in `config/settings.yaml` (optional) or via CLI flags.
 4. Store production credentials in AWS Secrets Manager using JSON keys that match the environment variable names (e.g., `JIRA_CLIENT_ID`, `BITBUCKET_APP_PASSWORD`).
 

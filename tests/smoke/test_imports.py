@@ -9,6 +9,9 @@ MODULES: tuple[str, ...] = (
     "cli.audit",
     "cli.health",
     "export.exporter",
+    "releasecopilot.entrypoints.audit",
+    "releasecopilot.entrypoints.recover",
+    "releasecopilot.entrypoints.wave2",
     "releasecopilot.orchestrator.release_exports",
 )
 

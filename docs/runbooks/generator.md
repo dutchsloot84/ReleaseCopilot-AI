@@ -7,7 +7,7 @@ issue bodies, and manifest metadata. Follow this runbook before committing regen
 
 ## Prerequisites
 
-- Python 3.11+ with repository dependencies installed: `pip install -r requirements.txt -r requirements-dev.txt`
+- Python 3.11+ with repository dependencies installed: `pip install -e .[dev]`
 - Git workspace synced with the latest `main`
 - Phoenix-local awareness. America/Phoenix (UTC-7) is the canonical timezone. Do **not** swap to UTC or daylight-saving offsets.
 
@@ -16,9 +16,9 @@ issue bodies, and manifest metadata. Follow this runbook before committing regen
 1. Inspect the source manifest (`backlog/wave3.yaml`) and confirm constraints reference Phoenix explicitly.
 2. Resolve deterministic timestamps:
    ```bash
-   python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix
+   rc-audit generate --spec backlog/wave3.yaml --timezone America/Phoenix
    ```
-   - The CLI delegates to `scripts/github/wave2_helper.py generate`, persisting Phoenix timestamps everywhere.
+   - The CLI delegates to the `rc-wave2 generate` helper, persisting Phoenix timestamps everywhere.
    - A prior wave MOP archive is written to `docs/mop/archive/mop_wave<N-1>_YYYY-MM-DD.md` once per Phoenix day.
 3. Validate outputs:
    - `docs/mop/mop_wave3.md`
@@ -28,12 +28,12 @@ issue bodies, and manifest metadata. Follow this runbook before committing regen
    - `docs/mop/archive/`
 4. Re-run the generator:
    ```bash
-   python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix
+   rc-audit generate --spec backlog/wave3.yaml --timezone America/Phoenix
    ```
    No diffs should appear; idempotency is enforced by pytest coverage (`tests/generator/`).
 5. Execute the generator test suite:
    ```bash
-   pytest tests/generator --cov=scripts.github.wave2_helper
+   pytest tests/generator --cov=releasecopilot.wave.wave2_helper
    ```
    Ensure Phoenix timestamp assertions and archiver/idempotency coverage pass locally.
 6. Update documentation and changelog markers using **Decision / Note / Action** prefixes. Reference
