@@ -35,7 +35,7 @@ Decision:
 - Keep ruff/isort as the source of truth for organizing imports across all Python modules.
 
 Note (2025-02-14 America/Phoenix):
-- CI will auto-fix import ordering on pull requests and push a `[skip ci]` commit titled `style: organize imports (ruff isort)` if required.
+- [pre-commit.ci](https://pre-commit.ci/) runs on every pull request and may push a `chore(pre-commit): auto fixes from pre-commit.ci` commit when lint finds reorderings.
 - The project enforces a single `src` package root. Imports should never be prefixed with `src.`; rely on the package names (`cli`, `export`, `releasecopilot`, etc.) instead.
 
 Action:
@@ -45,10 +45,10 @@ Follow these steps whenever you touch imports:
 
 1. Format and sort locally with `ruff check --fix .` followed by `ruff format .`.
 2. Run `pre-commit run --all-files` to confirm there are no lingering lint adjustments.
-3. If CI still reports import changes, fetch the bot's auto-fix commit, rebase, and push again.
+3. If CI still reports import changes, wait for pre-commit.ci to push its fix commit or run the hooks locally and push again.
 
 Troubleshooting tips:
 
 - If ruff raises module grouping errors (I001), ensure the module belongs to one of the configured sections: stdlib, third-party, `config`/`releasecopilot`, then relative imports.
-- When a PR originates from a fork, GitHub Actions cannot push auto-fix commits. In that situation the workflow fails with a reminder—run the commands above locally and push manually.
+- When a PR originates from a fork, pre-commit.ci cannot push auto-fix commits. In that situation the workflow fails with a reminder—run the commands above locally and push manually.
 - Verify `python -m pip install -r requirements-dev.txt` so the local hooks share the same versions as CI.

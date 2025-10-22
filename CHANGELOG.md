@@ -1,4 +1,8 @@
 ## [Unreleased]
+### pre-commit.ci Adoption
+**Decision:** Adopt pre-commit.ci for lint autofixes while converting GitHub Actions linting to a check-only gate that respects the single `src` package root.
+**Note:** Contributors should run `pre-commit run --all-files` locally; pre-commit.ci may push `chore(pre-commit): auto fixes from pre-commit.ci` commits, and CI logs continue to reference America/Phoenix scheduling guidance.
+**Action:** Added a pre-commit.ci badge and workflow notes in `README.md`/`CONTRIBUTING.md`, updated `.github/workflows/ci.yml` and `scripts/ci/run_precommit.sh` for check-only linting, and configured `.pre-commit-config.yaml` with bot automation metadata.
 ### CI Matrix Hardening Refresh
 **Decision:** Split GitHub Actions into cached lint, type-check, and test jobs on Python 3.10/3.11 while enforcing pre-commit, mypy, and coverage thresholds via `pyproject.toml`.
 **Note:** See `docs/ci/ci-hardening.md` for workflow topology, caching keys, Phoenix timestamp policy, and rollback guidance.

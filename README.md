@@ -1,5 +1,7 @@
 # releasecopilot-ai
 
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Release-Copilot/ReleaseCopilot-AI/main.svg)](https://results.pre-commit.ci/latest/github/Release-Copilot/ReleaseCopilot-AI/main)
+
 Releasecopilot AI automates release audits by correlating Jira stories with Bitbucket commits and exporting structured reports. The project ships with a modular Python codebase, Docker packaging, and AWS primitives for Lambda or container-based execution. This project is distributed under the [MIT License](LICENSE).
 
 > **Weekly Git Historian:** Our scheduled [`weekly-history`](.github/workflows/weekly-history.yml) workflow lints the repository's
@@ -125,6 +127,12 @@ mypy --config-file pyproject.toml && \
 pytest
 ```
 
+### Linting & formatting in CI
+
+- Local: `pre-commit run --all-files` applies ruff fixes, formatting, mypy, and ancillary checks before you push.
+- Pull requests: [pre-commit.ci](https://pre-commit.ci/) auto-applies the same hooks and may push a follow-up commit titled `chore(pre-commit): auto fixes from pre-commit.ci`.
+- GitHub Actions runs check-only linting (`scripts/ci/run_precommit.sh`), `mypy --config-file pyproject.toml`, and `pytest`; if lint fails, rerun the hooks locally or wait for the bot’s commit.
+
 ### Import hygiene & test isolation
 
 - `tests/conftest.py` seeds a `config.settings` stub with the Phoenix timezone and disables network access by patching `socket.socket` and `socket.create_connection` for the entire session.
@@ -133,7 +141,7 @@ pytest
 - Any test that needs custom configuration should patch helpers on the imported module (for example `main.load_settings`) rather than performing ad-hoc bootstrapping.
 - Attempts to open outbound sockets raise a `RuntimeError` so network regressions fail fast both locally and in CI.
 
-The pre-commit hooks run `ruff check --fix`, `ruff format`, and `mypy` locally, catching formatting drifts before CI. Wave 3 automation expects hook output timestamps in America/Phoenix (no DST), matching the Mission Outline Plan.
+Hook output timestamps should remain in America/Phoenix (no DST), matching the Mission Outline Plan and ensuring determinism across CI and pre-commit.ci runs.
 
 ## Contributing & Quality Gates
 

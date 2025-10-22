@@ -82,15 +82,15 @@ jobs:
           ruff check --output-format=github --select E402,F404,I --fix .
           ruff format .
 
-      - name: Run pre-commit
+      - name: Run lint suite (check-only)
         run: scripts/ci/run_precommit.sh
         shell: bash
 
       - name: Verify clean working tree after linting
         run: |
           if ! git diff --quiet; then
-            echo "Linting produced changes after the auto-fix commit." >&2
-            echo "Please run 'pre-commit run --all-files' locally before pushing." >&2
+            echo "Linting produced changes even though CI runs check-only." >&2
+            echo "Run 'pre-commit run --all-files' locally or wait for pre-commit.ci to push fixes." >&2
             git status
             exit 1
           fi
@@ -128,7 +128,7 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy -p releasecopilot -p src.cli -p clients
+          mypy --config-file pyproject.toml
 
   tests:
     name: Tests (Python ${{ matrix.python-version }})
