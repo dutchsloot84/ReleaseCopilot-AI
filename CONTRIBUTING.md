@@ -52,3 +52,23 @@ Troubleshooting tips:
 - If ruff raises module grouping errors (I001), ensure the module belongs to one of the configured sections: stdlib, third-party, `config`/`releasecopilot`, then relative imports.
 - When a PR originates from a fork, pre-commit.ci cannot push auto-fix commits. In that situation the workflow fails with a reminder—run the commands above locally and push manually.
 - Verify `python -m pip install -r requirements-dev.txt` so the local hooks share the same versions as CI.
+
+## Linting & pre-commit.ci
+
+- Local: `pre-commit run --all-files` applies ruff fixes, formatting, mypy, and ancillary checks before you push.
+- Pull requests: [pre-commit.ci](https://pre-commit.ci/) runs the same hooks, may push auto-fix commits, and reruns its checks after applying fixes.
+- GitHub Actions installs the repository in editable mode, then runs check-only linting via `scripts/ci/run_precommit.sh` (`ruff format --check .`, `ruff check --output-format=github .`, and `mypy --config-file pyproject.toml`); Actions never applies auto-fixes.
+- The `check-generated-wave` hook calls `python -m tools.hooks.check_generator_drift` to regenerate Wave artifacts and asserts `docs/mop`, `docs/sub-prompts`, and `artifacts/` match Git history.
+- Set `RELEASECOPILOT_SKIP_GENERATOR=1` when you intentionally skip regeneration (for example, on CI jobs that stage artifacts beforehand).
+- On failure it exits with drift instructions so you can re-run `python -m releasecopilot.cli_releasecopilot generate --spec backlog/wave3.yaml --timezone America/Phoenix --archive` and commit the refreshed outputs.
+
+## Tests & coverage
+
+Pytest defaults to `--cov=src` and writes JSON/XML reports so CI can enforce the ≥70% threshold from `pyproject.toml`.
+Infrastructure helpers in `infra/`, `scripts/`, and `tools/` plus entry-point wrappers like `src/**/__main__.py` are omitted from coverage calculations, keeping the gate focused on application code.
+
+## CLI entry points
+
+- Implement new CLIs as modules under `src/<package>/cli_<topic>.py` with a `main(argv: list[str] | None = None) -> int` signature and `if __name__ == "__main__": raise SystemExit(main())` guard.
+- Register the console script in `[project.scripts]` within `pyproject.toml` so editable installs expose the entry point (for example `releasecopilot = "releasecopilot.cli_releasecopilot:main"`).
+- Tests that shell out to the CLI should pass `PYTHONPATH=src:.` (or rely on the installed console script) rather than editing `sys.path` inside the implementation.

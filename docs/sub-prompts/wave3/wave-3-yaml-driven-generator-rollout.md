@@ -16,7 +16,7 @@ This task originates from the Wave 3 Mission Outline Plan generated from YAML. H
 5. Risk assessment noting fallbacks and rollback steps.
 
 ### Diff-oriented implementation plan
-- Enhance generator pipeline in `main.py` or `tools/generator/` to read the YAML spec and emit MOP, sub-prompts, issue bodies, and manifest files under `docs/sub-prompts/wave3/` and `backlog/`.
+- Enhance generator pipeline in the module-based CLI (`releasecopilot.cli_releasecopilot`) or `tools/generator/` to read the YAML spec and emit MOP, sub-prompts, issue bodies, and manifest files under `docs/sub-prompts/wave3/` and `backlog/`.
 - Implement archiver `tools/generator/archive.py` to compress previous wave MOP once per day, storing in `artifacts/issues/archive/` with Phoenix timestamp metadata.
 - Add drift detection guard invoked via Make/CI/pre-commit (e.g., `scripts/ci/check_generator_drift.sh`) that runs the generator and compares outputs using `git diff --exit-code`.
 - Sequence: generator updates → archiver scheduling (idempotent daily check) → guard script integration → docs/tests.
@@ -40,7 +40,7 @@ def archive_previous_wave(now: datetime | None = None) -> Path | None:
 # scripts/ci/check_generator_drift.sh
 #!/usr/bin/env bash
 set -euo pipefail
-python main.py generate --timezone America/Phoenix
+PYTHONPATH=src:. python -m releasecopilot.cli_releasecopilot generate --timezone America/Phoenix
 git diff --stat --exit-code docs/sub-prompts/wave3 prompts backlog || {
   echo "Generator drift detected" >&2
   exit 1
@@ -48,10 +48,9 @@ git diff --stat --exit-code docs/sub-prompts/wave3 prompts backlog || {
 ```
 
 ```python
-# main.py excerpt
+# releasecopilot/cli_releasecopilot.py excerpt
 if __name__ == "__main__":
-    parser.add_argument("generate", ...)
-    parser.add_argument("--timezone", default="America/Phoenix")
+    raise SystemExit(main())
 ```
 
 ### Tests (pytest; no live network)
@@ -64,7 +63,7 @@ if __name__ == "__main__":
 ### Docs excerpt (README/runbook)
 Add to `docs/runbooks/generator.md`:
 
-> Run `python main.py generate --timezone America/Phoenix` to refresh Wave 3 artifacts. The generator archives the prior wave MOP once per Phoenix day, writing tarballs to `artifacts/issues/archive/`. CI/pre-commit executes `scripts/ci/check_generator_drift.sh` to ensure repo state matches generated outputs.
+> Run `PYTHONPATH=src:. python -m releasecopilot.cli_releasecopilot generate --timezone America/Phoenix` to refresh Wave 3 artifacts (or use the `releasecopilot` console script after installing the project). The generator archives the prior wave MOP once per Phoenix day, writing tarballs to `artifacts/issues/archive/`. CI/pre-commit executes `scripts/ci/check_generator_drift.sh` to ensure repo state matches generated outputs.
 
 Update `README.md` automation section with drift guard details.
 

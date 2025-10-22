@@ -57,7 +57,7 @@ while surfacing gap payloads for `stories_without_commits` and `commits_without_
 
 ```
 releasecopilot-ai/
-├── main.py
+├── src/releasecopilot/cli_releasecopilot.py
 ├── clients/
 ├── processors/
 ├── exporters/
@@ -127,16 +127,16 @@ mypy --config-file pyproject.toml && \
 pytest
 ```
 
-### Linting & formatting in CI
+### Linting & pre-commit.ci
 
 - Local: `pre-commit run --all-files` applies ruff fixes, formatting, mypy, and ancillary checks before you push.
-- Pull requests: [pre-commit.ci](https://pre-commit.ci/) auto-applies the same hooks and may push a follow-up commit titled `chore(pre-commit): auto fixes from pre-commit.ci`.
-- GitHub Actions runs check-only linting (`scripts/ci/run_precommit.sh`), `mypy --config-file pyproject.toml`, and `pytest`; if lint fails, rerun the hooks locally or wait for the bot’s commit.
+- Pull requests: [pre-commit.ci](https://pre-commit.ci/) runs the same hook set, may auto-commit fixes, and reruns its checks once the fixes land.
+- GitHub Actions installs the project editable and runs check-only linting via `scripts/ci/run_precommit.sh` (`ruff format --check .`, `ruff check --output-format=github .`, and `mypy --config-file pyproject.toml`); Actions never applies auto-fixes.
 
 ### Import hygiene & test isolation
 
 - `tests/conftest.py` seeds a `config.settings` stub with the Phoenix timezone and disables network access by patching `socket.socket` and `socket.create_connection` for the entire session.
-- Individual tests must not manipulate `sys.path`, inject modules into `sys.modules`, or import `releasecopilot_bootstrap`; rely on standard imports at the top of the file.
+- Individual tests must not manipulate `sys.path` or inject modules into `sys.modules`; rely on standard imports at the top of the file and the module-based CLI entry points.
 - Import code directly from its package name (for example `from cli.shared import ...`); avoid `src.`-prefixed imports now that the repository enforces a single `src` package root for mypy and ruff.
 - Any test that needs custom configuration should patch helpers on the imported module (for example `main.load_settings`) rather than performing ad-hoc bootstrapping.
 - Attempts to open outbound sockets raise a `RuntimeError` so network regressions fail fast both locally and in CI.
@@ -156,7 +156,7 @@ Hook output timestamps should remain in America/Phoenix (no DST), matching the M
 Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CLI renders the Mission Outline Plan (MOP), sub-prompts, issue bodies, and a JSON manifest directly from that spec.
 
 1. Update `backlog/wave3.yaml` with the new wave metadata, constraints, and sequenced PRs.
-2. Run `make gen-wave3` to execute `python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix`.
+2. Run `make gen-wave3` to execute `python -m releasecopilot.cli_releasecopilot generate --spec backlog/wave3.yaml --timezone America/Phoenix` with `PYTHONPATH=src:.` so the `src` layout resolves correctly. After an editable install you can invoke the same workflow with the `releasecopilot` console script.
 3. Inspect regenerated files under:
    - `docs/mop/mop_wave3.md`
    - `docs/sub-prompts/wave3/`
@@ -173,7 +173,7 @@ Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CL
 **Action:** When the audit CLI reports a JQL failure after retries, provide the path to a UTF-8 Jira CSV export when prompted. The fallback is timestamped in America/Phoenix for traceability.
 
 - **Jira JQL failures** – After retries are exhausted, the CLI prompts for a CSV export. Supply the path to a Jira export generated with the default column set; invalid paths or malformed CSVs are rejected with a clear Phoenix-stamped status message before re-prompting.
-- **CI failure “Generator drift detected”** – Run `make gen-wave3` locally (or execute `./scripts/ci/check_generator_drift.sh`) and commit the resulting diffs. The guard script reruns the generator and blocks PRs when artifacts drift.
+- **CI failure “Generator drift detected”** – Run `make gen-wave3` locally (or execute `./scripts/ci/check_generator_drift.sh`) and commit the resulting diffs. The guard script reruns the generator via `python -m releasecopilot.cli_releasecopilot` and blocks PRs when artifacts drift.
 - **Archive skipped** – The generator only archives the previous wave MOP once per Phoenix day. Confirm `docs/mop/mop_wave2.md` exists before running the command.
 - **Need issue metadata** – Use the existing Wave 2 helper subcommands (for example `python scripts/github/wave2_helper.py collect`) to download issues, then stitch them into the generated sub-prompts manually.
 

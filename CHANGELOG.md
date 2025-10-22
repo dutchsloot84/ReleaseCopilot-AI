@@ -34,7 +34,7 @@
 - **Note:** Auto-fix commits are pushed with `[skip ci]` from the GitHub Actions bot and reference America/Phoenix scheduling expectations.
 - **Action:** Updated `.github/workflows/ci.yml`, `.pre-commit-config.yaml`, and `pyproject.toml` to apply ruff check --fix + ruff format, auto-commit results, and fail if additional diffs appear.
 ### Added
-- **Decision:** Adopt `python main.py generate --timezone America/Phoenix` as the source of truth for Wave 3 artifacts.
+- **Decision:** Adopt `python -m releasecopilot.cli_releasecopilot generate --timezone America/Phoenix` as the source of truth for Wave 3 artifacts.
 - **Note:** `./scripts/ci/check_generator_drift.sh` reruns the generator and compares `docs/mop/mop_wave3.md`, `docs/sub-prompts/wave3/`, `artifacts/issues/wave3/`, and `artifacts/manifests/wave3_subprompts.json` against the manifest entry.
 - **Action:** Introduced `tools/generator/` modules, Phoenix-day archiving, and generator drift guard invoked by Make/CI/pre-commit.
 - YAML-driven Wave 3 generator (`scripts/github/wave2_helper.py generate`) emitting the MOP,

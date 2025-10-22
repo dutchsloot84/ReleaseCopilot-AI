@@ -38,7 +38,7 @@ def test_archive_is_idempotent(tmp_path):
 ## Wave 3 Generator Workflow
 
 1. Update `prompts/wave3.yml` with new missions.
-2. Run `python main.py generate --timezone America/Phoenix` to produce sub-prompts.
+2. Run `PYTHONPATH=src:. python -m releasecopilot.cli_releasecopilot generate --timezone America/Phoenix` (or the `releasecopilot` console script after installing the project) to produce sub-prompts.
 3. Validate artifacts in `docs/sub-prompts/wave3/` before committing.
 ```
 
@@ -59,7 +59,7 @@ def test_archive_is_idempotent(tmp_path):
 ### Docs excerpt (README/runbook)
 Add to `docs/runbooks/generator.md`:
 
-> Contributors should run `python main.py generate --timezone America/Phoenix` to ensure deterministic timestamps. Archive outputs land in `artifacts/issues/wave3/` with `run_id`, `git_sha`, and `generated_at` metadata.
+> Contributors should run `PYTHONPATH=src:. python -m releasecopilot.cli_releasecopilot generate --timezone America/Phoenix` (or the `releasecopilot` console script after installing the project) to ensure deterministic timestamps. Archive outputs land in `artifacts/issues/wave3/` with `run_id`, `git_sha`, and `generated_at` metadata.
 
 Update `README.md` onboarding section with step-by-step generator usage and links to Wave 3 validation coverage.
 

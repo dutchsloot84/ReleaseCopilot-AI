@@ -1,7 +1,7 @@
 # Configuration defaults
 
 `config/defaults.yml` is the canonical source of configuration for Release Copilot.
-Both the CLI (`main.py`) and the Lambda entry point resolve their runtime settings
+Both the CLI module (`releasecopilot.cli_releasecopilot`) and the Lambda entry point resolve their runtime settings
 through the shared loader in `config/loader.py`, ensuring the following
 precedence order:
 

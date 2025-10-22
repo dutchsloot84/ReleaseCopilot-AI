@@ -3,7 +3,7 @@
 ```mermaid
 flowchart TB
   subgraph CLI Layer
-    CLI[cli/main.py]
+    CLI[src/releasecopilot/cli_releasecopilot.py]
     Config[config loader]
   end
 

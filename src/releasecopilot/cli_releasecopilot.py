@@ -24,8 +24,6 @@ from zoneinfo import ZoneInfo
 
 import click
 
-import releasecopilot_bootstrap  # noqa: F401  # ensures src/ is on sys.path
-
 try:  # pragma: no cover - best effort optional dependency
     from dotenv import load_dotenv
 except Exception:  # pragma: no cover - ignore missing dependency
@@ -49,11 +47,14 @@ from releasecopilot.utils.jira_csv_loader import (
 from tools.generator.generator import run_cli as run_generator_cli
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
 def _load_local_dotenv() -> None:
     if load_dotenv is None:
         return
 
-    env_path = Path(__file__).resolve().parent / ".env"
+    env_path = PROJECT_ROOT / ".env"
     if not env_path.is_file():
         return
 
@@ -65,9 +66,8 @@ def _load_local_dotenv() -> None:
 
 _load_local_dotenv()
 
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-TEMP_DIR = BASE_DIR / "temp_data"
+DATA_DIR = PROJECT_ROOT / "data"
+TEMP_DIR = PROJECT_ROOT / "temp_data"
 PHOENIX_ZONE = ZoneInfo("America/Phoenix")
 
 
@@ -480,8 +480,8 @@ def _dispatch(argv: list[str]) -> tuple[Optional[int], Optional[tuple[Any, ...]]
     return None, (args, config)
 
 
-def main(argv: Optional[Iterable[str]] = None) -> int:
-    vector = list(argv or []) if argv is not None else sys.argv[1:]
+def main(argv: list[str] | None = None) -> int:
+    vector = list(argv) if argv is not None else sys.argv[1:]
     exit_code, parsed = _dispatch(vector)
     if exit_code is not None:
         return exit_code

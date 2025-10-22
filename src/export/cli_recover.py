@@ -1,13 +1,14 @@
-"""Standalone recovery CLI that rebuilds export artifacts from cached JSON."""
+"""Recover-and-export CLI implemented as a module entry point."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import logging
+from collections.abc import Iterable
 from pathlib import Path
 import sys
-from typing import Any, Dict, Iterable
+from typing import Any, Dict
 
 from export.exporter import build_export_payload, export_all
 
@@ -26,14 +27,18 @@ class MissingInputError(RuntimeError):
 
 
 def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Rebuild export artifacts from cached payloads")
+    parser = argparse.ArgumentParser(
+        description="Rebuild export artifacts from cached payloads",
+    )
     parser.add_argument(
         "--input-dir",
         default="temp_data/",
         help="Directory containing cached JSON payloads",
     )
     parser.add_argument(
-        "--out-dir", default="reports/", help="Directory to write regenerated reports"
+        "--out-dir",
+        default="reports/",
+        help="Directory to write regenerated reports",
     )
     parser.add_argument(
         "--format",
@@ -102,13 +107,13 @@ def build_payload_from_inputs(inputs: Dict[str, Dict[str, Any]]) -> Dict[str, An
         data={
             "summary": _ensure_dict(inputs["summary"]),
             "stories_with_no_commits": _ensure_list(
-                _extract(inputs["stories"], "stories_with_no_commits", "stories", "items")
+                _extract(inputs["stories"], "stories_with_no_commits", "stories", "items"),
             ),
             "orphan_commits": _ensure_list(
-                _extract(inputs["commits"], "orphan_commits", "commits", "items")
+                _extract(inputs["commits"], "orphan_commits", "commits", "items"),
             ),
             "commit_story_mapping": _ensure_list(
-                _extract(inputs["links"], "commit_story_mapping", "links", "items")
+                _extract(inputs["links"], "commit_story_mapping", "links", "items"),
             ),
         }
     )
@@ -118,7 +123,7 @@ def parse_formats(value: str) -> Iterable[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-def main(argv: Iterable[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     configure_logging(args.verbose)
 
@@ -150,4 +155,4 @@ def main(argv: Iterable[str] | None = None) -> int:
 
 
 if __name__ == "__main__":  # pragma: no cover - CLI entry point
-    sys.exit(main())
+    raise SystemExit(main())

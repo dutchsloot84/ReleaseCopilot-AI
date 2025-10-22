@@ -67,10 +67,11 @@ These files are produced by the data collection phases of the legacy pipeline
 and retained by Historian. Missing or corrupt payloads cause the command to exit
 with a helpful error explaining which file needs to be recovered.
 
-If the cache is available but the original export step failed, use
-[`recover_and_export.py`](../recover_and_export.py) as a convenience wrapper.
-It calls the same exporter under the hood but accepts separate knobs for
-selecting formats.
+If the cache is available but the original export step failed, use the
+module-based CLI (`python -m export.cli_recover` with `PYTHONPATH=src:.`) or the
+`recover-and-export` console script created by the editable install. Both call
+the same exporter under the hood but accept separate knobs for selecting
+formats.
 
 ## Uploading artifacts to S3
 

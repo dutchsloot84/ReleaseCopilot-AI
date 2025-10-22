@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -13,6 +14,16 @@ import pytest
 FIXTURE_DIR = Path("tests/fixtures/temp_data")
 GOLDEN_DIR = Path("tests/fixtures/golden")
 EXPECTED_WORKBOOK = GOLDEN_DIR / "audit_results_workbook.json"
+
+
+def _cli_env() -> dict[str, str]:
+    env = os.environ.copy()
+    pythonpath = env.get("PYTHONPATH")
+    segments = ["src", "."]
+    if pythonpath:
+        segments.append(pythonpath)
+    env["PYTHONPATH"] = os.pathsep.join(segments)
+    return env
 
 
 def _load_workbook(path: Path) -> dict[str, pd.DataFrame]:
@@ -53,7 +64,8 @@ def test_recover_and_export_matches_golden(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "recover_and_export.py",
+            "-m",
+            "export.cli_recover",
             "--input-dir",
             str(input_dir),
             "--out-dir",
@@ -62,6 +74,7 @@ def test_recover_and_export_matches_golden(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
         check=False,
+        env=_cli_env(),
     )
 
     assert result.returncode == 0, result.stderr
@@ -85,7 +98,8 @@ def test_missing_inputs_exit_with_error(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "recover_and_export.py",
+            "-m",
+            "export.cli_recover",
             "--input-dir",
             str(input_dir),
             "--out-dir",
@@ -94,6 +108,7 @@ def test_missing_inputs_exit_with_error(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
         check=False,
+        env=_cli_env(),
     )
 
     assert result.returncode == 1
@@ -108,7 +123,8 @@ def test_format_flag_limits_outputs(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "recover_and_export.py",
+            "-m",
+            "export.cli_recover",
             "--input-dir",
             str(input_dir),
             "--out-dir",
@@ -119,6 +135,7 @@ def test_format_flag_limits_outputs(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
         check=False,
+        env=_cli_env(),
     )
 
     assert result.returncode == 0, result.stderr
