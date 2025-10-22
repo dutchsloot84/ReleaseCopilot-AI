@@ -14,13 +14,13 @@ Ensure imports are grouped consistently (future → stdlib → third-party → f
 
 ## Steps
 1. Run `ruff check --fix .` to sort imports within each section using the shared configuration in `pyproject.toml`.
-2. Run `black .` so formatting is stable before hooks execute.
+2. Run `ruff format .` so formatting is stable before hooks execute.
 3. Execute `pre-commit run --all-files` to mirror the CI pipeline and confirm no further adjustments are necessary.
 4. Push your branch; if CI adds an auto-fix commit, fetch and integrate it before merging.
 
 ## Validations
 - `ruff check .` reports no `I001` (import order) warnings.
-- `black --check .` returns clean formatting.
+- `ruff format --check .` returns clean formatting.
 - CI reports a clean working tree after linting; otherwise follow the troubleshooting guide in `CONTRIBUTING.md`.
 
 ## Rollback

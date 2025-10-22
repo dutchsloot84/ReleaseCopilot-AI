@@ -102,8 +102,8 @@ To run the workflow manually:
 * **2025-01-09:** CI failures from `tools/validate_prompts.py` complaining that a prompt path "is not in the subpath" were
   fixed by normalizing relative prompt paths before comparison. If you hit the error locally, pull the latest main branch or
   ensure you invoke the validator from the repository root so the normalized paths resolve correctly.
-* **2025-01-09:** `black --check .` now runs during the Validate Prompt Waves workflow. If it flags a mass of files as "would
-  reformat", run `black .` (or the equivalent formatting task) locally and commit the changes before re-running CI.
+* **2025-01-09:** `ruff format --check .` now runs during the Validate Prompt Waves workflow. If it flags a mass of files as
+  "would reformat", run `ruff format .` (or the equivalent formatting task) locally and commit the changes before re-running CI.
 * **2025-01-09:** `pytest --cov=. --cov-report=term-missing --cov-fail-under=70` requires the `pytest-cov` plugin. Install it
   (for example via `pip install -r requirements-dev.txt`) before re-running the Validate Prompt Waves workflow; otherwise pytest will
   exit with `unrecognized arguments: --cov`.
@@ -118,14 +118,14 @@ Decision:
   the matching extensions available.
 - Reference runtime dependencies from the development requirement set so the Validate Prompt Waves workflow can import boto3, pandas,
   PyYAML, and other libraries exercised by the test suite.
-- Treat `black --check .` failures as blocking and reformat the repository before retrying the workflow to avoid churn in
+- Treat `ruff format --check .` failures as blocking and reformat the repository before retrying the workflow to avoid churn in
   follow-up commits.
 
 Action:
-- Add `black` (and other new lint dependencies) to `requirements-dev.txt` whenever the workflow gains a new check.
+- Add new lint dependencies (such as Ruff) to `requirements-dev.txt` whenever the workflow gains a new check.
 - Update `requirements-dev.txt` when enabling pytest coverage arguments so the `pytest-cov` plugin is installed alongside
   `pytest` on CI runners.
-- When the formatting job fails, run `black .` locally, validate with `black --check .`, and push the formatting commit with a
+- When the formatting job fails, run `ruff format .` locally, validate with `ruff format --check .`, and push the formatting commit with a
   summary referencing the CI repair.
 - Install dev dependencies via `pip install -r requirements-dev.txt` (which now pulls in `requirements.txt`) before running the
   Validate Prompt Waves workflow locally or in CI if you encounter missing third-party modules.
