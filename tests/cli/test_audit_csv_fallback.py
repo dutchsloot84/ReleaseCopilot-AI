@@ -8,7 +8,7 @@ from typing import Any, Iterable
 import pytest
 
 from cli.shared import AuditConfig
-import main as main_module
+from releasecopilot.entrypoints import audit as audit_module
 from releasecopilot.errors import JiraJQLFailed
 
 
@@ -51,7 +51,7 @@ def _patch_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     }
 
     monkeypatch.setattr(
-        main_module,
+        audit_module,
         "load_settings",
         lambda overrides=None: fake_settings,
     )
@@ -67,21 +67,21 @@ def test_run_audit_uses_csv_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: 
     prompts = iter([str(csv_path)])
     messages: list[str] = []
 
-    monkeypatch.setattr(main_module, "DATA_DIR", tmp_path / "data", raising=False)
-    monkeypatch.setattr(main_module, "TEMP_DIR", tmp_path / "temp", raising=False)
-    monkeypatch.setattr(main_module, "_phoenix_timestamp", lambda: "2025-10-15T07:30:00-07:00")
-    monkeypatch.setattr(main_module.click, "prompt", lambda *_, **__: next(prompts))
-    monkeypatch.setattr(main_module.click, "echo", lambda message, **__: messages.append(message))
+    monkeypatch.setattr(audit_module, "DATA_DIR", tmp_path / "data", raising=False)
+    monkeypatch.setattr(audit_module, "TEMP_DIR", tmp_path / "temp", raising=False)
+    monkeypatch.setattr(audit_module, "_phoenix_timestamp", lambda: "2025-10-15T07:30:00-07:00")
+    monkeypatch.setattr(audit_module.click, "prompt", lambda *_, **__: next(prompts))
+    monkeypatch.setattr(audit_module.click, "echo", lambda message, **__: messages.append(message))
 
     captured_upload: dict[str, Any] = {}
 
     def _capture_upload(**kwargs: Any) -> None:
         captured_upload["raw_files"] = list(kwargs.get("raw_files", []))
 
-    monkeypatch.setattr(main_module, "upload_artifacts", _capture_upload)
+    monkeypatch.setattr(audit_module, "upload_artifacts", _capture_upload)
 
     config = AuditConfig(fix_version="4.0.0")
-    result = main_module.run_audit(
+    result = audit_module.run_audit(
         config,
         issue_provider=_FailingIssueProvider(),
         commit_provider=_StaticCommitProvider(),
@@ -107,15 +107,15 @@ def test_csv_prompt_retries_on_invalid_path(
     def _echo(message: str, **kwargs: Any) -> None:
         outputs.append((message, kwargs.get("err", False)))
 
-    monkeypatch.setattr(main_module, "DATA_DIR", tmp_path / "data", raising=False)
-    monkeypatch.setattr(main_module, "TEMP_DIR", tmp_path / "temp", raising=False)
-    monkeypatch.setattr(main_module, "_phoenix_timestamp", lambda: "2025-10-15T08:00:00-07:00")
-    monkeypatch.setattr(main_module.click, "prompt", lambda *_, **__: next(prompts))
-    monkeypatch.setattr(main_module.click, "echo", _echo)
-    monkeypatch.setattr(main_module, "upload_artifacts", lambda **kwargs: None)
+    monkeypatch.setattr(audit_module, "DATA_DIR", tmp_path / "data", raising=False)
+    monkeypatch.setattr(audit_module, "TEMP_DIR", tmp_path / "temp", raising=False)
+    monkeypatch.setattr(audit_module, "_phoenix_timestamp", lambda: "2025-10-15T08:00:00-07:00")
+    monkeypatch.setattr(audit_module.click, "prompt", lambda *_, **__: next(prompts))
+    monkeypatch.setattr(audit_module.click, "echo", _echo)
+    monkeypatch.setattr(audit_module, "upload_artifacts", lambda **kwargs: None)
 
     config = AuditConfig(fix_version="4.1.0")
-    main_module.run_audit(
+    audit_module.run_audit(
         config,
         issue_provider=_FailingIssueProvider(),
         commit_provider=_StaticCommitProvider(),

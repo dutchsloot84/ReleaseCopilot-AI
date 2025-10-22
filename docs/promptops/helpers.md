@@ -1,6 +1,6 @@
 # Wave 2 Helper Automation
 
-The Wave 2 helper CLI streamlines backlog triage, deterministic artifact generation, and manual follow-up prep for the active Master Orchestrator Prompt (MOP). The commands live in `scripts/github/wave2_helper.py` and can be executed with `python -m scripts.github.wave2_helper`.
+The Wave 2 helper CLI streamlines backlog triage, deterministic artifact generation, and manual follow-up prep for the active Master Orchestrator Prompt (MOP). Install the project in editable mode (`pip install -e .[dev]`) and invoke the helper with the `rc-wave2` console script (or `python -m releasecopilot.entrypoints.wave2`).
 
 ## Commands
 

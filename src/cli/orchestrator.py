@@ -18,6 +18,10 @@ from releasecopilot.orchestrator.command import (
     DispatchPlan,
     SlashCommand,
 )
+from releasecopilot.orchestrator.release_exports import (
+    ReleaseExportError,
+    run_release_exports,
+)
 
 LOGGER = get_logger(__name__)
 PHOENIX_TZ = ZoneInfo("America/Phoenix")
@@ -68,6 +72,21 @@ def register_orchestrator_parser(
         "--plan-path",
         required=True,
         help="Path to a plan.json artifact produced by 'rc orchestrator plan'",
+    )
+
+    release = orchestrator_sub.add_parser(
+        "release-export",
+        help="Generate release notes and validation docs from the latest audit payload",
+    )
+    release.add_argument(
+        "--reports-dir",
+        default=str(defaults.reports_dir),
+        help="Directory containing audit JSON/Excel outputs",
+    )
+    release.add_argument(
+        "--artifact-root",
+        default=str(defaults.project_root / "artifacts"),
+        help="Root folder for release artifacts",
     )
 
 
@@ -132,6 +151,38 @@ def run_orchestrator_command(
             },
         )
         print(json.dumps(envelope.to_dict(), indent=2))
+        return 0
+
+    if subcommand == "release-export":
+        reports_dir = Path(args.reports_dir)
+        artifact_root = Path(args.artifact_root)
+        try:
+            result = run_release_exports(
+                reports_dir=reports_dir,
+                artifact_root=artifact_root,
+                defaults=defaults,
+            )
+        except ReleaseExportError as exc:
+            LOGGER.error(
+                "Release export failed",
+                extra={
+                    "command": "release-export",
+                    "phoenix_timestamp": context.phoenix_timestamp,
+                    "error": str(exc),
+                },
+            )
+            print(str(exc), file=sys.stderr)
+            return 1
+
+        LOGGER.info(
+            "Release export completed",
+            extra={
+                "command": "release-export",
+                "phoenix_timestamp": context.phoenix_timestamp,
+                "artifacts": result.as_dict(),
+            },
+        )
+        print(json.dumps(result.as_dict(), indent=2))
         return 0
 
     raise OrchestratorCommandError(f"Unsupported subcommand: {subcommand}")

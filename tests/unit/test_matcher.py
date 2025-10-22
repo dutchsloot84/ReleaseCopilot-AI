@@ -1,4 +1,4 @@
-from src.matcher.engine import match
+from matcher.engine import match
 
 
 def test_match_basic():

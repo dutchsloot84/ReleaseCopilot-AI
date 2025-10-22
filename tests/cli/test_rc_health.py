@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
+from cli import app
 from config.loader import load_defaults
-from src.cli import app
-from src.ops.health import ReadinessOptions, ReadinessReport
+from ops.health import ReadinessOptions, ReadinessReport
 
 
 @pytest.fixture(name="defaults")
@@ -70,7 +70,7 @@ def test_health_readiness_prints_report(monkeypatch: pytest.MonkeyPatch, default
     def _fake_run(options: ReadinessOptions):
         return _report()
 
-    monkeypatch.setattr("src.cli.health.run_readiness", _fake_run)
+    monkeypatch.setattr("cli.health.run_readiness", _fake_run)
 
     exit_code = app.main(["health", "--readiness"], defaults=defaults)
     assert exit_code == 0
@@ -88,7 +88,7 @@ def test_health_readiness_writes_json(monkeypatch: pytest.MonkeyPatch, defaults,
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "testing")
     monkeypatch.setenv("AWS_SESSION_TOKEN", "testing")
 
-    monkeypatch.setattr("src.cli.health.run_readiness", lambda options: _report())
+    monkeypatch.setattr("cli.health.run_readiness", lambda options: _report())
 
     exit_code = app.main(
         ["health", "--readiness", "--json", str(output_path)],
@@ -108,7 +108,7 @@ def test_health_readiness_respects_overrides(monkeypatch: pytest.MonkeyPatch, de
         captured["options"] = options
         return _report(dry_run=True)
 
-    monkeypatch.setattr("src.cli.health.run_readiness", _capture)
+    monkeypatch.setattr("cli.health.run_readiness", _capture)
 
     exit_code = app.main(
         [
@@ -136,7 +136,7 @@ def test_health_readiness_respects_overrides(monkeypatch: pytest.MonkeyPatch, de
 
 
 def test_health_requires_readiness_flag(monkeypatch: pytest.MonkeyPatch, defaults, capsys):
-    monkeypatch.setattr("src.cli.health.run_readiness", lambda options: _report())
+    monkeypatch.setattr("cli.health.run_readiness", lambda options: _report())
 
     exit_code = app.main(["health"], defaults=defaults)
     assert exit_code == 1

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import jsonschema
 
-from src.ops.health import ReadinessClients, ReadinessOptions, run_readiness
+from ops.health import ReadinessClients, ReadinessOptions, run_readiness
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

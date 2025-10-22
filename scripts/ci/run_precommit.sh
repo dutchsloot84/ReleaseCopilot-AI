@@ -1,3 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-pre-commit run --all-files --show-diff-on-failure
+
+ruff format --check .
+ruff check --output-format=github .
+mypy --config-file pyproject.toml
+make check-generated
+git diff --check

@@ -23,9 +23,9 @@ HEALTH_VERSION = "health.v1"
 class ReadinessClients:
     """Container for AWS clients used during readiness checks."""
 
-    secrets: Any | None = None
-    dynamodb: Any | None = None
-    s3: Any | None = None
+    secrets: Any = None
+    dynamodb: Any = None
+    s3: Any = None
 
 
 @dataclass(frozen=True)
@@ -324,7 +324,7 @@ def _check_dynamodb(
         )
 
     sentinel = f"rc-health-{uuid.uuid4().hex}"
-    item: Dict[str, Dict[str, str]] = {}
+    item: Dict[str, Dict[str, str | bytes]] = {}
     for index, element in enumerate(key_schema):
         name = element.get("AttributeName")
         attr_type = attr_defs.get(name, "S")
@@ -359,7 +359,7 @@ def _check_dynamodb(
     return CheckResult("pass", resource=f"dynamodb://{table_name}"), cleanup_warning
 
 
-def _ddb_attribute(attr_type: str, sentinel: str) -> Dict[str, str]:
+def _ddb_attribute(attr_type: str, sentinel: str) -> Dict[str, str | bytes]:
     if attr_type == "N":
         return {"N": str(int(time.time()))}
     if attr_type == "B":

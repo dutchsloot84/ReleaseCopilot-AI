@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-import importlib.util
 import json
 from pathlib import Path
 import shutil
@@ -15,32 +14,8 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-_SRC_DIR = _REPO_ROOT / "src"
-for candidate in (str(_REPO_ROOT), str(_SRC_DIR)):
-    if candidate in sys.path:
-        sys.path.remove(candidate)
-sys.path.insert(0, str(_REPO_ROOT))
-sys.path.insert(1, str(_SRC_DIR))
-
-config_module = importlib.import_module("config")
-config_module.__path__ = [str(_REPO_ROOT / "config"), str(_SRC_DIR / "config")]
-for _namespace in ("tools", "scripts"):
-    if _namespace not in sys.modules:
-        _module = types.ModuleType(_namespace)
-        _module.__path__ = [str(_REPO_ROOT / _namespace)]  # type: ignore[attr-defined]
-        sys.modules[_namespace] = _module
-
-_WAVE_HELPER_PATH = _REPO_ROOT / "scripts/github/wave2_helper.py"
-_WAVE_SPEC = importlib.util.spec_from_file_location(
-    "scripts.github.wave2_helper", _WAVE_HELPER_PATH
-)
-if _WAVE_SPEC is None or _WAVE_SPEC.loader is None:  # pragma: no cover - defensive guard
-    raise RuntimeError("Unable to load wave2_helper module for tests")
-generator = importlib.util.module_from_spec(_WAVE_SPEC)
-sys.modules[_WAVE_SPEC.name] = generator
 try:
-    _WAVE_SPEC.loader.exec_module(generator)
+    from releasecopilot.wave import wave2_helper as generator
 except ModuleNotFoundError as exc:  # pragma: no cover - dependency guard
     if exc.name == "jinja2":
         pytest.skip("jinja2 is required for generator tests", allow_module_level=True)

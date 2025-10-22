@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.export.exporter import export_all
+from export.exporter import export_all
 
 
 def test_export_creates_files(tmp_path: Path) -> None:

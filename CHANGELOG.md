@@ -1,4 +1,12 @@
 ## [Unreleased]
+### Console entry points & coverage alignment
+**Decision:** Migrate executable scripts to src-layout entry points with editable-install console scripts and explicit coverage scope.
+**Note:** Developers should run `pip install -e .[dev]` to expose `rc`, `rc-audit`, `rc-recover`, and `rc-wave2`, then rely on Phoenix-stamped coverage gates configured in `pyproject.toml`.
+**Action:** Moved `main.py`, `recover_and_export.py`, and Wave 2 helper logic under `src/releasecopilot`, added console scripts in `pyproject.toml`, tightened coverage configuration, updated CI to install via `pip install -e .[dev]`, refreshed docs/runbooks, and replaced the bootstrap sys.path hack with smoke tests guarding the new entry points.
+### pre-commit.ci Adoption
+**Decision:** Adopt pre-commit.ci for lint autofixes while converting GitHub Actions linting to a check-only gate that respects the single `src` package root.
+**Note:** Contributors should run `pre-commit run --all-files` locally; pre-commit.ci may push `chore(pre-commit): auto fixes from pre-commit.ci` commits, and CI logs continue to reference America/Phoenix scheduling guidance.
+**Action:** Added a pre-commit.ci badge and workflow notes in `README.md`/`CONTRIBUTING.md`, updated `.github/workflows/ci.yml` and `scripts/ci/run_precommit.sh` for check-only linting, and configured `.pre-commit-config.yaml` with bot automation metadata.
 ### CI Matrix Hardening Refresh
 **Decision:** Split GitHub Actions into cached lint, type-check, and test jobs on Python 3.10/3.11 while enforcing pre-commit, mypy, and coverage thresholds via `pyproject.toml`.
 **Note:** See `docs/ci/ci-hardening.md` for workflow topology, caching keys, Phoenix timestamp policy, and rollback guidance.

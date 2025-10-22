@@ -7,28 +7,28 @@ import types
 
 import pytest
 
-
-@pytest.fixture
-def main_module() -> types.ModuleType:
-    import main
-
-    return importlib.reload(main)
+from releasecopilot.entrypoints import audit as audit_entrypoint
 
 
 @pytest.fixture
-def fixed_datetime(monkeypatch: pytest.MonkeyPatch, main_module: types.ModuleType) -> None:
+def audit_module() -> types.ModuleType:
+    return importlib.reload(audit_entrypoint)
+
+
+@pytest.fixture
+def fixed_datetime(monkeypatch: pytest.MonkeyPatch, audit_module: types.ModuleType) -> None:
     class FixedDatetime(datetime):
         @classmethod
         def utcnow(cls) -> "FixedDatetime":  # type: ignore[override]
             return cls(2025, 10, 24, 15, 30, 0)
 
-    monkeypatch.setattr(main_module, "datetime", FixedDatetime)
+    monkeypatch.setattr(audit_module, "datetime", FixedDatetime)
 
 
 def test_upload_artifacts_builds_versioned_prefix(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    main_module: types.ModuleType,
+    audit_module: types.ModuleType,
     fixed_datetime,
 ) -> None:
     reports = []
@@ -43,8 +43,8 @@ def test_upload_artifacts_builds_versioned_prefix(
         raw_files.append(path)
 
     temp_dir = tmp_path / "temp"
-    monkeypatch.setattr(main_module, "TEMP_DIR", temp_dir)
-    monkeypatch.setattr(main_module, "_detect_git_sha", lambda: "abcdef123456")
+    monkeypatch.setattr(audit_module, "TEMP_DIR", temp_dir)
+    monkeypatch.setattr(audit_module, "_detect_git_sha", lambda: "abcdef123456")
 
     calls: list[dict] = []
 
@@ -54,15 +54,15 @@ def test_upload_artifacts_builds_versioned_prefix(
     def fake_upload_directory(**kwargs):
         calls.append(kwargs)
 
-    monkeypatch.setattr(main_module.uploader, "build_s3_client", fake_build_client)
-    monkeypatch.setattr(main_module.uploader, "upload_directory", fake_upload_directory)
+    monkeypatch.setattr(audit_module.uploader, "build_s3_client", fake_build_client)
+    monkeypatch.setattr(audit_module.uploader, "upload_directory", fake_upload_directory)
 
-    config = main_module.AuditConfig(
+    config = audit_module.AuditConfig(
         fix_version="2025.10.24", s3_bucket="bucket", s3_prefix="audits"
     )
     settings = {"aws": {}}
 
-    main_module.upload_artifacts(
+    audit_module.upload_artifacts(
         config=config,
         settings=settings,
         reports=reports,
@@ -92,19 +92,21 @@ def test_upload_artifacts_builds_versioned_prefix(
 def test_upload_artifacts_skips_when_bucket_missing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    main_module: types.ModuleType,
+    audit_module: types.ModuleType,
 ) -> None:
-    monkeypatch.setattr(main_module, "TEMP_DIR", tmp_path / "temp")
+    monkeypatch.setattr(audit_module, "TEMP_DIR", tmp_path / "temp")
 
     calls: list[dict] = []
     monkeypatch.setattr(
-        main_module.uploader, "upload_directory", lambda **kwargs: calls.append(kwargs)
+        audit_module.uploader,
+        "upload_directory",
+        lambda **kwargs: calls.append(kwargs),
     )
 
-    config = main_module.AuditConfig(fix_version="2025.10.24")
+    config = audit_module.AuditConfig(fix_version="2025.10.24")
     settings = {"aws": {}}
 
-    main_module.upload_artifacts(
+    audit_module.upload_artifacts(
         config=config,
         settings=settings,
         reports=[],

@@ -5,9 +5,14 @@ from __future__ import annotations
 import importlib
 
 MODULES: tuple[str, ...] = (
-    "src.cli.app",
-    "src.cli.audit",
-    "src.cli.health",
+    "cli.app",
+    "cli.audit",
+    "cli.health",
+    "export.exporter",
+    "releasecopilot.entrypoints.audit",
+    "releasecopilot.entrypoints.recover",
+    "releasecopilot.entrypoints.wave2",
+    "releasecopilot.orchestrator.release_exports",
 )
 
 

@@ -42,7 +42,7 @@ Example timestamp notation: `2024-04-15 14:05 MST`.
 
 ## Wave 2 Helper Automation
 
-Use `python -m scripts.github.wave2_helper` to manage the helper backlog for Wave 2. The CLI supports `collect`, `prioritize`, `seed`, `post`, and `open-pr` subcommands, each writing deterministic artifacts under `artifacts/helpers/` and `project/prompts/wave2/`. See `docs/promptops/helpers.md` for detailed usage. When preparing manual comments or PRs, keep the Decision / Note / Action markers and include Phoenix-local scheduling context (America/Phoenix) in every timestamp.
+Use `rc-wave2` (or `python -m releasecopilot.entrypoints.wave2`) to manage the helper backlog for Wave 2. The CLI supports `collect`, `prioritize`, `seed`, `post`, and `open-pr` subcommands, each writing deterministic artifacts under `artifacts/helpers/` and `project/prompts/wave2/`. See `docs/promptops/helpers.md` for detailed usage. When preparing manual comments or PRs, keep the Decision / Note / Action markers and include Phoenix-local scheduling context (America/Phoenix) in every timestamp.
 
 ## Prompt Wave CI Validation
 

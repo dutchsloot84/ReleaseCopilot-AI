@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import subprocess
 
-from scripts.github import wave2_helper as generator
+from releasecopilot.wave import wave2_helper as generator
 
 
 def _run_generator(spec: dict[str, object]) -> None:

@@ -50,6 +50,11 @@ bitbucket:
     app_password: null
     access_token: null
 
+release:
+  timezone: America/Phoenix
+  validation_doc:
+    deployment_notes_field_id: deployment_notes
+
 webhooks:
   jira:
     secret: null

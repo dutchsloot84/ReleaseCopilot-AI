@@ -6,7 +6,7 @@ from pathlib import Path
 from click.testing import CliRunner
 import yaml
 
-from scripts.github.wave2_helper import cli
+from releasecopilot.wave.wave2_helper import cli
 
 
 def _write_temp_config(tmp_path: Path) -> Path:

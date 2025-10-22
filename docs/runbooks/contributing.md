@@ -6,7 +6,7 @@ The Wave 3 Mission Outline Plan codified our contributor workflow, including the
 
 1. Create or update your development environment:
    ```bash
-   pip install -r requirements.txt -r requirements-dev.txt
+   pip install -e .[dev]
    ```
 2. Install the hooks locally:
    ```bash
@@ -33,6 +33,6 @@ The `.github/workflows/ci.yml` pipeline now runs the same tooling directly—`pr
 
 ## Troubleshooting
 
-- **Hook updates** — When dependencies change, bump the versions in `.pre-commit-config.yaml` to match `requirements-dev.txt` pins and re-run `pre-commit autoupdate` locally before committing the diff.
+- **Hook updates** — When dependencies change, bump the versions in `.pre-commit-config.yaml` to match the pinned versions declared in `pyproject.toml` and re-run `pre-commit autoupdate` locally before committing the diff.
 - **Phoenix timestamps missing** — If hook output shows another timezone, export `TZ=America/Phoenix` when running hooks and update your shell profile so logs match automation expectations.
 - **Bypassing hooks** — Avoid using `SKIP=` unless the Mission Outline Plan explicitly instructs otherwise. CI enforces the hooks, so local bypasses will fail the pipeline.
