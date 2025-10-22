@@ -51,4 +51,22 @@ Troubleshooting tips:
 
 - If ruff raises module grouping errors (I001), ensure the module belongs to one of the configured sections: stdlib, third-party, `config`/`releasecopilot`, then relative imports.
 - When a PR originates from a fork, pre-commit.ci cannot push auto-fix commits. In that situation the workflow fails with a reminder—run the commands above locally and push manually.
-- Verify `python -m pip install -r requirements-dev.txt` so the local hooks share the same versions as CI.
+- Verify `pip install -e .[dev]` so the local hooks share the same versions as CI and expose the console entry points used by automation.
+
+## Entry points and coverage policy
+
+- Console scripts are defined in `pyproject.toml` under `[project.scripts]`. New
+  executables should live under `src/releasecopilot/entrypoints/` (or an adjacent
+  src package) and expose a `main(argv: Sequence[str] | None = None) -> int` function.
+  Add the script to `[project.scripts]` and include tests that exercise the module
+  via `python -m <package.module>` so imports remain src-aware.
+- Prefer running tooling through console scripts (`rc`, `rc-audit`, `rc-recover`,
+  `rc-wave2`) or `python -m releasecopilot.entrypoints.<name>` in CI and tests; direct
+  invocation of legacy wrappers (for example `main.py`) is deprecated.
+- Coverage gates are configured in `pyproject.toml` with `source = ["src", "clients",
+  "config", "exporters", "processors", "services", "matcher", "ops", "ui"]` and omit
+  infra/tooling paths. Keep additional runtime packages in that list so the
+  `tools/coverage_gate.py` check and PR coverage comment remain stable at the 70%
+  threshold.
+- pre-commit.ci auto-applies lint fixes on pull requests; if a hook fails in CI,
+  run `pre-commit run --all-files` locally or wait for the bot’s follow-up commit.

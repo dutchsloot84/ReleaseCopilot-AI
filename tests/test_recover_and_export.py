@@ -53,7 +53,8 @@ def test_recover_and_export_matches_golden(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "recover_and_export.py",
+            "-m",
+            "releasecopilot.entrypoints.recover",
             "--input-dir",
             str(input_dir),
             "--out-dir",
@@ -85,7 +86,8 @@ def test_missing_inputs_exit_with_error(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "recover_and_export.py",
+            "-m",
+            "releasecopilot.entrypoints.recover",
             "--input-dir",
             str(input_dir),
             "--out-dir",
@@ -108,7 +110,8 @@ def test_format_flag_limits_outputs(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "recover_and_export.py",
+            "-m",
+            "releasecopilot.entrypoints.recover",
             "--input-dir",
             str(input_dir),
             "--out-dir",

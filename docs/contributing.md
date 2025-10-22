@@ -6,7 +6,7 @@
 
 ## Local checklist
 
-1. `python -m pip install -r requirements-dev.txt`
+1. `pip install -e .[dev]`
 2. `pre-commit install`
 3. `ruff check --fix .`
 4. `ruff format .`

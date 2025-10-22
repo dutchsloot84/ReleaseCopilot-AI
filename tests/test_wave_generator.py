@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 try:
-    from scripts.github import wave2_helper as generator
+    from releasecopilot.wave import wave2_helper as generator
 except ModuleNotFoundError as exc:  # pragma: no cover - dependency guard
     if exc.name == "jinja2":
         pytest.skip("jinja2 is required for generator tests", allow_module_level=True)

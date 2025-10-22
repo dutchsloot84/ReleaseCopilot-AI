@@ -1,4 +1,8 @@
 ## [Unreleased]
+### Console entry points & coverage alignment
+**Decision:** Migrate executable scripts to src-layout entry points with editable-install console scripts and explicit coverage scope.
+**Note:** Developers should run `pip install -e .[dev]` to expose `rc`, `rc-audit`, `rc-recover`, and `rc-wave2`, then rely on Phoenix-stamped coverage gates configured in `pyproject.toml`.
+**Action:** Moved `main.py`, `recover_and_export.py`, and Wave 2 helper logic under `src/releasecopilot`, added console scripts in `pyproject.toml`, tightened coverage configuration, updated CI to install via `pip install -e .[dev]`, refreshed docs/runbooks, and replaced the bootstrap sys.path hack with smoke tests guarding the new entry points.
 ### pre-commit.ci Adoption
 **Decision:** Adopt pre-commit.ci for lint autofixes while converting GitHub Actions linting to a check-only gate that respects the single `src` package root.
 **Note:** Contributors should run `pre-commit run --all-files` locally; pre-commit.ci may push `chore(pre-commit): auto fixes from pre-commit.ci` commits, and CI logs continue to reference America/Phoenix scheduling guidance.

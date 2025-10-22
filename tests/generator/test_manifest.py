@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from scripts.github import wave2_helper as generator
+from releasecopilot.wave import wave2_helper as generator
 
 
 def test_manifest_contains_expected_metadata(sample_spec: dict[str, object]) -> None:
