@@ -110,4 +110,3 @@ jobs:
           else
             poetry run python -m releasecopilot.cli pr-comment coverage --file coverage.json
           fi
-
