@@ -12,13 +12,7 @@ from typing import Sequence
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 HOOK_REQUIREMENTS = Path(__file__).with_name("requirements.txt")
-_HOOK_IMPORTS = (
-    "click",
-    "jinja2",
-    "slugify",
-    "yaml",
-    "requests",
-)
+_HOOK_IMPORTS = ("yaml",)
 DEFAULT_SPEC = Path("backlog/wave3.yaml")
 DEFAULT_TIMEZONE = "America/Phoenix"
 GENERATED_PATHS: tuple[str, ...] = ("docs/mop", "docs/sub-prompts", "artifacts")
@@ -44,6 +38,11 @@ def _ensure_hook_dependencies(requirements: Path) -> None:
             [sys.executable, "-m", "pip", "install", "-r", str(requirements)],
             check=True,
         )
+
+    sys_path_updates = [str(REPO_ROOT), str(REPO_ROOT / "src")]
+    for path in sys_path_updates:
+        if path not in sys.path:
+            sys.path.insert(0, path)
 
     try:
         import_module("releasecopilot")

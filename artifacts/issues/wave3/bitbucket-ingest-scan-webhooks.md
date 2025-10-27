@@ -112,7 +112,6 @@ Update `README.md` integration timeline section:
 - Rollback: disable webhook route, revert `src/releasecopilot/ingest/` modules, and remove CLI entry; clear generated artifacts if they reference the new runner.
 - No data migrations are performed; existing storage tables remain unchanged.
 
-
 ## Critic Check
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.

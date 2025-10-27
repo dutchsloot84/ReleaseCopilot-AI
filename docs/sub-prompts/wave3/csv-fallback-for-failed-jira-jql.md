@@ -85,7 +85,6 @@ Update `README.md` troubleshooting section:
 - Rollback: revert exception/prompt changes in Jira client and CLI; remove CSV loader module.
 - No data migrations or dependency updates introduced.
 
-
 ## Critic Check
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.

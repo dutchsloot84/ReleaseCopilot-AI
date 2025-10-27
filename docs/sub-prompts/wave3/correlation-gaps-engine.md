@@ -101,7 +101,6 @@ Update `README.md` API table:
 - Rollback: revert `src/matcher/` and `src/releasecopilot/gaps/` changes; remove artifact schema updates if unused.
 - No data migrations required; prior correlation logic can be restored from git history.
 
-
 ## Critic Check
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.

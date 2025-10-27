@@ -91,7 +91,6 @@ Troubleshooting section:
 - Rollback: disable `/webhooks/jira` route, revert parser/upsert modules, and remove artifact updates; clear stored secrets if necessary.
 - No data migrations introduced; existing correlation engine remains intact if webhook flow rolled back.
 
-
 ## Critic Check
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.

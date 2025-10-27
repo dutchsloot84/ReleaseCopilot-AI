@@ -111,7 +111,6 @@ Update `README.md` exports section:
 - Rollback: revert changes in `src/export/`, `src/releasecopilot/orchestrator/`, UI button wiring, and artifact schema files; remove generated docs in `docs/runbooks/` if needed.
 - No data migrations occur; deleting the artifacts reverts to previous manual export flow.
 
-
 ## Critic Check
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.

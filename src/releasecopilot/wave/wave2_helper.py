@@ -13,16 +13,20 @@ from typing import Any, Callable, Iterable, Sequence
 import uuid
 
 import click
-from jinja2 import Environment, FileSystemLoader
-from slugify import slugify  # type: ignore[import-untyped]
 import yaml
 
 from releasecopilot.logging_config import get_logger
-from tools.generator.generator import TimezoneLabel, format_timezone_label
+from tools.generator.generator import (
+    TimezoneLabel,
+    format_timezone_label,
+    load_spec as load_wave_spec,
+    render_mop_from_spec as _render_mop_from_spec,
+    render_subprompts_and_issues as _render_subprompts_and_issues,
+    write_manifest as _write_manifest,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PHOENIX_TZ = "America/Phoenix"
-TEMPLATES_DIR = PROJECT_ROOT / "templates"
 MANIFEST_SCHEMA_VERSION = "1.0"
 
 
@@ -395,17 +399,6 @@ def _gh_issue_list(labels: list[str]) -> list[Issue]:
     result = subprocess.run(cmd, capture_output=True, check=True, text=True)
     payload = json.loads(result.stdout or "[]")
     return [Issue.from_raw(item) for item in payload]
-
-
-def _jinja_environment() -> Environment:
-    return Environment(
-        loader=FileSystemLoader(str(TEMPLATES_DIR)),
-        autoescape=False,
-        trim_blocks=True,
-        lstrip_blocks=True,
-    )
-
-
 def write_text(path: Path, content: str) -> Path:
     """Write text to ``path`` only when the content differs."""
 
@@ -419,58 +412,9 @@ def write_text(path: Path, content: str) -> Path:
 
 
 def load_spec(path: Path | str) -> dict[str, Any]:
-    """Load a wave specification from YAML."""
+    """Delegate to the shared Wave generator parser."""
 
-    spec_path = Path(path)
-    with spec_path.open("r", encoding="utf-8") as handle:
-        raw_spec = yaml.safe_load(handle) or {}
-    try:
-        wave = int(raw_spec["wave"])
-    except KeyError as exc:  # pragma: no cover - validation guard
-        raise ValueError("Missing required 'wave' field in spec") from exc
-
-    def _stringify_list(values: Iterable[Any]) -> list[str]:
-        result: list[str] = []
-        for entry in values:
-            if isinstance(entry, dict):
-                result.append(", ".join(f"{key}: {value}" for key, value in entry.items()))
-            else:
-                result.append(str(entry))
-        return result
-
-    def _normalize_guidance(payload: Any) -> dict[str, str]:
-        guidance: dict[str, str] = {}
-        if not isinstance(payload, dict):
-            return guidance
-        for key, value in payload.items():
-            if value is None:
-                continue
-            if isinstance(value, list):
-                text = "\n".join(str(item) for item in value if item is not None)
-            else:
-                text = str(value)
-            guidance[key] = text
-        return guidance
-
-    spec = {
-        "wave": wave,
-        "purpose": str(raw_spec.get("purpose", "")).strip(),
-        "constraints": _stringify_list(raw_spec.get("constraints") or []),
-        "quality_bar": _stringify_list(raw_spec.get("quality_bar") or []),
-    }
-    sequenced: list[dict[str, Any]] = []
-    for pr in raw_spec.get("sequenced_prs", []) or []:
-        sequenced.append(
-            {
-                "title": str(pr.get("title", "")).strip(),
-                "acceptance": _stringify_list(pr.get("acceptance") or []),
-                "notes": _stringify_list(pr.get("notes") or []),
-                "labels": _stringify_list(pr.get("labels") or []),
-                "guidance": _normalize_guidance(pr.get("guidance")),
-            }
-        )
-    spec["sequenced_prs"] = sequenced
-    return spec
+    return load_wave_spec(path)
 
 
 def archive_previous_wave_mop(prev_wave: int) -> None:
@@ -497,22 +441,14 @@ def render_mop_from_yaml(
 ) -> Path:
     """Render the Mission Outline Plan from the YAML spec."""
 
-    env = _jinja_environment()
-    template = env.get_template("mop.md.j2")
     timestamp = generated_at or phoenix_now().isoformat()
     label = timezone_label or format_timezone_label(PHOENIX_TZ)
-    content = template.render(
-        wave=spec["wave"],
-        purpose=spec.get("purpose", ""),
-        constraints=spec.get("constraints", []),
-        quality_bar=spec.get("quality_bar", []),
-        sequenced_prs=spec.get("sequenced_prs", []),
+    return _render_mop_from_spec(
+        spec,
         generated_at=timestamp,
-        timezone_parenthetical=label.parenthetical,
+        base_dir=Path.cwd(),
+        timezone_label=label,
     )
-    path = Path("docs/mop") / f"mop_wave{spec['wave']}.md"
-    write_text(path, content)
-    return path
 
 
 def render_subprompts_and_issues(
@@ -522,78 +458,28 @@ def render_subprompts_and_issues(
 ) -> list[dict[str, Any]]:
     """Render sub-prompts and issue bodies for each sequenced PR."""
 
-    env = _jinja_environment()
-    sub_template = env.get_template("subprompt.md.j2")
-    issue_template = env.get_template("issue_body.md.j2")
     wave = spec["wave"]
     timestamp = generated_at or phoenix_now().isoformat()
     label = timezone_label or format_timezone_label(PHOENIX_TZ)
-    subprompt_root = Path("docs/sub-prompts") / f"wave{wave}"
-    issue_root = Path("artifacts/issues") / f"wave{wave}"
-    items: list[dict[str, Any]] = []
-    for pr in spec.get("sequenced_prs", []):
-        title = pr.get("title", "")
-        slug = slugify(title) or f"wave{wave}-item"
-        normalized = {
-            "title": title,
-            "acceptance": list(pr.get("acceptance") or []),
-            "notes": list(pr.get("notes") or []),
-            "labels": list(pr.get("labels") or []),
-            "guidance": dict(pr.get("guidance") or {}),
-        }
-        subprompt_content = sub_template.render(
-            wave=wave,
-            pr=normalized,
-            generated_at=timestamp,
-            timezone_label=label.context,
-        )
-        lines = subprompt_content.splitlines()
-        body_without_heading = "\n".join(lines[1:]).lstrip()
-        summary_line = (
-            "Generated automatically from backlog/wave"
-            f"{wave}.yaml on {timestamp} {label.parenthetical}."
-        )
-        issue_content = issue_template.render(
-            wave=wave,
-            pr=normalized,
-            summary_line=summary_line,
-            subprompt_body=body_without_heading,
-            timezone_label=label.summary,
-        )
-        subprompt_path = subprompt_root / f"{slug}.md"
-        issue_path = issue_root / f"{slug}.md"
-        write_text(subprompt_path, subprompt_content)
-        write_text(issue_path, issue_content)
-        items.append(
-            {
-                "title": normalized["title"],
-                "slug": slug,
-                "labels": normalized["labels"],
-                "acceptance": normalized["acceptance"],
-                "subprompt_path": subprompt_path.as_posix(),
-                "issue_path": issue_path.as_posix(),
-            }
-        )
-    return items
+    return _render_subprompts_and_issues(
+        spec,
+        generated_at=timestamp,
+        base_dir=Path.cwd(),
+        timezone_label=label,
+    )
 
 
 def write_manifest(wave: int, items: list[dict[str, Any]], generated_at: str | None = None) -> Path:
     """Write the manifest describing generated sub-prompts."""
 
-    manifest_path = Path("artifacts/manifests") / f"wave{wave}_subprompts.json"
     timestamp = generated_at or phoenix_now().isoformat()
-    payload = {
-        "schema_version": MANIFEST_SCHEMA_VERSION,
-        "generated_at": timestamp,
-        "timezone": PHOENIX_TZ,
-        "git_sha": os.getenv("GIT_SHA", "GIT_SHA_HERE"),
-        "items": sorted(items, key=lambda item: item["slug"]),
-    }
-    write_text(
-        manifest_path,
-        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+    return _write_manifest(
+        wave,
+        items,
+        generated_at=timestamp,
+        base_dir=Path.cwd(),
+        timezone=PHOENIX_TZ,
     )
-    return manifest_path
 
 
 def resolve_generated_at(wave: int) -> str:

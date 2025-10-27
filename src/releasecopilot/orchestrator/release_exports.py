@@ -125,9 +125,12 @@ def run_release_exports(
     except Exception as exc:  # pragma: no cover - propagate as orchestrator error
         raise ReleaseExportError(f"Unable to load reports from {reports_dir}: {exc}") from exc
 
-    report_data = report_payload.get("data")
+    report_data = report_payload.get("data") if isinstance(report_payload, Mapping) else None
     if not isinstance(report_data, Mapping):
-        raise ReleaseExportError("Report JSON is missing the expected mapping payload")
+        if isinstance(report_payload, Mapping):
+            report_data = report_payload
+        else:
+            raise ReleaseExportError("Report JSON is missing the expected mapping payload")
 
     settings = load_settings(defaults_path=defaults.settings_path)
     base_url = _resolve_base_url(settings)

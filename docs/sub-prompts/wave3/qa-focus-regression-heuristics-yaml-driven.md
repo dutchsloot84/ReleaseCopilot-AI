@@ -89,7 +89,6 @@ Update `README.md` analytics section:
 - Rollback: revert `config/risk.yaml`, QA scorer modules, API/ UI updates, and remove artifacts if necessary.
 - No data migrations; artifacts regenerate from orchestrator runs.
 
-
 ## Critic Check
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.

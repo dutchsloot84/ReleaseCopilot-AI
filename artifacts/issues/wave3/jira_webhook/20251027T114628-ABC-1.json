@@ -1,0 +1,27 @@
+{
+  "correlation": {
+    "matched": [],
+    "missing": [],
+    "orphans": [],
+    "summary": {
+      "orphan_commits": 0,
+      "stories_with_commits": 0,
+      "stories_without_commits": 0,
+      "total_commits": 0,
+      "total_issues": 1,
+      "total_stories": 1
+    }
+  },
+  "generated_at": "2025-10-27T11:46:28-07:00",
+  "git_sha": "deca66688d3d6aff43d8ba1db106aee480ad1e88",
+  "issues": [
+    {
+      "event_type": "jira:issue_deleted",
+      "issue_key": "ABC-1",
+      "phoenix_updated_at": "2025-10-27T11:46:28-07:00",
+      "updated_at": "2025-10-27T18:46:28.251454Z"
+    }
+  ],
+  "run_id": "d2c96c68-ebea-45d1-ac7c-6d6c3f0efcb1",
+  "timezone": "America/Phoenix"
+}

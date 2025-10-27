@@ -11,8 +11,7 @@ from pathlib import Path
 from typing import Any, Callable, Final, Iterable, Mapping
 from zoneinfo import ZoneInfo
 
-from jinja2 import Environment, FileSystemLoader
-from slugify import slugify
+import re
 import yaml
 
 from .archive import PHOENIX_TZ as ARCHIVE_TZ, ArchiveResult, archive_previous_wave
@@ -62,13 +61,173 @@ def format_timezone_label(timezone: str) -> TimezoneLabel:
     )
 
 
-def _jinja_environment(templates_dir: Path) -> Environment:
-    return Environment(
-        loader=FileSystemLoader(str(templates_dir)),
-        autoescape=False,
-        trim_blocks=True,
-        lstrip_blocks=True,
+_NON_ALNUM_RE = re.compile(r"[^a-z0-9]+")
+
+
+def _slugify(text: str, *, fallback: str) -> str:
+    normalized = _NON_ALNUM_RE.sub("-", text.lower()).strip("-")
+    return normalized or fallback
+
+
+def _render_mop_content(
+    spec: Mapping[str, Any],
+    *,
+    generated_at: str,
+    timezone_label: TimezoneLabel,
+) -> str:
+    wave = spec["wave"]
+    lines = [
+        f"# Wave {wave} Mission Outline Plan",
+        "",
+        f"_Generated at {generated_at} {timezone_label.parenthetical}_",
+        "",
+        "## Purpose",
+        str(spec.get("purpose", "")),
+        "",
+        "## Global Constraints",
+    ]
+    for item in spec.get("constraints", []):
+        lines.append(f"- {item}")
+    lines.append("")
+    lines.append("## Quality Bar")
+    for item in spec.get("quality_bar", []):
+        lines.append(f"- {item}")
+    lines.append("")
+    lines.append("## Sequenced PRs")
+    for pr in spec.get("sequenced_prs", []):
+        acceptance = list(pr.get("acceptance") or [])
+        notes = list(pr.get("notes") or [])
+        title = str(pr.get("title", ""))
+        lines.append(
+            f"- **{title}** — {len(acceptance)} acceptance checks"
+        )
+        for check in acceptance:
+            lines.append(f"  - {check}")
+        if notes:
+            lines.append("  _Notes:_")
+            for note in notes:
+                lines.append(f"  - {note}")
+    lines.extend(
+        [
+            "",
+            "## Artifacts & Traceability",
+            f"- MOP source: `backlog/wave{wave}.yaml`",
+            f"- Rendered MOP: `docs/mop/mop_wave{wave}.md`",
+            f"- Sub-prompts: `docs/sub-prompts/wave{wave}/`",
+            f"- Issue bodies: `artifacts/issues/wave{wave}/`",
+            f"- Manifest: `artifacts/manifests/wave{wave}_subprompts.json`",
+            "- Generated via `make gen-wave{wave}` with Phoenix timestamps.",
+            "",
+            "## Notes & Decisions Policy",
+            "- Capture contributor annotations with **Decision:**/**Note:**/**Action:** markers.",
+            "- America/Phoenix (no DST) timestamps must accompany status updates.",
+            "- Store generated artifacts in Git with deterministic ordering.",
+            "",
+            "## Acceptance Gate",
+            "- Validate linting, typing, and tests before marking this wave complete.",
+            "- Ensure the manifest SHA (`git_sha`) matches the release commit used for generation.",
+        ]
     )
+    return "\n".join(lines)
+
+
+def _render_subprompt_content(
+    wave: int,
+    pr: Mapping[str, Any],
+    *,
+    generated_at: str,
+    timezone_label: str,
+) -> str:
+    acceptance = list(pr.get("acceptance") or [])
+    guidance = dict(pr.get("guidance") or {})
+    lines = [
+        f"# Wave {wave} – Sub-Prompt · [AUTO] {pr.get('title', '')}",
+        "",
+        "## Context",
+        (
+            "This task originates from the Wave "
+            f"{wave} Mission Outline Plan generated from YAML. "
+            f"Honor {timezone_label} for all scheduling data and reference the "
+            "Decision/Note/Action markers when updating artifacts."
+        ),
+        "",
+        "## Acceptance Criteria (from issue)",
+    ]
+    for check in acceptance:
+        lines.append(f"- {check}")
+    lines.extend(
+        [
+            "",
+            "## Return these 5 outputs",
+            "1. Implementation plan covering sequencing and Phoenix-aware timestamps.",
+            "2. Code snippets or diffs that satisfy the acceptance criteria.",
+            "3. Tests (unit/pytest) demonstrating coverage.",
+            "4. Documentation updates referencing this wave's artifacts.",
+            "5. Risk assessment noting fallbacks and rollback steps.",
+            "",
+        ]
+    )
+
+    optional_sections = [
+        ("implementation_plan", "### Diff-oriented implementation plan"),
+        ("code_snippets", "### Key code snippets"),
+        ("tests", "### Tests (pytest; no live network)"),
+        ("docs_excerpt", "### Docs excerpt (README/runbook)"),
+        ("risk", "### Risk & rollback"),
+    ]
+    for key, heading in optional_sections:
+        value = str(guidance.get(key, "")).strip()
+        if value:
+            lines.append(heading)
+            lines.append(value)
+            lines.append("")
+
+    lines.extend(
+        [
+            "## Critic Check",
+            "- Re-read the acceptance criteria.",
+            "- Confirm Phoenix timezone is referenced wherever scheduling appears.",
+            "- Ensure no secrets or credentials are exposed.",
+        ]
+    )
+    critic = str(guidance.get("critic_check", "")).strip()
+    if critic:
+        lines.append(critic)
+
+    lines.extend(
+        [
+            "",
+            "## PR Markers",
+            "- Begin change logs with **Decision:**/**Note:**/**Action:** blocks.",
+            "- Link back to the generated manifest entry for traceability.",
+        ]
+    )
+    pr_markers = str(guidance.get("pr_markers", "")).strip()
+    if pr_markers:
+        lines.append(pr_markers)
+
+    return "\n".join(lines).rstrip()
+
+
+def _render_issue_content(
+    wave: int,
+    pr: Mapping[str, Any],
+    *,
+    summary_line: str,
+    subprompt_body: str,
+) -> str:
+    labels = list(pr.get("labels") or [])
+    label_text = ", ".join(labels) if labels else f"wave:wave{wave}"
+    lines = [
+        f"## {pr.get('title', '')}",
+        "",
+        summary_line,
+        "",
+        subprompt_body,
+        "",
+        f"**Labels:** {label_text}",
+    ]
+    return "\n".join(lines).rstrip()
 
 
 def _write_text(path: Path, content: str) -> Path:
@@ -173,18 +332,11 @@ def render_mop_from_spec(
 ) -> Path:
     root = Path(base_dir) if base_dir is not None else Path.cwd()
     templates_dir = root / "templates"
-    env = _jinja_environment(templates_dir)
-    template = env.get_template("mop.md.j2")
-    content = template.render(
-        wave=spec["wave"],
-        purpose=spec.get("purpose", ""),
-        constraints=spec.get("constraints", []),
-        quality_bar=spec.get("quality_bar", []),
-        sequenced_prs=spec.get("sequenced_prs", []),
+    label = timezone_label or format_timezone_label(PHOENIX_TZ)
+    content = _render_mop_content(
+        spec,
         generated_at=generated_at,
-        timezone_parenthetical=(
-            (timezone_label or format_timezone_label(PHOENIX_TZ)).parenthetical
-        ),
+        timezone_label=label,
     )
     path = root / "docs" / "mop" / f"mop_wave{spec['wave']}.md"
     return _write_text(path, content)
@@ -199,9 +351,6 @@ def render_subprompts_and_issues(
 ) -> list[dict[str, Any]]:
     root = Path(base_dir) if base_dir is not None else Path.cwd()
     templates_dir = root / "templates"
-    env = _jinja_environment(templates_dir)
-    sub_template = env.get_template("subprompt.md.j2")
-    issue_template = env.get_template("issue_body.md.j2")
     wave = spec["wave"]
     label = timezone_label or format_timezone_label(PHOENIX_TZ)
     subprompt_root = root / "docs" / "sub-prompts" / f"wave{wave}"
@@ -209,7 +358,7 @@ def render_subprompts_and_issues(
     items: list[dict[str, Any]] = []
     for pr in spec.get("sequenced_prs", []):
         title = pr.get("title", "")
-        slug = slugify(title) or f"wave{wave}-item"
+        slug = _slugify(title, fallback=f"wave{wave}-item")
         normalized = {
             "id": pr.get("id"),
             "title": title,
@@ -218,9 +367,9 @@ def render_subprompts_and_issues(
             "labels": list(pr.get("labels") or []),
             "guidance": dict(pr.get("guidance") or {}),
         }
-        sub_content = sub_template.render(
-            wave=wave,
-            pr=normalized,
+        sub_content = _render_subprompt_content(
+            wave,
+            normalized,
             generated_at=generated_at,
             timezone_label=label.context,
         )
@@ -232,12 +381,11 @@ def render_subprompts_and_issues(
             "Generated automatically from "
             f"backlog/wave{wave}.yaml on {generated_at} {label.parenthetical}."
         )
-        issue_content = issue_template.render(
-            wave=wave,
-            pr=normalized,
+        issue_content = _render_issue_content(
+            wave,
+            normalized,
             summary_line=summary_line,
             subprompt_body=body_without_heading,
-            timezone_label=label.summary,
         )
         issue_path = issue_root / f"{slug}.md"
         _write_text(issue_path, issue_content)

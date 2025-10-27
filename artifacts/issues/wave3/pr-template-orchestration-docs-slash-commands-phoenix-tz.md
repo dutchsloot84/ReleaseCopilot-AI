@@ -59,7 +59,6 @@ Update `docs/runbooks/orchestrator.md` introduction:
 - Rollback: revert `.github/pull_request_template.md` and doc updates; no runtime impact.
 - No data migrations or dependency changes.
 
-
 ## Critic Check
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.
