@@ -62,40 +62,40 @@ jobs:
         run: |
           python -m pip install --upgrade pip wheel
           if python - <<'PY'
-from __future__ import annotations
+            from __future__ import annotations
 
-import configparser
-from pathlib import Path
-
-
-def has_dev_extra() -> bool:
-    pyproject = Path("pyproject.toml")
-    if pyproject.is_file():
-        text = pyproject.read_text(encoding="utf-8")
-        try:
-            import tomllib  # type: ignore[attr-defined]
-        except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
-            tomllib = None  # type: ignore[assignment]
-        if tomllib is not None:
-            data = tomllib.loads(text)  # type: ignore[attr-defined]
-            extras = data.get("project", {}).get("optional-dependencies", {})
-            if "dev" in extras:
-                return True
-        if "[project.optional-dependencies]" in text and "dev" in text:
-            return True
-
-    setup_cfg = Path("setup.cfg")
-    if setup_cfg.is_file():
-        parser = configparser.ConfigParser()
-        parser.read(setup_cfg)
-        if parser.has_option("options.extras_require", "dev"):
-            return True
-
-    return False
+            import configparser
+            from pathlib import Path
 
 
-raise SystemExit(0 if has_dev_extra() else 1)
-PY
+            def has_dev_extra() -> bool:
+                pyproject = Path("pyproject.toml")
+                if pyproject.is_file():
+                    text = pyproject.read_text(encoding="utf-8")
+                    try:
+                        import tomllib  # type: ignore[attr-defined]
+                    except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
+                        tomllib = None  # type: ignore[assignment]
+                    if tomllib is not None:
+                        data = tomllib.loads(text)  # type: ignore[attr-defined]
+                        extras = data.get("project", {}).get("optional-dependencies", {})
+                        if "dev" in extras:
+                            return True
+                    if "[project.optional-dependencies]" in text and "dev" in text:
+                        return True
+
+                setup_cfg = Path("setup.cfg")
+                if setup_cfg.is_file():
+                    parser = configparser.ConfigParser()
+                    parser.read(setup_cfg)
+                    if parser.has_option("options.extras_require", "dev"):
+                        return True
+
+                return False
+
+
+            raise SystemExit(0 if has_dev_extra() else 1)
+          PY
           then
             pip install -e .[dev]
           else
@@ -147,40 +147,40 @@ PY
         run: |
           python -m pip install --upgrade pip wheel
           if python - <<'PY'
-from __future__ import annotations
+            from __future__ import annotations
 
-import configparser
-from pathlib import Path
-
-
-def has_dev_extra() -> bool:
-    pyproject = Path("pyproject.toml")
-    if pyproject.is_file():
-        text = pyproject.read_text(encoding="utf-8")
-        try:
-            import tomllib  # type: ignore[attr-defined]
-        except ModuleNotFoundError:
-            tomllib = None  # type: ignore[assignment]
-        if tomllib is not None:
-            data = tomllib.loads(text)  # type: ignore[attr-defined]
-            extras = data.get("project", {}).get("optional-dependencies", {})
-            if "dev" in extras:
-                return True
-        if "[project.optional-dependencies]" in text and "dev" in text:
-            return True
-
-    setup_cfg = Path("setup.cfg")
-    if setup_cfg.is_file():
-        parser = configparser.ConfigParser()
-        parser.read(setup_cfg)
-        if parser.has_option("options.extras_require", "dev"):
-            return True
-
-    return False
+            import configparser
+            from pathlib import Path
 
 
-raise SystemExit(0 if has_dev_extra() else 1)
-PY
+            def has_dev_extra() -> bool:
+                pyproject = Path("pyproject.toml")
+                if pyproject.is_file():
+                    text = pyproject.read_text(encoding="utf-8")
+                    try:
+                        import tomllib  # type: ignore[attr-defined]
+                    except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
+                        tomllib = None  # type: ignore[assignment]
+                    if tomllib is not None:
+                        data = tomllib.loads(text)  # type: ignore[attr-defined]
+                        extras = data.get("project", {}).get("optional-dependencies", {})
+                        if "dev" in extras:
+                            return True
+                    if "[project.optional-dependencies]" in text and "dev" in text:
+                        return True
+
+                setup_cfg = Path("setup.cfg")
+                if setup_cfg.is_file():
+                    parser = configparser.ConfigParser()
+                    parser.read(setup_cfg)
+                    if parser.has_option("options.extras_require", "dev"):
+                        return True
+
+                return False
+
+
+            raise SystemExit(0 if has_dev_extra() else 1)
+          PY
           then
             pip install -e .[dev]
           else
@@ -365,7 +365,6 @@ PY
       RC_S3_BUCKET: ${{ secrets.RC_S3_BUCKET }}
       RC_S3_PREFIX: releasecopilot
       FIX_VERSION: ${{ inputs.fix_version }}
-      PYTHONPATH: src
     steps:
       - uses: actions/checkout@v4
 
@@ -383,6 +382,7 @@ PY
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements-optional.txt ]; then pip install -r requirements-optional.txt; fi
+          pip install -e .[optional]
 
       - name: Compute OIDC availability flags
         env:

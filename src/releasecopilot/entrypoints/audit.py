@@ -24,16 +24,6 @@ from zoneinfo import ZoneInfo
 
 import click
 
-LoadDotenvFn = Callable[..., bool]
-load_dotenv: LoadDotenvFn | None
-
-try:  # pragma: no cover - best effort optional dependency
-    from dotenv import load_dotenv as _load_dotenv
-except Exception:  # pragma: no cover - ignore missing dependency
-    load_dotenv = None
-else:
-    load_dotenv = _load_dotenv
-
 from cli.shared import AuditConfig, finalize_run, handle_dry_run, parse_args
 from clients.bitbucket_client import BitbucketClient
 from clients.jira_client import JiraClient, compute_fix_version_window
@@ -51,11 +41,18 @@ from releasecopilot.utils.jira_csv_loader import (
 )
 from tools.generator.generator import run_cli as run_generator_cli
 
+LoadDotenvFn = Callable[..., bool]
+_load_dotenv: LoadDotenvFn | None = None
+try:  # pragma: no cover - best effort optional dependency
+    from dotenv import load_dotenv as _load_dotenv
+except Exception:  # pragma: no cover - ignore missing dependency
+    _load_dotenv = None
+
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _load_local_dotenv() -> None:
-    if load_dotenv is None:
+    if _load_dotenv is None:
         return
 
     env_path = PROJECT_ROOT / ".env"
@@ -63,7 +60,7 @@ def _load_local_dotenv() -> None:
         return
 
     try:  # pragma: no cover - defensive guard
-        load_dotenv(dotenv_path=env_path)
+        _load_dotenv(dotenv_path=env_path)
     except Exception:
         pass
 
