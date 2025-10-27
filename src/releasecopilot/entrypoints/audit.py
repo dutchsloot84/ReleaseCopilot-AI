@@ -18,21 +18,12 @@ from typing import (
     List,
     Optional,
     Protocol,
+    cast,
     runtime_checkable,
 )
 from zoneinfo import ZoneInfo
 
 import click
-
-LoadDotenvFn = Callable[..., bool]
-load_dotenv: LoadDotenvFn | None
-
-try:  # pragma: no cover - best effort optional dependency
-    from dotenv import load_dotenv as _load_dotenv
-except Exception:  # pragma: no cover - ignore missing dependency
-    load_dotenv = None
-else:
-    load_dotenv = _load_dotenv
 
 from cli.shared import AuditConfig, finalize_run, handle_dry_run, parse_args
 from clients.bitbucket_client import BitbucketClient
@@ -50,6 +41,18 @@ from releasecopilot.utils.jira_csv_loader import (
     load_issues_from_csv,
 )
 from tools.generator.generator import run_cli as run_generator_cli
+
+try:  # pragma: no cover - best effort optional dependency
+    from dotenv import load_dotenv as _load_dotenv
+except Exception:  # pragma: no cover - ignore missing dependency
+    _load_dotenv = None
+
+LoadDotenvFn = Callable[..., bool]
+load_dotenv: LoadDotenvFn | None
+if _load_dotenv is None:
+    load_dotenv = None
+else:
+    load_dotenv = cast(LoadDotenvFn, _load_dotenv)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 

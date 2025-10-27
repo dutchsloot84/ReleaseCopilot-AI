@@ -27,10 +27,27 @@ def _run(
     return subprocess.run(
         list(command),
         cwd=str(cwd or REPO_ROOT),
-        env=env,
+        env=_build_env(env),
         check=True,
         text=True,
     )
+
+
+def _build_env(extra_env: dict[str, str] | None = None) -> dict[str, str]:
+    env: dict[str, str] = os.environ.copy()
+    src_path = (REPO_ROOT / "src").as_posix()
+    existing = env.get("PYTHONPATH")
+    if existing:
+        paths = existing.split(os.pathsep)
+        if src_path not in paths:
+            env["PYTHONPATH"] = os.pathsep.join((src_path, existing))
+    else:
+        env["PYTHONPATH"] = src_path
+
+    if extra_env:
+        env.update(extra_env)
+
+    return env
 
 
 def _should_skip() -> bool:
