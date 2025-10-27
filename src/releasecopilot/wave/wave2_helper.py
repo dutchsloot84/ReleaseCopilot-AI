@@ -4,16 +4,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from importlib import import_module
 import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Iterable, Sequence, cast
 import uuid
 
 import click
 import yaml
+from jinja2 import Environment, FileSystemLoader
+from slugify import slugify  # type: ignore[import-untyped]
 
 from releasecopilot.logging_config import get_logger
 from tools.generator.generator import (
@@ -24,6 +27,8 @@ from tools.generator.generator import (
     render_subprompts_and_issues as _render_subprompts_and_issues,
     write_manifest as _write_manifest,
 )
+
+yaml = cast(Any, import_module("yaml"))
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PHOENIX_TZ = "America/Phoenix"
