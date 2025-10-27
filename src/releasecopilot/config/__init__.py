@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import argparse
+from importlib import import_module
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable
-
-import yaml
+from typing import Any, Dict, Iterable, cast
 
 from .. import aws_secrets
+
+yaml = cast(Any, import_module("yaml"))
 
 # Keys that the configuration system understands by default. Additional keys
 # discovered in the YAML file will also be considered for environment
