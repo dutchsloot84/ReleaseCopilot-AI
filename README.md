@@ -136,8 +136,8 @@ pytest
 ### CI Hardening
 
 **Decision:** Every GitHub Actions runner installs Release Copilot in editable mode for its active interpreter so subprocess calls share the same package view and Phoenix-aware hooks stay reproducible.
-**Note:** The wave generator now relies solely on the standard library, so pre-commit hook environments never reach out to PyPI and simply reuse the editable install produced earlier in the job.
-**Action:** Run `pip install -e .[dev]` locally before invoking generator or CLI entry points, and update `tools/hooks/requirements.txt` if future enhancements legitimately require third-party packages.
+**Note:** Pre-commit hook environments bootstrap themselves from `tools/hooks/requirements.txt`, ensuring generator drift checks always carry `requests`, YAML tooling, and slugify helpers even on clean clones.
+**Action:** Run `pip install -e .[dev]` locally before invoking generator or CLI entry points, and record any new hook dependencies in `tools/hooks/requirements.txt` to keep CI and pre-commit.ci aligned.
 
 ### Import hygiene & test isolation
 

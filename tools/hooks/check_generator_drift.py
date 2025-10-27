@@ -14,7 +14,7 @@ DEFAULT_SPEC = Path("backlog/wave3.yaml")
 DEFAULT_TIMEZONE = "America/Phoenix"
 GENERATED_PATHS: tuple[str, ...] = ("docs/mop", "docs/sub-prompts", "artifacts")
 HOOK_MARKER_FILENAME = ".releasecopilot_hook_requirements_installed"
-REQUIRED_MODULES: tuple[str, ...] = ()
+REQUIRED_MODULES: tuple[str, ...] = ("jinja2", "slugify", "yaml", "requests")
 
 
 def _should_install_requirements() -> bool:

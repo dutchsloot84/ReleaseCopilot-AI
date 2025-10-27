@@ -1,2 +1,5 @@
-# Generator hook dependencies are currently optional.
-# Leave this file in place so future additions can declare packages explicitly.
+click==8.1.7
+Jinja2==3.1.0
+PyYAML==6.0.2
+python-slugify==8.0.0
+requests>=2.32
