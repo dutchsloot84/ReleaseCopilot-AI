@@ -23,7 +23,7 @@ jobs:
         run: poetry config virtualenvs.create true
 
       - name: Install deps from lock
-        run: poetry install --no-interaction --no-ansi
+        run: poetry install --no-interaction --no-ansi --sync
 
       - name: Ruff (lint)
         run: poetry run ruff check .
