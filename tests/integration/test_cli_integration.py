@@ -1,4 +1,5 @@
 import subprocess
+import sys
 
 
 def test_cli_dry_run(tmp_path):
@@ -7,9 +8,9 @@ def test_cli_dry_run(tmp_path):
 
     result = subprocess.run(
         [
-            "python",
+            sys.executable,
             "-m",
-            "src.cli.main",
+            "cli.main",
             "--fix-version",
             "TEST-1",
             "--dry-run",

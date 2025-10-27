@@ -1,4 +1,8 @@
 ## [Unreleased]
+### Hook environment isolation
+**Decision:** Lock generator hooks and subprocess CLIs to editable installs with explicit hook requirements so ModuleNotFoundError regressions stop flapping CI.
+**Note:** Pre-commit environments reuse the editable install and never attempt network-bound dependency resolution because the wave generator now ships with a pure-stdlib implementation and YAML fallback parser.
+**Action:** Updated `.pre-commit-config.yaml`, hook requirements, GitHub workflows, and integration tests to depend on editable installs, guard the stdlib-only generator, and smoke-test `releasecopilot.entrypoints.recover --help`.
 ### Console entry points & coverage alignment
 **Decision:** Migrate executable scripts to src-layout entry points with editable-install console scripts and explicit coverage scope.
 **Note:** Developers should run `pip install -e .[dev]` to expose `rc`, `rc-audit`, `rc-recover`, and `rc-wave2`, then rely on Phoenix-stamped coverage gates configured in `pyproject.toml`.

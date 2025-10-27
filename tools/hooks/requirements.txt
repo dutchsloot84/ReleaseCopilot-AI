@@ -1,0 +1,2 @@
+# Generator hook dependencies are currently optional.
+# Leave this file in place so future additions can declare packages explicitly.

@@ -133,6 +133,12 @@ pytest
 - Pull requests: [pre-commit.ci](https://pre-commit.ci/) runs the same hook set, may auto-commit fixes, and reruns its checks once the fixes land.
 - GitHub Actions installs the project editable and runs check-only linting via `scripts/ci/run_precommit.sh` (`ruff format --check .`, `ruff check --output-format=github .`, and `mypy --config-file pyproject.toml`); Actions never applies auto-fixes.
 
+### CI Hardening
+
+**Decision:** Every GitHub Actions runner installs Release Copilot in editable mode for its active interpreter so subprocess calls share the same package view and Phoenix-aware hooks stay reproducible.
+**Note:** The wave generator now relies solely on the standard library, so pre-commit hook environments never reach out to PyPI and simply reuse the editable install produced earlier in the job.
+**Action:** Run `pip install -e .[dev]` locally before invoking generator or CLI entry points, and update `tools/hooks/requirements.txt` if future enhancements legitimately require third-party packages.
+
 ### Import hygiene & test isolation
 
 - `tests/conftest.py` seeds a `config.settings` stub with the Phoenix timezone and disables network access by patching `socket.socket` and `socket.create_connection` for the entire session.
