@@ -171,15 +171,16 @@ rely on `sys.path` manipulation.
 Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CLI renders the Mission Outline Plan (MOP), sub-prompts, issue bodies, and a JSON manifest directly from that spec.
 
 1. Update `backlog/wave3.yaml` with the new wave metadata, constraints, and sequenced PRs.
-2. Run `make gen-wave3` to execute `rc-audit generate --spec backlog/wave3.yaml --timezone America/Phoenix`.
+2. Run `make gen-wave` to execute `python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix --archive`.
 3. Inspect regenerated files under:
    - `docs/mop/mop_wave3.md`
    - `docs/sub-prompts/wave3/`
    - `artifacts/issues/wave3/`
-   - `artifacts/manifests/wave3_subprompts.json`
-   - `docs/mop/archive/` (previous wave MOP archived once per Phoenix day)
+ - `artifacts/manifests/wave3_subprompts.json`
+  - `docs/mop/archive/` (previous wave MOP archived once per Phoenix day)
 4. Validate Phoenix timestamps (America/Phoenix, UTC-7 year-round) in every artifact before committing. The generator runbook (`docs/runbooks/generator.md`) outlines the contributor checklist.
 5. Run the generator twice to confirm idempotency, then commit or rerun until `git status` is clean. Wave outputs must remain drift-free across Phoenix days.
+6. Reference [`docs/runbooks/ci_wave_check.md`](docs/runbooks/ci_wave_check.md) for drift-check troubleshooting and CI guidance.
 
 ### Troubleshooting
 
@@ -188,7 +189,7 @@ Wave 3 and later waves are defined in YAML (`backlog/wave3.yaml`). The helper CL
 **Action:** When the audit CLI reports a JQL failure after retries, provide the path to a UTF-8 Jira CSV export when prompted. The fallback is timestamped in America/Phoenix for traceability.
 
 - **Jira JQL failures** – After retries are exhausted, the CLI prompts for a CSV export. Supply the path to a Jira export generated with the default column set; invalid paths or malformed CSVs are rejected with a clear Phoenix-stamped status message before re-prompting.
-- **CI failure “Generator drift detected”** – Run `make gen-wave3` locally (or execute `./scripts/ci/check_generator_drift.sh`) and commit the resulting diffs. The guard script reruns the generator and blocks PRs when artifacts drift.
+- **CI failure “Wave artifacts are stale or missing”** – Run `make gen-wave` locally (or execute `python scripts/check_generated_wave.py --mode=check`) and commit the resulting diffs. The guard script regenerates artifacts in a temporary directory and compares them byte-for-byte with the committed outputs.
 - **Archive skipped** – The generator only archives the previous wave MOP once per Phoenix day. Confirm `docs/mop/mop_wave2.md` exists before running the command.
 - **Need issue metadata** – Use the existing Wave 2 helper subcommands (for example `rc-wave2 collect`) to download issues, then stitch them into the generated sub-prompts manually.
 

@@ -18,7 +18,7 @@ This task originates from the Wave 3 Mission Outline Plan generated from YAML. H
 ### Diff-oriented implementation plan
 - Enhance generator pipeline in `main.py` or `tools/generator/` to read the YAML spec and emit MOP, sub-prompts, issue bodies, and manifest files under `docs/sub-prompts/wave3/` and `backlog/`.
 - Implement archiver `tools/generator/archive.py` to compress previous wave MOP once per day, storing in `artifacts/issues/archive/` with Phoenix timestamp metadata.
-- Add drift detection guard invoked via Make/CI/pre-commit (e.g., `scripts/ci/check_generator_drift.sh`) that runs the generator and compares outputs using `git diff --exit-code`.
+- Add drift detection guard invoked via Make/CI/pre-commit (e.g., `python scripts/check_generated_wave.py --mode=check`) that regenerates artifacts in a temporary directory and performs a byte-for-byte comparison.
 - Sequence: generator updates → archiver scheduling (idempotent daily check) → guard script integration → docs/tests.
 
 ### Key code snippets
@@ -36,15 +36,16 @@ def archive_previous_wave(now: datetime | None = None) -> Path | None:
     return create_tarball(source=previous_wave_dir, dest=artifacts_dir / f"wave2_{today}.tar.gz")
 ```
 
-```bash
-# scripts/ci/check_generator_drift.sh
-#!/usr/bin/env bash
-set -euo pipefail
-python main.py generate --timezone America/Phoenix
-git diff --stat --exit-code docs/sub-prompts/wave3 prompts backlog || {
-  echo "Generator drift detected" >&2
-  exit 1
-}
+```python
+# scripts/check_generated_wave.py
+def main(argv: Iterable[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--mode", default="check", choices=["check"])
+    args = parser.parse_args(list(argv) if argv is not None else None)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        run_generator_into_temp_dir(Path(tmp_dir))
+        compare_committed_vs_generated()
+    return report_and_exit(differences)
 ```
 
 ```python
@@ -57,14 +58,14 @@ if __name__ == "__main__":
 ### Tests (pytest; no live network)
 - `tests/generator/test_generate_outputs.py::test_generate_from_yaml_creates_manifest` ensures all files are produced and match expected fixtures.
 - `tests/generator/test_archive.py::test_archive_runs_once_per_day` checks lockfile behavior and Phoenix timezone usage.
-- `tests/generator/test_drift_guard.py::test_drift_guard_detects_changes` invokes guard script via subprocess in temp repo.
+- `tests/scripts/test_check_generated_wave.py::test_main_reports_drift` exercises the hermetic checker and ensures failures surface helpful remediation text.
 - Edge cases: missing previous wave directory, YAML spec missing fields, timezone conversions crossing midnight.
 - Maintain ≥70% coverage on generator modules with `pytest tests/generator --cov=tools.generator`.
 
 ### Docs excerpt (README/runbook)
 Add to `docs/runbooks/generator.md`:
 
-> Run `python main.py generate --timezone America/Phoenix` to refresh Wave 3 artifacts. The generator archives the prior wave MOP once per Phoenix day, writing tarballs to `artifacts/issues/archive/`. CI/pre-commit executes `scripts/ci/check_generator_drift.sh` to ensure repo state matches generated outputs.
+> Run `python main.py generate --timezone America/Phoenix` to refresh Wave 3 artifacts. The generator archives the prior wave MOP once per Phoenix day, writing tarballs to `artifacts/issues/archive/`. CI/pre-commit executes `python scripts/check_generated_wave.py --mode=check` to ensure repo state matches generated outputs.
 
 Update `README.md` automation section with drift guard details.
 
@@ -77,7 +78,7 @@ Update `README.md` automation section with drift guard details.
 - Re-read the acceptance criteria.
 - Confirm Phoenix timezone is referenced wherever scheduling appears.
 - Ensure no secrets or credentials are exposed.
-- Run generator unit tests with coverage, ruff/black on scripts, and manual `scripts/ci/check_generator_drift.sh` dry run.
+- Run generator unit tests with coverage, ruff/black on scripts, and manual `python scripts/check_generated_wave.py --mode=check` dry run.
 - Validate archive tarballs include Phoenix timestamp metadata without embedding secrets.
 - Confirm drift guard respects clean git state and excludes ephemeral files.
 

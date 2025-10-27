@@ -37,6 +37,9 @@
 - **Decision:** Automate import hygiene fixes in CI so ruff/isort guards always run before reviews.
 - **Note:** Auto-fix commits are pushed with `[skip ci]` from the GitHub Actions bot and reference America/Phoenix scheduling expectations.
 - **Action:** Updated `.github/workflows/ci.yml`, `.pre-commit-config.yaml`, and `pyproject.toml` to apply ruff check --fix + ruff format, auto-commit results, and fail if additional diffs appear.
+- **Decision:** Make the Wave artifact drift check hermetic and remove Poetry from the CI pipeline.
+- **Note:** Pre-commit and CI now execute `python scripts/check_generated_wave.py --mode=check` with pip-installed caches while pytest enforces ≥70% coverage and uploads XML/HTML reports.
+- **Action:** Added a Python-based checker, pip/pre-commit caching in CI, a `make gen-wave` target, refreshed docs/runbook guidance, and regression tests for the new hook.
 ### Added
 - **Decision:** Adopt `python main.py generate --timezone America/Phoenix` as the source of truth for Wave 3 artifacts.
 - **Note:** `./scripts/ci/check_generator_drift.sh` reruns the generator and compares `docs/mop/mop_wave3.md`, `docs/sub-prompts/wave3/`, `artifacts/issues/wave3/`, and `artifacts/manifests/wave3_subprompts.json` against the manifest entry.

@@ -1,4 +1,4 @@
-.PHONY: setup lint typecheck test
+.PHONY: setup lint typecheck test gen-wave
 
 setup:
 	poetry install
@@ -12,4 +12,7 @@ typecheck:
 	poetry run mypy .
 
 test:
-	poetry run pytest
+        poetry run pytest
+
+gen-wave:
+	python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix --archive

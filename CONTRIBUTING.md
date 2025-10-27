@@ -58,7 +58,7 @@ Troubleshooting tips:
 - Local: `pre-commit run --all-files` applies ruff fixes, formatting, mypy, and ancillary checks before you push.
 - Pull requests: [pre-commit.ci](https://pre-commit.ci/) runs the same hooks, may push auto-fix commits, and reruns its checks after applying fixes.
 - GitHub Actions installs the repository in editable mode, then runs check-only linting via `scripts/ci/run_precommit.sh` (`ruff format --check .`, `ruff check --output-format=github .`, and `mypy --config-file pyproject.toml`); Actions never applies auto-fixes.
-- The `check-generated-wave` hook calls `python -m tools.hooks.check_generator_drift` to regenerate Wave artifacts and asserts `docs/mop`, `docs/sub-prompts`, and `artifacts/` match Git history.
+- The `check-generated-wave` hook invokes `python scripts/check_generated_wave.py --mode=check` to regenerate Wave artifacts in a temporary directory and confirm `docs/mop`, `docs/sub-prompts`, and `artifacts/` match Git history.
 - Set `RELEASECOPILOT_SKIP_GENERATOR=1` when you intentionally skip regeneration (for example, on CI jobs that stage artifacts beforehand).
 - On failure it exits with drift instructions so you can re-run `python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix --archive` and commit the refreshed outputs.
 

@@ -39,10 +39,14 @@ repos:
   - repo: local
     hooks:
       - id: check-generated-wave
-        name: Check generated wave artifacts
-        entry: bash -lc 'poetry run python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix --archive'
-        language: system
+        name: Check generated wave artifacts are up-to-date
+        entry: python scripts/check_generated_wave.py --mode=check
+        language: python
         pass_filenames: false
+        additional_dependencies:
+          - PyYAML==6.0.2
+          - Jinja2==3.1.0
+          - python-slugify==8.0.0
 ci:
   autofix_prs: true
   autofix_commit_msg: "chore(pre-commit): auto fixes from pre-commit.ci"

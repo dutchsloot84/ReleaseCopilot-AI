@@ -83,7 +83,7 @@ Deliver MVP surface: Streamlit dashboard, webhook-grade Jira/Bitbucket ingest, c
 - Sub-prompts: `docs/sub-prompts/wave3/`
 - Issue bodies: `artifacts/issues/wave3/`
 - Manifest: `artifacts/manifests/wave3_subprompts.json`
-- Generated via `make gen-wave3` with Phoenix timestamps.
+- Generated via `make gen-wave` with Phoenix timestamps.
 
 ## Notes & Decisions Policy
 - Capture contributor annotations with **Decision:**/**Note:**/**Action:** markers.

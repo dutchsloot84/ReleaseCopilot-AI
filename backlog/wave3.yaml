@@ -1102,7 +1102,7 @@ metadata:
   archived_from_wave: 2
   phoenix_date: 2025-10-15
   generator_behavior:
-    - Wave 3 spec is authoritative for Step 1; run make gen-wave3 after merge.
+    - Wave 3 spec is authoritative for Step 1; run make gen-wave after merge.
     - Generators must stamp Phoenix timestamps and capture args/git_sha/generated_at.
 markers:
   decision: Establish Wave 3 spec as the authoritative pre-generation source of truth before running any automation.
@@ -1110,4 +1110,4 @@ markers:
   action:
     owner: "@dutchsloot84"
     summary: >-
-      After merge, run `make gen-wave3` followed by `make check-generated`, then open a follow-up PR with the regenerated artifacts.
+      After merge, run `make gen-wave` followed by `python scripts/check_generated_wave.py --mode=check`, then open a follow-up PR with the regenerated artifacts.
