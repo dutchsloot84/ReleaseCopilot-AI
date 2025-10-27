@@ -46,25 +46,16 @@ jobs:
         with:
           python-version: '3.11.7'
 
-      - name: Install pipx and Poetry
-        run: |
-          python -m pip install --user pipx
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          ~/.local/bin/pipx install poetry==1.8.3
-
-      - name: Configure Poetry
-        run: |
-          poetry config virtualenvs.create true
-
       - name: Install dependencies
         run: |
-          poetry install --no-interaction --no-ansi
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
 
       - name: Run ruff lint
-        run: poetry run ruff check .
+        run: ruff check .
 
       - name: Run ruff format check
-        run: poetry run ruff format --check .
+        run: ruff format --check .
 
       - name: Verify clean working tree after linting
         run: |
@@ -76,7 +67,7 @@ jobs:
           fi
 
       - name: Run mypy
-        run: poetry run mypy .
+        run: mypy --config-file pyproject.toml
 
       - name: Determine coverage scope
         run: |
@@ -103,11 +94,11 @@ jobs:
 
       - name: Run pytest with coverage gate
         run: |
-          poetry run pytest -q
+          pytest -q
           if [ -n "$COVERAGE_PATHS" ]; then
-            poetry run python tools/coverage_gate.py coverage.json --paths $COVERAGE_PATHS
+            python tools/coverage_gate.py coverage.json --paths $COVERAGE_PATHS
           else
-            poetry run python tools/coverage_gate.py coverage.json
+            python tools/coverage_gate.py coverage.json
           fi
 
       - name: Coverage PR comment
@@ -116,9 +107,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -n "$COVERAGE_PATHS" ]; then
-            poetry run python -m releasecopilot.cli pr-comment coverage --file coverage.json --paths $COVERAGE_PATHS
+            python -m releasecopilot.cli pr-comment coverage --file coverage.json --paths $COVERAGE_PATHS
           else
-            poetry run python -m releasecopilot.cli pr-comment coverage --file coverage.json
+            python -m releasecopilot.cli pr-comment coverage --file coverage.json
           fi
 
       - name: Upload coverage reports
