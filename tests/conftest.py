@@ -18,8 +18,12 @@ try:
     from releasecopilot.wave import wave2_helper as generator
 except ModuleNotFoundError as exc:  # pragma: no cover - dependency guard
     if exc.name == "jinja2":
-        pytest.skip("jinja2 is required for generator tests", allow_module_level=True)
-    raise
+        class _Wave2Stub:
+            PHOENIX_TZ = "America/Phoenix"
+
+        generator = _Wave2Stub()  # type: ignore[assignment]
+    else:
+        raise
 
 FIXED_NOW = datetime(2024, 1, 1, 12, 0, tzinfo=ZoneInfo(generator.PHOENIX_TZ))
 

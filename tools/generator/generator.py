@@ -5,15 +5,19 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from datetime import datetime
+from importlib import import_module
+from types import ModuleType
 import json
 import os
 from pathlib import Path
+import re
 from typing import Any, Callable, Final, Iterable, Mapping
 from zoneinfo import ZoneInfo
 
-from jinja2 import Environment, FileSystemLoader
-from slugify import slugify
-import yaml
+try:  # pragma: no cover - optional dependency for full YAML parsing
+    yaml: ModuleType | None = import_module("yaml")
+except ModuleNotFoundError:  # pragma: no cover - exercised in hook environments
+    yaml = None
 
 from .archive import PHOENIX_TZ as ARCHIVE_TZ, ArchiveResult, archive_previous_wave
 
@@ -62,13 +66,177 @@ def format_timezone_label(timezone: str) -> TimezoneLabel:
     )
 
 
-def _jinja_environment(templates_dir: Path) -> Environment:
-    return Environment(
-        loader=FileSystemLoader(str(templates_dir)),
-        autoescape=False,
-        trim_blocks=True,
-        lstrip_blocks=True,
-    )
+def _slugify(text: str) -> str:
+    normalized = text.strip().lower()
+    normalized = re.sub(r"[^a-z0-9]+", "-", normalized)
+    return normalized.strip("-")
+
+
+def _fold_block(lines: list[str]) -> str:
+    if not lines:
+        return ""
+    segments: list[str] = []
+    buffer: list[str] = []
+    for line in lines:
+        if not line.strip():
+            if buffer:
+                segments.append(" ".join(buffer).strip())
+                buffer = []
+            segments.append("")
+        else:
+            buffer.append(line.strip())
+    if buffer:
+        segments.append(" ".join(buffer).strip())
+    result_lines: list[str] = []
+    for segment in segments:
+        if segment == "":
+            result_lines.append("")
+        else:
+            result_lines.append(segment)
+    return "\n".join(result_lines)
+
+
+def _literal_block(lines: list[str]) -> str:
+    if not lines:
+        return ""
+    return "\n".join(lines)
+
+
+def _parse_scalar(token: str) -> Any:
+    lowered = token.lower()
+    if lowered in {"null", "none"}:
+        return None
+    if lowered == "true":
+        return True
+    if lowered == "false":
+        return False
+    if token.isdigit():
+        return int(token)
+    try:
+        return float(token)
+    except ValueError:
+        pass
+    if token.startswith(("'", '"')) and token.endswith(("'", '"')):
+        return token[1:-1]
+    return token
+
+
+def _collect_block(lines: list[str], start: int, indent: int) -> tuple[list[str], int]:
+    collected: list[str] = []
+    index = start
+    while index < len(lines):
+        raw = lines[index]
+        if not raw.strip():
+            collected.append("")
+            index += 1
+            continue
+        current_indent = len(raw) - len(raw.lstrip(" "))
+        if current_indent < indent:
+            break
+        collected.append(raw[indent:])
+        index += 1
+    return collected, index
+
+
+def _parse_block(lines: list[str], start: int, indent: int) -> tuple[Any, int]:
+    mapping: dict[str, Any] = {}
+    sequence: list[Any] | None = None
+    index = start
+    while index < len(lines):
+        raw = lines[index]
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            index += 1
+            continue
+        current_indent = len(raw) - len(raw.lstrip(" "))
+        if current_indent < indent:
+            break
+        if current_indent > indent:
+            raise ValueError("Invalid indentation in YAML-like specification")
+        if stripped.startswith("- "):
+            if mapping:
+                raise ValueError("Mixed mapping and sequence not supported")
+            if sequence is None:
+                sequence = []
+            item_content = stripped[2:]
+            item_indent = indent + 2
+            index += 1
+            if not item_content:
+                value, index = _parse_block(lines, index, item_indent)
+                sequence.append(value)
+                continue
+            if item_content.endswith(":") or ":" in item_content:
+                key_part, _, value_part = item_content.partition(":")
+                key = key_part.strip()
+                value_part = value_part.strip()
+                item_dict: dict[str, Any] = {}
+                if value_part:
+                    item_dict[key] = _parse_scalar(value_part)
+                else:
+                    nested_value, index = _parse_block(lines, index, item_indent + 2)
+                    item_dict[key] = nested_value
+                while index < len(lines):
+                    lookahead = lines[index]
+                    lookahead_stripped = lookahead.strip()
+                    if not lookahead_stripped:
+                        index += 1
+                        continue
+                    la_indent = len(lookahead) - len(lookahead.lstrip(" "))
+                    if la_indent < item_indent:
+                        break
+                    if la_indent > item_indent:
+                        raise ValueError("Invalid nested indentation in sequence item")
+                    if lookahead_stripped.startswith("- "):
+                        break
+                    key2_part, _, value2_part = lookahead_stripped.partition(":")
+                    key2 = key2_part.strip()
+                    value2_part = value2_part.strip()
+                    index += 1
+                    if value2_part in {"|", "|-", ">", ">-"}:
+                        block_lines, index = _collect_block(lines, index, item_indent + 2)
+                        if value2_part.startswith(">"):
+                            item_dict[key2] = _fold_block(block_lines)
+                        else:
+                            item_dict[key2] = _literal_block(block_lines)
+                        continue
+                    if not value2_part:
+                        nested_value2, index = _parse_block(lines, index, item_indent + 2)
+                        item_dict[key2] = nested_value2
+                    else:
+                        item_dict[key2] = _parse_scalar(value2_part)
+                sequence.append(item_dict)
+                continue
+            sequence.append(_parse_scalar(item_content))
+            continue
+        key_part, _, value_part = stripped.partition(":")
+        key = key_part.strip()
+        value_part = value_part.strip()
+        index += 1
+        if value_part in {"|", "|-", ">", ">-"}:
+            block_lines, index = _collect_block(lines, index, indent + 2)
+            if value_part.startswith(">"):
+                mapping[key] = _fold_block(block_lines)
+            else:
+                mapping[key] = _literal_block(block_lines)
+            continue
+        if not value_part:
+            value, index = _parse_block(lines, index, indent + 2)
+            mapping[key] = value
+        else:
+            mapping[key] = _parse_scalar(value_part)
+    if sequence is not None:
+        return sequence, index
+    return mapping, index
+
+
+def _simple_yaml_load(text: str) -> Any:
+    lines = text.splitlines()
+    value, index = _parse_block(lines, 0, 0)
+    if index < len(lines):
+        remaining = any(line.strip() for line in lines[index:])
+        if remaining:
+            raise ValueError("Failed to consume entire YAML specification")
+    return value
 
 
 def _write_text(path: Path, content: str) -> Path:
@@ -116,7 +284,11 @@ def load_spec(spec_path: Path | str) -> dict[str, Any]:
 
     path = Path(spec_path)
     with path.open("r", encoding="utf-8") as handle:
-        raw_spec = yaml.safe_load(handle) or {}
+        raw_text = handle.read()
+    if yaml is not None:
+        raw_spec = yaml.safe_load(raw_text) or {}
+    else:
+        raw_spec = _simple_yaml_load(raw_text) or {}
 
     if "wave" not in raw_spec:
         raise ValueError("Missing required 'wave' field in spec")
@@ -172,20 +344,68 @@ def render_mop_from_spec(
     timezone_label: TimezoneLabel | None = None,
 ) -> Path:
     root = Path(base_dir) if base_dir is not None else Path.cwd()
-    templates_dir = root / "templates"
-    env = _jinja_environment(templates_dir)
-    template = env.get_template("mop.md.j2")
-    content = template.render(
-        wave=spec["wave"],
-        purpose=spec.get("purpose", ""),
-        constraints=spec.get("constraints", []),
-        quality_bar=spec.get("quality_bar", []),
-        sequenced_prs=spec.get("sequenced_prs", []),
-        generated_at=generated_at,
-        timezone_parenthetical=(
-            (timezone_label or format_timezone_label(PHOENIX_TZ)).parenthetical
-        ),
+    label = (timezone_label or format_timezone_label(PHOENIX_TZ)).parenthetical
+    wave = spec["wave"]
+    lines = [
+        f"# Wave {wave} Mission Outline Plan",
+        "",
+        f"_Generated at {generated_at} {label}_",
+        "",
+        "## Purpose",
+        str(spec.get("purpose", "")).strip(),
+        "",
+        "## Global Constraints",
+    ]
+    for item in spec.get("constraints", []):
+        lines.append(f"- {item}")
+    lines.extend(
+        [
+            "",
+            "## Quality Bar",
+        ]
     )
+    for item in spec.get("quality_bar", []):
+        lines.append(f"- {item}")
+    lines.extend(
+        [
+            "",
+            "## Sequenced PRs",
+        ]
+    )
+    for pr in spec.get("sequenced_prs", []):
+        title = pr.get("title", "")
+        acceptance = list(pr.get("acceptance") or [])
+        notes = list(pr.get("notes") or [])
+        lines.append(f"- **{title}** — {len(acceptance)} acceptance checks")
+        if acceptance:
+            for check in acceptance:
+                lines.append(f"  - {check}")
+        if notes:
+            lines.append("  _Notes:_")
+            for note in notes:
+                lines.append(f"  - {note}")
+    lines.extend(
+        [
+            "",
+            "## Artifacts & Traceability",
+            f"- MOP source: `backlog/wave{wave}.yaml`",
+            f"- Rendered MOP: `docs/mop/mop_wave{wave}.md`",
+            f"- Sub-prompts: `docs/sub-prompts/wave{wave}/`",
+            f"- Issue bodies: `artifacts/issues/wave{wave}/`",
+            f"- Manifest: `artifacts/manifests/wave{wave}_subprompts.json`",
+            f"- Generated via `make gen-wave{wave}` with Phoenix timestamps.",
+            "",
+            "## Notes & Decisions Policy",
+            "- Capture contributor annotations with **Decision:**/**Note:**/**Action:** markers.",
+            "- America/Phoenix (no DST) timestamps must accompany status updates.",
+            "- Store generated artifacts in Git with deterministic ordering.",
+            "",
+            "## Acceptance Gate",
+            "- Validate linting, typing, and tests before marking this wave complete.",
+            "- Ensure the manifest SHA (`git_sha`) matches the release commit used for generation.",
+        ]
+    )
+    content = "\n".join(lines)
     path = root / "docs" / "mop" / f"mop_wave{spec['wave']}.md"
     return _write_text(path, content)
 
@@ -198,10 +418,6 @@ def render_subprompts_and_issues(
     timezone_label: TimezoneLabel | None = None,
 ) -> list[dict[str, Any]]:
     root = Path(base_dir) if base_dir is not None else Path.cwd()
-    templates_dir = root / "templates"
-    env = _jinja_environment(templates_dir)
-    sub_template = env.get_template("subprompt.md.j2")
-    issue_template = env.get_template("issue_body.md.j2")
     wave = spec["wave"]
     label = timezone_label or format_timezone_label(PHOENIX_TZ)
     subprompt_root = root / "docs" / "sub-prompts" / f"wave{wave}"
@@ -209,7 +425,7 @@ def render_subprompts_and_issues(
     items: list[dict[str, Any]] = []
     for pr in spec.get("sequenced_prs", []):
         title = pr.get("title", "")
-        slug = slugify(title) or f"wave{wave}-item"
+        slug = _slugify(title) or f"wave{wave}-item"
         normalized = {
             "id": pr.get("id"),
             "title": title,
@@ -218,12 +434,72 @@ def render_subprompts_and_issues(
             "labels": list(pr.get("labels") or []),
             "guidance": dict(pr.get("guidance") or {}),
         }
-        sub_content = sub_template.render(
-            wave=wave,
-            pr=normalized,
-            generated_at=generated_at,
-            timezone_label=label.context,
+        context_line = (
+            "This task originates from the Wave {wave} Mission Outline Plan generated from YAML. "
+            "Honor {tz} for all scheduling data and reference the Decision/Note/Action markers when "
+            "updating artifacts."
+        ).format(wave=wave, tz=label.context)
+        sub_lines = [
+            f"# Wave {wave} – Sub-Prompt · [AUTO] {normalized['title']}",
+            "",
+            "## Context",
+            context_line,
+            "",
+            "## Acceptance Criteria (from issue)",
+        ]
+        for check in normalized["acceptance"]:
+            sub_lines.append(f"- {check}")
+        sub_lines.extend(
+            [
+                "",
+                "## Return these 5 outputs",
+                "1. Implementation plan covering sequencing and Phoenix-aware timestamps.",
+                "2. Code snippets or diffs that satisfy the acceptance criteria.",
+                "3. Tests (unit/pytest) demonstrating coverage.",
+                "4. Documentation updates referencing this wave's artifacts.",
+                "5. Risk assessment noting fallbacks and rollback steps.",
+                "",
+            ]
         )
+
+        guidance = normalized["guidance"]
+        def _append_guidance(key: str, heading: str) -> None:
+            value = guidance.get(key)
+            if value:
+                sub_lines.append(heading)
+                sub_lines.append(str(value).strip())
+                sub_lines.append("")
+
+        _append_guidance("implementation_plan", "### Diff-oriented implementation plan")
+        _append_guidance("code_snippets", "### Key code snippets")
+        _append_guidance("tests", "### Tests (pytest; no live network)")
+        _append_guidance("docs_excerpt", "### Docs excerpt (README/runbook)")
+        _append_guidance("risk", "### Risk & rollback")
+
+        sub_lines.append("")
+        sub_lines.extend(
+            [
+                "## Critic Check",
+                "- Re-read the acceptance criteria.",
+                "- Confirm Phoenix timezone is referenced wherever scheduling appears.",
+                "- Ensure no secrets or credentials are exposed.",
+            ]
+        )
+        critic = guidance.get("critic_check")
+        if critic:
+            sub_lines.append(str(critic).strip())
+        sub_lines.extend(
+            [
+                "",
+                "## PR Markers",
+                "- Begin change logs with **Decision:**/**Note:**/**Action:** blocks.",
+                "- Link back to the generated manifest entry for traceability.",
+            ]
+        )
+        markers = guidance.get("pr_markers")
+        if markers:
+            sub_lines.append(str(markers).strip())
+        sub_content = "\n".join(sub_lines).rstrip() + "\n"
         sub_path = subprompt_root / f"{slug}.md"
         _write_text(sub_path, sub_content)
 
@@ -232,13 +508,17 @@ def render_subprompts_and_issues(
             "Generated automatically from "
             f"backlog/wave{wave}.yaml on {generated_at} {label.parenthetical}."
         )
-        issue_content = issue_template.render(
-            wave=wave,
-            pr=normalized,
-            summary_line=summary_line,
-            subprompt_body=body_without_heading,
-            timezone_label=label.summary,
-        )
+        labels_text = ", ".join(normalized["labels"]) if normalized["labels"] else f"wave:wave{wave}"
+        issue_lines = [
+            f"## {normalized['title']}",
+            "",
+            summary_line,
+            "",
+            body_without_heading.rstrip(),
+            "",
+            f"**Labels:** {labels_text}",
+        ]
+        issue_content = "\n".join(issue_lines)
         issue_path = issue_root / f"{slug}.md"
         _write_text(issue_path, issue_content)
 
