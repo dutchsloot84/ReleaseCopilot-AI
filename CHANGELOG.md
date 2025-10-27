@@ -1,4 +1,7 @@
 ## [Unreleased]
+### Environment Alignment
+**Decision:** Single Source of Truth = pyproject.toml + poetry.lock; Python pinned 3.11.7.
+**Action:** Hooks and tests run under Poetry; numpy/pandas pinned for ABI stability.
 ### Console entry points & coverage alignment
 **Decision:** Migrate executable scripts to src-layout entry points with editable-install console scripts and explicit coverage scope.
 **Note:** Developers should run `pip install -e .[dev]` to expose `rc`, `rc-audit`, `rc-recover`, and `rc-wave2`, then rely on Phoenix-stamped coverage gates configured in `pyproject.toml`.
