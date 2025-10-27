@@ -339,6 +339,12 @@ bundle. A follow-up job ensures the infrastructure code synthesises by running
 `v*.*.*` is pushed, the packaged `lambda_bundle.zip` artifact is uploaded to the
 run for download.
 
+### CI-V2: Hermetic Rules
+
+- **Decision:** Introduce `.github/workflows/ci-v2.yml` running editable installs and full Ruff/Black-equivalent hooks, mypy, pytest, and subprocess smoke checks on Python 3.11 and 3.12.
+- **Note:** Pre-commit hooks execute with dependencies pinned in `tools/hooks/requirements.txt`, keeping generator runs hermetic and offline while preserving America/Phoenix timestamps.
+- **Action:** Run `pip install -e .[dev]` for each interpreter before executing hooks or tests, ensure subprocess invocations use `sys.executable`, and monitor CI artifacts for the Phoenix-stamped run metadata emitted by generators.
+
 ## Infrastructure (CDK)
 
 - [CDK Best Practices (This Repo)](docs/cdk/README.md)

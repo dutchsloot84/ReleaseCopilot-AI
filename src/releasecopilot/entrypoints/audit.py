@@ -10,29 +10,10 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Protocol,
-    runtime_checkable,
-)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Protocol, runtime_checkable
 from zoneinfo import ZoneInfo
 
 import click
-
-LoadDotenvFn = Callable[..., bool]
-load_dotenv: LoadDotenvFn | None
-
-try:  # pragma: no cover - best effort optional dependency
-    from dotenv import load_dotenv as _load_dotenv
-except Exception:  # pragma: no cover - ignore missing dependency
-    load_dotenv = None
-else:
-    load_dotenv = _load_dotenv
 
 from cli.shared import AuditConfig, finalize_run, handle_dry_run, parse_args
 from clients.bitbucket_client import BitbucketClient
@@ -51,11 +32,24 @@ from releasecopilot.utils.jira_csv_loader import (
 )
 from tools.generator.generator import run_cli as run_generator_cli
 
+LoadDotenvFn = Callable[..., bool]
+
+
+def _maybe_import_load_dotenv() -> LoadDotenvFn | None:
+    try:  # pragma: no cover - best effort optional dependency
+        from dotenv import load_dotenv as imported_load_dotenv
+    except Exception:  # pragma: no cover - ignore missing dependency
+        return None
+    return imported_load_dotenv
+
+
+_load_dotenv_fn = _maybe_import_load_dotenv()
+
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _load_local_dotenv() -> None:
-    if load_dotenv is None:
+    if _load_dotenv_fn is None:
         return
 
     env_path = PROJECT_ROOT / ".env"
@@ -63,7 +57,7 @@ def _load_local_dotenv() -> None:
         return
 
     try:  # pragma: no cover - defensive guard
-        load_dotenv(dotenv_path=env_path)
+        _load_dotenv_fn(dotenv_path=env_path)
     except Exception:
         pass
 

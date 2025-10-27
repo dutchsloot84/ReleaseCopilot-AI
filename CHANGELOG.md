@@ -1,4 +1,8 @@
 ## [Unreleased]
+### CI-V2 Parallel Shakedown
+- **Decision:** Stand up `.github/workflows/ci-v2.yml` alongside the legacy pipeline with editable installs, hermetic hooks, and Python 3.11/3.12 coverage.
+- **Note:** The prior mypy failure stemmed from assigning `None` to the imported `load_dotenv` callable; the fix keeps the optional dependency injectable without shadowing the symbol.
+- **Action:** Added a subprocess smoke test ensuring `python -m releasecopilot.entrypoints.recover --help` succeeds, declared hook dependencies in `tools/hooks/requirements.txt`, and documented Phoenix-stamped generator metadata expectations for CI-V2.
 ### Console entry points & coverage alignment
 **Decision:** Migrate executable scripts to src-layout entry points with editable-install console scripts and explicit coverage scope.
 **Note:** Developers should run `pip install -e .[dev]` to expose `rc`, `rc-audit`, `rc-recover`, and `rc-wave2`, then rely on Phoenix-stamped coverage gates configured in `pyproject.toml`.
