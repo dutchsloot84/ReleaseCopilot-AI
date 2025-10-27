@@ -135,4 +135,3 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":  # pragma: no cover - entry point
     raise SystemExit(main(sys.argv[1:]))
-
