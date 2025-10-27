@@ -12,6 +12,43 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SPEC = Path("backlog/wave3.yaml")
 DEFAULT_TIMEZONE = "America/Phoenix"
 GENERATED_PATHS: tuple[str, ...] = ("docs/mop", "docs/sub-prompts", "artifacts")
+HOOK_MARKER_FILENAME = ".releasecopilot_hook_requirements_installed"
+
+
+def _should_install_requirements() -> bool:
+    if os.environ.get("PRE_COMMIT") == "1":
+        return True
+    prefix = Path(sys.prefix)
+    return "pre-commit" in prefix.as_posix()
+
+
+def _ensure_requirements_installed() -> None:
+    if not _should_install_requirements():
+        return
+
+    marker_dir = Path(sys.prefix)
+    marker_dir.mkdir(parents=True, exist_ok=True)
+    marker_path = marker_dir / HOOK_MARKER_FILENAME
+    if marker_path.exists():
+        return
+
+    requirements_path = REPO_ROOT / "tools/hooks/requirements.txt"
+    if not requirements_path.is_file():
+        return
+
+    subprocess.run(
+        (
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            requirements_path.as_posix(),
+        ),
+        check=True,
+        text=True,
+    )
+    marker_path.write_text("installed", encoding="utf-8")
 
 
 class DriftDetectedError(RuntimeError):
@@ -38,11 +75,13 @@ def _build_env(extra_env: dict[str, str] | None = None) -> dict[str, str]:
     src_path = (REPO_ROOT / "src").as_posix()
     existing = env.get("PYTHONPATH")
     if existing:
-        paths = existing.split(os.pathsep)
-        if src_path not in paths:
-            env["PYTHONPATH"] = os.pathsep.join((src_path, existing))
+        paths = [part for part in existing.split(os.pathsep) if part]
     else:
-        env["PYTHONPATH"] = src_path
+        paths = []
+
+    paths = [part for part in paths if part != src_path]
+    paths.insert(0, src_path)
+    env["PYTHONPATH"] = os.pathsep.join(paths) if paths else src_path
 
     if extra_env:
         env.update(extra_env)
@@ -81,6 +120,7 @@ def assert_clean_git_diff(paths: Sequence[str] = GENERATED_PATHS) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     del argv  # currently unused, reserved for future options
+    _ensure_requirements_installed()
     if _should_skip():
         return 0
 
@@ -95,3 +135,4 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":  # pragma: no cover - entry point
     raise SystemExit(main(sys.argv[1:]))
+

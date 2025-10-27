@@ -365,7 +365,6 @@ jobs:
       RC_S3_BUCKET: ${{ secrets.RC_S3_BUCKET }}
       RC_S3_PREFIX: releasecopilot
       FIX_VERSION: ${{ inputs.fix_version }}
-      PYTHONPATH: src
     steps:
       - uses: actions/checkout@v4
 
@@ -383,6 +382,7 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements-optional.txt ]; then pip install -r requirements-optional.txt; fi
+          pip install -e .[optional]
 
       - name: Compute OIDC availability flags
         env:
