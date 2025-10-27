@@ -30,7 +30,7 @@ def _setup_repo(tmp_path: Path) -> None:
     manifest_dir = tmp_path / "artifacts" / "manifests"
     manifest_dir.mkdir(parents=True)
     manifest_dir.joinpath("wave3_subprompts.json").write_text(
-        "{" "\n  \"generated_at\": \"2024-01-02T03:04:05-07:00\",\n  \"git_sha\": \"abc123\"\n}\n",
+        "{" '\n  "generated_at": "2024-01-02T03:04:05-07:00",\n  "git_sha": "abc123"\n}\n',
         encoding="utf-8",
     )
 
@@ -50,9 +50,7 @@ def _monkeypatch_module(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     ) -> None:
         del spec_path, timezone, existing_timestamp, git_sha
         destination.joinpath("docs", "mop").mkdir(parents=True, exist_ok=True)
-        destination.joinpath("docs", "mop", "mop_wave3.md").write_text(
-            "content", encoding="utf-8"
-        )
+        destination.joinpath("docs", "mop", "mop_wave3.md").write_text("content", encoding="utf-8")
 
     def fake_copy(destination: Path) -> None:
         destination.mkdir(parents=True, exist_ok=True)
@@ -61,7 +59,9 @@ def _monkeypatch_module(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     monkeypatch.setattr(checker, "_copy_support_files", fake_copy)
 
 
-def test_main_succeeds_when_artifacts_match(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_main_succeeds_when_artifacts_match(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     _setup_repo(tmp_path)
     (tmp_path / "docs" / "mop").mkdir(parents=True)
     (tmp_path / "docs" / "mop" / "mop_wave3.md").write_text("content", encoding="utf-8")
