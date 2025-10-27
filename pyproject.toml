@@ -106,6 +106,7 @@ explicit_package_bases = true
 namespace_packages = true
 ignore_missing_imports = true
 follow_imports = "silent"
+exclude = "(^rag-aws/)"
 warn_unused_configs = true
 warn_redundant_casts = true
 show_error_codes = true
