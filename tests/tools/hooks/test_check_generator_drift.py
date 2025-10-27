@@ -43,7 +43,9 @@ def test_ensure_requirements_installed_creates_marker_without_install(
     assert not calls
 
 
-def test_ensure_requirements_installed_skips_when_not_precommit(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ensure_requirements_installed_skips_when_not_precommit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.delenv("PRE_COMMIT", raising=False)
     monkeypatch.setattr(sys, "prefix", sys.prefix)
     calls: list[tuple[str, ...]] = []

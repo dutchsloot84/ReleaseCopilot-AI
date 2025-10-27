@@ -6,11 +6,11 @@ import argparse
 from dataclasses import dataclass
 from datetime import datetime
 from importlib import import_module
-from types import ModuleType
 import json
 import os
 from pathlib import Path
 import re
+from types import ModuleType
 from typing import Any, Callable, Final, Iterable, Mapping
 from zoneinfo import ZoneInfo
 
@@ -463,6 +463,7 @@ def render_subprompts_and_issues(
         )
 
         guidance = normalized["guidance"]
+
         def _append_guidance(key: str, heading: str) -> None:
             value = guidance.get(key)
             if value:
@@ -508,7 +509,9 @@ def render_subprompts_and_issues(
             "Generated automatically from "
             f"backlog/wave{wave}.yaml on {generated_at} {label.parenthetical}."
         )
-        labels_text = ", ".join(normalized["labels"]) if normalized["labels"] else f"wave:wave{wave}"
+        labels_text = (
+            ", ".join(normalized["labels"]) if normalized["labels"] else f"wave:wave{wave}"
+        )
         issue_lines = [
             f"## {normalized['title']}",
             "",

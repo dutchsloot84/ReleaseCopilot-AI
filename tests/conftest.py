@@ -18,6 +18,7 @@ try:
     from releasecopilot.wave import wave2_helper as generator
 except ModuleNotFoundError as exc:  # pragma: no cover - dependency guard
     if exc.name == "jinja2":
+
         class _Wave2Stub:
             PHOENIX_TZ = "America/Phoenix"
 
