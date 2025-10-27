@@ -32,13 +32,9 @@ permissions:
   pull-requests: write
 
 jobs:
-  lint:
-    name: Lint (Python ${{ matrix.python-version }})
+  quality:
+    name: Quality checks (Python 3.11.7)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.10', '3.11']
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,64 +44,27 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.11.7'
 
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements*.txt', 'pyproject.toml') }}
-          restore-keys: |
-            pip-${{ runner.os }}-${{ matrix.python-version }}-
+      - name: Install pipx and Poetry
+        run: |
+          python -m pip install --user pipx
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          ~/.local/bin/pipx install poetry==1.8.3
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip wheel
-          if python - <<'PY'
-from __future__ import annotations
+          poetry install --no-interaction --no-ansi
 
-import configparser
-from pathlib import Path
+      - name: Run ruff lint
+        run: poetry run ruff check .
 
-
-def has_dev_extra() -> bool:
-    pyproject = Path("pyproject.toml")
-    if pyproject.is_file():
-        text = pyproject.read_text(encoding="utf-8")
-        try:
-            import tomllib  # type: ignore[attr-defined]
-        except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
-            tomllib = None  # type: ignore[assignment]
-        if tomllib is not None:
-            data = tomllib.loads(text)  # type: ignore[attr-defined]
-            extras = data.get("project", {}).get("optional-dependencies", {})
-            if "dev" in extras:
-                return True
-        if "[project.optional-dependencies]" in text and "dev" in text:
-            return True
-
-    setup_cfg = Path("setup.cfg")
-    if setup_cfg.is_file():
-        parser = configparser.ConfigParser()
-        parser.read(setup_cfg)
-        if parser.has_option("options.extras_require", "dev"):
-            return True
-
-    return False
-
-
-raise SystemExit(0 if has_dev_extra() else 1)
-PY
-          then
-            pip install -e .[dev]
-          else
-            pip install -e .
-            if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-          fi
-
-      - name: Run lint suite (check-only)
-        run: scripts/ci/run_precommit.sh
-        shell: bash
+      - name: Run ruff format check
+        run: poetry run ruff format --check .
 
       - name: Verify clean working tree after linting
         run: |
@@ -116,83 +75,8 @@ PY
             exit 1
           fi
 
-  tests:
-    name: Tests (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
-    needs: lint
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.10', '3.11']
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements*.txt', 'pyproject.toml') }}
-          restore-keys: |
-            pip-${{ runner.os }}-${{ matrix.python-version }}-
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip wheel
-          if python - <<'PY'
-from __future__ import annotations
-
-import configparser
-from pathlib import Path
-
-
-def has_dev_extra() -> bool:
-    pyproject = Path("pyproject.toml")
-    if pyproject.is_file():
-        text = pyproject.read_text(encoding="utf-8")
-        try:
-            import tomllib  # type: ignore[attr-defined]
-        except ModuleNotFoundError:
-            tomllib = None  # type: ignore[assignment]
-        if tomllib is not None:
-            data = tomllib.loads(text)  # type: ignore[attr-defined]
-            extras = data.get("project", {}).get("optional-dependencies", {})
-            if "dev" in extras:
-                return True
-        if "[project.optional-dependencies]" in text and "dev" in text:
-            return True
-
-    setup_cfg = Path("setup.cfg")
-    if setup_cfg.is_file():
-        parser = configparser.ConfigParser()
-        parser.read(setup_cfg)
-        if parser.has_option("options.extras_require", "dev"):
-            return True
-
-    return False
-
-
-raise SystemExit(0 if has_dev_extra() else 1)
-PY
-          then
-            pip install -e .[dev]
-          else
-            pip install -e .
-            if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-          fi
-
-      - name: Cache pytest
-        uses: actions/cache@v4
-        with:
-          path: .pytest_cache
-          key: pytest-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+      - name: Run mypy
+        run: poetry run mypy .
 
       - name: Determine coverage scope
         run: |
@@ -219,26 +103,25 @@ PY
 
       - name: Run pytest with coverage gate
         run: |
-          pytest
+          poetry run pytest -q
           if [ -n "$COVERAGE_PATHS" ]; then
-            python tools/coverage_gate.py coverage.json --paths $COVERAGE_PATHS
+            poetry run python tools/coverage_gate.py coverage.json --paths $COVERAGE_PATHS
           else
-            python tools/coverage_gate.py coverage.json
+            poetry run python tools/coverage_gate.py coverage.json
           fi
 
       - name: Coverage PR comment
-        if: ${{ github.event_name == 'pull_request' && matrix.python-version == '3.11' }}
+        if: ${{ github.event_name == 'pull_request' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -n "$COVERAGE_PATHS" ]; then
-            python -m releasecopilot.cli pr-comment coverage --file coverage.json --paths $COVERAGE_PATHS
+            poetry run python -m releasecopilot.cli pr-comment coverage --file coverage.json --paths $COVERAGE_PATHS
           else
-            python -m releasecopilot.cli pr-comment coverage --file coverage.json
+            poetry run python -m releasecopilot.cli pr-comment coverage --file coverage.json
           fi
 
       - name: Upload coverage reports
-        if: ${{ matrix.python-version == '3.11' }}
         uses: actions/upload-artifact@v4
         with:
           name: coverage-${{ github.run_id }}
@@ -250,14 +133,14 @@ PY
   package:
     name: Package Lambda bundle
     runs-on: ubuntu-latest
-    needs: tests
+    needs: quality
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.11.7'
           cache: 'pip'
           cache-dependency-path: |
             requirements.txt
@@ -305,14 +188,14 @@ PY
   cdk-synth:
     name: CDK synth
     runs-on: ubuntu-latest
-    needs: tests
+    needs: quality
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.11.7'
           cache: 'pip'
           cache-dependency-path: |
             requirements.txt
@@ -372,7 +255,7 @@ PY
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.11.7'
           cache: 'pip'
           cache-dependency-path: |
             requirements.txt
