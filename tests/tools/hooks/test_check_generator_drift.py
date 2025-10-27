@@ -32,7 +32,6 @@ def test_ensure_requirements_installed_runs_once(
     monkeypatch.setenv("PRE_COMMIT", "1")
     monkeypatch.setattr(sys, "prefix", env_dir.as_posix())
     monkeypatch.setattr(drift.subprocess, "run", fake_run)
-    monkeypatch.setattr(drift, "_missing_modules", lambda: ["jinja2"])
 
     drift._ensure_requirements_installed()
     marker = env_dir / drift.HOOK_MARKER_FILENAME
@@ -58,22 +57,6 @@ def test_ensure_requirements_installed_skips_when_not_precommit(
     monkeypatch.setattr(drift.subprocess, "run", fake_run)
     drift._ensure_requirements_installed()
     assert not calls
-
-
-def test_ensure_requirements_installed_skips_when_modules_present(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    env_dir = tmp_path / "venv"
-    env_dir.mkdir()
-    marker = env_dir / drift.HOOK_MARKER_FILENAME
-
-    monkeypatch.setenv("PRE_COMMIT", "1")
-    monkeypatch.setattr(sys, "prefix", env_dir.as_posix())
-    monkeypatch.setattr(drift, "_missing_modules", lambda: [])
-
-    drift._ensure_requirements_installed()
-
-    assert marker.exists()
 
 
 def test_build_env_injects_src_prefix(monkeypatch: pytest.MonkeyPatch) -> None:

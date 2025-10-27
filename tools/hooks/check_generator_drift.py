@@ -14,7 +14,6 @@ DEFAULT_SPEC = Path("backlog/wave3.yaml")
 DEFAULT_TIMEZONE = "America/Phoenix"
 GENERATED_PATHS: tuple[str, ...] = ("docs/mop", "docs/sub-prompts", "artifacts")
 HOOK_MARKER_FILENAME = ".releasecopilot_hook_requirements_installed"
-REQUIRED_MODULES: tuple[str, ...] = ("jinja2", "slugify", "yaml", "requests")
 
 
 def _should_install_requirements() -> bool:
@@ -34,16 +33,9 @@ def _ensure_requirements_installed() -> None:
     if marker_path.exists():
         return
 
-    missing = _missing_modules()
-    if not missing:
-        marker_path.write_text("installed", encoding="utf-8")
-        return
-
     requirements_path = REPO_ROOT / "tools/hooks/requirements.txt"
     if not requirements_path.is_file():
-        raise RuntimeError(
-            "Missing hook requirements file while packages are absent: " f"{requirements_path}"
-        )
+        return
 
     subprocess.run(
         (
@@ -58,14 +50,6 @@ def _ensure_requirements_installed() -> None:
         text=True,
     )
     marker_path.write_text("installed", encoding="utf-8")
-
-
-def _missing_modules() -> list[str]:
-    missing: list[str] = []
-    for module in REQUIRED_MODULES:
-        if importlib.util.find_spec(module) is None:
-            missing.append(module)
-    return missing
 
 
 class DriftDetectedError(RuntimeError):
