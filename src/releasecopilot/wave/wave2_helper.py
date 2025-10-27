@@ -15,8 +15,6 @@ import uuid
 
 import click
 import yaml
-from jinja2 import Environment, FileSystemLoader
-from slugify import slugify  # type: ignore[import-untyped]
 
 from releasecopilot.logging_config import get_logger
 from tools.generator.generator import (
@@ -404,6 +402,8 @@ def _gh_issue_list(labels: list[str]) -> list[Issue]:
     result = subprocess.run(cmd, capture_output=True, check=True, text=True)
     payload = json.loads(result.stdout or "[]")
     return [Issue.from_raw(item) for item in payload]
+
+
 def write_text(path: Path, content: str) -> Path:
     """Write text to ``path`` only when the content differs."""
 

@@ -8,10 +8,10 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
+import re
 from typing import Any, Callable, Final, Iterable, Mapping
 from zoneinfo import ZoneInfo
 
-import re
 import yaml
 
 from .archive import PHOENIX_TZ as ARCHIVE_TZ, ArchiveResult, archive_previous_wave
@@ -98,9 +98,7 @@ def _render_mop_content(
         acceptance = list(pr.get("acceptance") or [])
         notes = list(pr.get("notes") or [])
         title = str(pr.get("title", ""))
-        lines.append(
-            f"- **{title}** — {len(acceptance)} acceptance checks"
-        )
+        lines.append(f"- **{title}** — {len(acceptance)} acceptance checks")
         for check in acceptance:
             lines.append(f"  - {check}")
         if notes:
