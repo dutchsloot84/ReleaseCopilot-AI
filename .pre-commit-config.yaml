@@ -40,14 +40,9 @@ repos:
     hooks:
       - id: check-generated-wave
         name: Check generated wave artifacts
-        entry: python -m tools.hooks.check_generator_drift
-        language: python
+        entry: poetry run python tools/hooks/check_generator_drift.py
+        language: system
         pass_filenames: false
-        additional_dependencies:
-          - click==8.1.7
-          - PyYAML==6.0.2
-          - Jinja2==3.1.0
-          - python-slugify==8.0.0
 ci:
   autofix_prs: true
   autofix_commit_msg: "chore(pre-commit): auto fixes from pre-commit.ci"
