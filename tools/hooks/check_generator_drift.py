@@ -42,8 +42,7 @@ def _ensure_requirements_installed() -> None:
     requirements_path = REPO_ROOT / "tools/hooks/requirements.txt"
     if not requirements_path.is_file():
         raise RuntimeError(
-            "Missing hook requirements file while packages are absent: "
-            f"{requirements_path}"
+            "Missing hook requirements file while packages are absent: " f"{requirements_path}"
         )
 
     subprocess.run(
@@ -153,4 +152,3 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":  # pragma: no cover - entry point
     raise SystemExit(main(sys.argv[1:]))
-

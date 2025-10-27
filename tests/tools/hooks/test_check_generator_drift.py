@@ -17,7 +17,9 @@ class _FakeResult:
     returncode = 0
 
 
-def test_ensure_requirements_installed_runs_once(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_ensure_requirements_installed_runs_once(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     env_dir = tmp_path / "venv"
     env_dir.mkdir()
     calls: list[tuple[str, ...]] = []
@@ -42,7 +44,9 @@ def test_ensure_requirements_installed_runs_once(monkeypatch: pytest.MonkeyPatch
     assert not calls
 
 
-def test_ensure_requirements_installed_skips_when_not_precommit(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ensure_requirements_installed_skips_when_not_precommit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.delenv("PRE_COMMIT", raising=False)
     monkeypatch.setattr(sys, "prefix", sys.prefix)
     calls: list[tuple[str, ...]] = []
