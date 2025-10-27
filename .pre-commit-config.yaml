@@ -40,7 +40,7 @@ repos:
     hooks:
       - id: check-generated-wave
         name: Check generated wave artifacts
-        entry: bash -lc 'poetry run python tools/hooks/check_generator_drift.py'
+        entry: bash -lc 'poetry run python main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix --archive'
         language: system
         pass_filenames: false
 ci:
