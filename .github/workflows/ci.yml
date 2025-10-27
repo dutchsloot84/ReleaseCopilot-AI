@@ -16,14 +16,18 @@ jobs:
 
       - name: Install Poetry
         run: |
-          pipx install poetry==1.8.3
+          python -m pip install --upgrade pip
+          python -m pip install poetry==1.8.3
           poetry --version
 
       - name: Configure Poetry (no venv in-project)
         run: poetry config virtualenvs.create true
 
       - name: Install deps from lock
-        run: poetry install --no-interaction --no-ansi --sync
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Validate lockfile
+        run: poetry lock --check
 
       - name: Ruff (lint)
         run: poetry run ruff check .
@@ -31,9 +35,18 @@ jobs:
       - name: Ruff (format check)
         run: poetry run ruff format --check .
 
+      - name: Pre-commit (hooks)
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/rag-aws
+        run: poetry run pre-commit run --all-files
+
       - name: Mypy (typecheck)
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/rag-aws
         run: poetry run mypy
 
       - name: Pytest (coverage ≥ 70%)
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/rag-aws
         run: |
           poetry run pytest -q

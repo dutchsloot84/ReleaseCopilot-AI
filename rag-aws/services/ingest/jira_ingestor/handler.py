@@ -13,7 +13,7 @@ import boto3
 from botocore.exceptions import ClientError
 from dateutil import parser as date_parser
 
-from .adf_md import to_markdown
+from services.ingest.jira_ingestor.adf_md import to_markdown
 from .jira_api import (
     JiraAuthError,
     JiraRateLimitError,

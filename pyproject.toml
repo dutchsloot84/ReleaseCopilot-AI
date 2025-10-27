@@ -110,6 +110,7 @@ warn_unused_configs = true
 warn_redundant_casts = true
 show_error_codes = true
 files = ["src", "tests"]
+exclude = "(^rag-aws/)"
 
 [[tool.mypy.overrides]]
 module = "rag_aws.*"

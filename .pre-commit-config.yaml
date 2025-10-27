@@ -40,7 +40,7 @@ repos:
     hooks:
       - id: check-generated-wave
         name: Check generated wave artifacts
-        entry: python tools/hooks/check_generator_drift.py
+        entry: bash -lc 'poetry run python tools/hooks/check_generator_drift.py'
         language: system
         pass_filenames: false
 ci:
