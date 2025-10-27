@@ -88,7 +88,20 @@
         "notes": 1,
         "artifacts": 45
       }
+    },
+    {
+      "date": "2025-10-27",
+      "file": "docs/history/2025-10-27-checkin.md",
+      "since": "2025-10-20T14:10:41.265347+00:00",
+      "until": "2025-10-27T14:10:41.265364+00:00",
+      "counts": {
+        "completed": 12,
+        "in_progress": 0,
+        "backlog": 0,
+        "notes": 4,
+        "artifacts": 11
+      }
     }
   ],
-  "generated_at": "2025-10-20T14:09:59.719968+00:00"
+  "generated_at": "2025-10-27T14:11:09.207975+00:00"
 }
