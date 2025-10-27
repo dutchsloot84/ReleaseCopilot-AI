@@ -1,16 +1,27 @@
-cat > .gitignore <<'EOF'
-# Python
+# Python caches
 __pycache__/
 *.pyc
+.mypy_cache/
+.pytest_cache/
+
+# Virtual environments
 .venv/
+
+# Coverage and build artifacts
+.coverage
+.coverage.*
+.artifacts/
+dist/
+
 # Local environment files
 .env
+
 # Lambda build artifacts
 services/ingest/jira_ingestor/build/
 services/ingest/jira_ingestor/jira_ingestor.zip
-# Terraform local state backups (keep state files unless you use remote backend)
+
+# Terraform local state backups
 *.tfstate.backup
-.crc
-.coverage
-.artifacts
+
+# Misc project artifacts
 artifacts/issues/archive/

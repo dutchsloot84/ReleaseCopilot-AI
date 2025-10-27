@@ -1,16 +1,15 @@
-PYTHON ?= python3
+.PHONY: setup lint typecheck test
 
-.PHONY: gen-wave3 check-generated lint lint-fix
-
-gen-wave3:
-	$(PYTHON) main.py generate --spec backlog/wave3.yaml --timezone America/Phoenix
-
-check-generated:
-	$(PYTHON) -m tools.hooks.check_generator_drift
+setup:
+	poetry install
+	pre-commit install
 
 lint:
-	pre-commit run --all-files --show-diff-on-failure
+	poetry run ruff check .
+	poetry run ruff format --check .
 
-lint-fix:
-	ruff check . --fix
-	ruff format .
+typecheck:
+	poetry run mypy .
+
+test:
+	poetry run pytest
