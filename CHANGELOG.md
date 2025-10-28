@@ -1,4 +1,8 @@
 ## [Unreleased]
+### Editable install parity for CI hooks
+**Decision:** Require every CI job that runs pre-commit, generators, or tests to activate Python 3.11.x and perform `pip install -e .[dev]` before invoking project tooling.
+**Note:** This keeps the `releasecopilot` package, Click CLI dependencies, and Phoenix-deterministic generators importable inside hooks and GitHub Actions (no stray Python 3.12 runtimes).
+**Action:** Updated GitHub workflows to pin Python 3.11.x, install the package in editable mode ahead of lint/tests/prompt validation, refreshed docs runbooks with the 3.11.dev workflow, and added verification guidance for byte-stable generator reruns.
 ### Console entry points & coverage alignment
 **Decision:** Migrate executable scripts to src-layout entry points with editable-install console scripts and explicit coverage scope.
 **Note:** Developers should run `pip install -e .[dev]` to expose `rc`, `rc-audit`, `rc-recover`, and `rc-wave2`, then rely on Phoenix-stamped coverage gates configured in `pyproject.toml`.

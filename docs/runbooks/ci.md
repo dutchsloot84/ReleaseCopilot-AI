@@ -2,18 +2,20 @@
 
 **Decision:** Keep local developer workflows identical to Actions by running the full Phoenix-aware lint/type/test suite with `pre-commit`.
 **Note:** Use deterministic timestamps (`PHOENIX_TIMESTAMP_OVERRIDE`) when regenerating artifacts or validating prompts to avoid generator drift in CI.
-**Action:** Install dev extras, run `pre-commit run --all-files`, execute mypy/pytest/coverage gate locally, and document prompt validator/CDK guardrails.
+**Action:** Activate a Python 3.11.x environment, install dev extras, run `pre-commit run --all-files`, execute mypy/pytest/coverage gate locally, and document prompt validator/CDK guardrails.
 
 Traceability: `backlog/wave3.yaml` → entry `ci-coverage-gate-pr-summary-comment` and MOP “CI Recovery Plan”.
 
 ## Required tooling
 
 ```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
 python -m pip install --upgrade pip wheel
 pip install -e .[dev]
 ```
 
-This ensures `pre-commit`, mypy, pytest, and generator dependencies (Jinja2, slugify, etc.) match CI.
+Always run these commands from Python 3.11.x; CI executes the same interpreter across lint, prompt validation, generator drift, and tests. This ensures `pre-commit`, mypy, pytest, and generator dependencies (Jinja2, slugify, etc.) match CI.
 
 ## Lint, types, and prompt validation
 
