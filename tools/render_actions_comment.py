@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 PHOENIX_TZ = ZoneInfo("America/Phoenix")
 COMMENT_MARKER = "<!-- actions-comment -->"
 COMMENT_TITLE = "⚠️ Outstanding Human Actions"
+TIMESTAMP_ENV = "PHOENIX_TIMESTAMP_OVERRIDE"
 
 
 @dataclass
@@ -91,7 +92,7 @@ def build_comment(
     pr_number: int,
     git_sha: str,
 ) -> str:
-    timestamp = datetime.now(PHOENIX_TZ).strftime("%Y-%m-%d %H:%M MST")
+    timestamp = _phoenix_now().strftime("%Y-%m-%d %H:%M MST")
     header = [COMMENT_MARKER, f"{COMMENT_TITLE}", ""]
     metadata = [
         f"Run metadata (git: `{git_sha}`, args: `{' '.join(sys.argv[1:]) or 'default'}`, time: {timestamp}).",
@@ -114,6 +115,20 @@ def build_comment(
             body_lines.append("No outstanding human actions tracked.")
     body = "\n".join(header + metadata + [""] + body_lines)
     return body
+
+
+def _phoenix_now() -> datetime:
+    override = os.environ.get(TIMESTAMP_ENV)
+    if override:
+        try:
+            candidate = datetime.fromisoformat(override)
+        except ValueError:
+            pass
+        else:
+            if candidate.tzinfo is None:
+                candidate = candidate.replace(tzinfo=PHOENIX_TZ)
+            return candidate.astimezone(PHOENIX_TZ)
+    return datetime.now(PHOENIX_TZ)
 
 
 def github_request(method: str, url: str, token: str, data: Optional[dict] = None) -> dict:

@@ -6,6 +6,7 @@ import argparse
 from dataclasses import dataclass
 from datetime import datetime
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -22,30 +23,70 @@ class ValidationConfig:
     git_sha: str
 
 
+TIMESTAMP_ENV = "PHOENIX_TIMESTAMP_OVERRIDE"
+
+
+def _phoenix_now() -> datetime:
+    """Return deterministic Phoenix time, honoring overrides when provided."""
+
+    override = os.environ.get(TIMESTAMP_ENV)
+    if override:
+        try:
+            candidate = datetime.fromisoformat(override)
+        except ValueError:
+            pass
+        else:
+            if candidate.tzinfo is None:
+                candidate = candidate.replace(tzinfo=PHOENIX_TZ)
+            return candidate.astimezone(PHOENIX_TZ)
+    return datetime.now(PHOENIX_TZ)
+
+
 class PromptRecipeValidator:
     def __init__(self, config: ValidationConfig) -> None:
         self.config = config
+        self.repo_root = Path.cwd().resolve()
+
+    def _ensure_absolute(self, path: Path) -> Path:
+        if path.is_absolute():
+            return path.resolve()
+        return (self.repo_root / path).resolve()
+
+    def _as_repo_relative(self, path: Path) -> str:
+        resolved = path.resolve()
+        try:
+            return resolved.relative_to(self.repo_root).as_posix()
+        except ValueError:
+            return resolved.as_posix()
 
     def gather_prompts(self) -> List[Path]:
         prompts: List[Path] = []
         ignore = {"README.md", "subprompt_template.md", "mop_wave1_security.md"}
         for directory in self.config.prompts_dirs:
-            for path in directory.glob("*.md"):
+            resolved_dir = self._ensure_absolute(directory)
+            for path in resolved_dir.glob("*.md"):
                 if path.name in ignore:
                     continue
-                prompts.append(path)
+                prompts.append(path.resolve())
         return sorted(prompts)
 
     def gather_recipe_mapping(self) -> Dict[str, Path]:
         mapping: Dict[str, Path] = {}
-        for recipe_path in sorted(self.config.recipes_dir.glob("*_recipe.md")):
+        recipes_root = self._ensure_absolute(self.config.recipes_dir)
+        for recipe_path in sorted(recipes_root.glob("*_recipe.md")):
             sub_prompts = self._extract_sub_prompt_paths(recipe_path)
             for entry in sub_prompts:
                 normalized = entry.strip()
                 if not normalized:
                     continue
-                mapping[normalized] = recipe_path
+                key = self._normalize_recipe_target(normalized)
+                mapping[key] = recipe_path.resolve()
         return mapping
+
+    def _normalize_recipe_target(self, entry: str) -> str:
+        candidate = Path(entry)
+        resolved = self._ensure_absolute(candidate)
+        return self._as_repo_relative(resolved)
 
     def _extract_sub_prompt_paths(self, recipe_path: Path) -> Sequence[str]:
         lines = recipe_path.read_text(encoding="utf-8").splitlines()
@@ -64,13 +105,8 @@ class PromptRecipeValidator:
         prompts = self.gather_prompts()
         mapping = self.gather_recipe_mapping()
         missing: List[str] = []
-        repo_root = Path.cwd().resolve()
         for prompt in prompts:
-            prompt_path = prompt if prompt.is_absolute() else (repo_root / prompt).resolve()
-            try:
-                key = str(prompt_path.relative_to(repo_root))
-            except ValueError:
-                key = str(prompt_path)
+            key = self._as_repo_relative(prompt)
             if key not in mapping:
                 missing.append(key)
         return missing
@@ -150,12 +186,29 @@ def emit_metadata(
     recipes_dir: Path,
     missing: Sequence[str],
 ) -> None:
+    repo_root = Path.cwd().resolve()
+    resolved_dirs = [Path(path).resolve() for path in prompts_dirs]
+    if resolved_dirs:
+        try:
+            common_root = Path(os.path.commonpath([path.as_posix() for path in resolved_dirs]))
+        except ValueError:
+            common_root = prompts_root.resolve()
+    else:
+        common_root = prompts_root.resolve()
+
+    def _relative(path: Path) -> str:
+        resolved = Path(path).resolve()
+        try:
+            return resolved.relative_to(repo_root).as_posix()
+        except ValueError:
+            return resolved.as_posix()
+
     payload = {
-        "timestamp_mst": datetime.now(PHOENIX_TZ).strftime("%Y-%m-%d %H:%M MST"),
+        "timestamp_mst": _phoenix_now().strftime("%Y-%m-%d %H:%M MST"),
         "git_sha": git_sha,
-        "prompts_root": str(prompts_root),
-        "prompts_dirs": [str(path) for path in prompts_dirs],
-        "recipes_dir": str(recipes_dir),
+        "prompts_root": _relative(common_root),
+        "prompts_dirs": [_relative(path) for path in resolved_dirs],
+        "recipes_dir": _relative(recipes_dir),
         "waves": list(waves or []),
         "missing_prompts": list(missing),
         "cli_args": sys.argv[1:],

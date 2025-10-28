@@ -76,6 +76,8 @@ jobs:
     needs: detect-waves
     if: ${{ needs.detect-waves.outputs.has_waves == 'true' }}
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
     strategy:
       fail-fast: false
       matrix:
@@ -94,6 +96,8 @@ jobs:
       - validate-prompts
     if: ${{ needs.detect-waves.outputs.has_waves == 'false' || needs.validate-prompts.result == 'success' }}
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

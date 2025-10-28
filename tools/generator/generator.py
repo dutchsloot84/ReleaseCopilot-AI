@@ -18,6 +18,7 @@ import yaml
 from .archive import PHOENIX_TZ as ARCHIVE_TZ, ArchiveResult, archive_previous_wave
 
 PHOENIX_TZ: Final[str] = ARCHIVE_TZ
+TIMESTAMP_ENV = "PHOENIX_TIMESTAMP_OVERRIDE"
 
 
 @dataclass(frozen=True)
@@ -44,6 +45,16 @@ def zoned_now(timezone: str = PHOENIX_TZ) -> datetime:
     """Return current time in the requested timezone (default Phoenix)."""
 
     zone = ZoneInfo(timezone)
+    override = os.environ.get(TIMESTAMP_ENV)
+    if override:
+        try:
+            moment = datetime.fromisoformat(override)
+        except ValueError:
+            pass
+        else:
+            if moment.tzinfo is None:
+                moment = moment.replace(tzinfo=zone)
+            return moment.astimezone(zone).replace(microsecond=0)
     return datetime.now(tz=zone).replace(microsecond=0)
 
 

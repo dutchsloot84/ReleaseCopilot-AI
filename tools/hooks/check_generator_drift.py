@@ -24,10 +24,18 @@ def _run(
     cwd: Path | None = None,
     env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
+    effective_env = dict(os.environ)
+    python_path_parts = [str(REPO_ROOT), str(REPO_ROOT / "src")]
+    if env:
+        effective_env.update(env)
+    existing_python_path = effective_env.get("PYTHONPATH")
+    if existing_python_path:
+        python_path_parts.append(existing_python_path)
+    effective_env["PYTHONPATH"] = os.pathsep.join(python_path_parts)
     return subprocess.run(
         list(command),
         cwd=str(cwd or REPO_ROOT),
-        env=env,
+        env=effective_env,
         check=True,
         text=True,
     )

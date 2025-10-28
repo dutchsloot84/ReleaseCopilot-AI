@@ -98,6 +98,50 @@ def test_validator_passes_with_recipe(tmp_path: Path, monkeypatch: pytest.Monkey
     assert exit_code == 0
 
 
+def test_metadata_normalizes_paths(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    prompts_dir = Path("prompts")
+    prompts_dir.mkdir()
+    prompt_path = prompts_dir / "task.md"
+    prompt_path.write_text("content", encoding="utf-8")
+
+    recipes_dir = Path("recipes")
+    recipes_dir.mkdir()
+    recipe = recipes_dir / "task_recipe.md"
+    recipe.write_text(
+        "\n".join(
+            [
+                "# Recipe",
+                "- **Sub-Prompt Path:** prompts/task.md",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv("PHOENIX_TIMESTAMP_OVERRIDE", "2024-01-02T03:04:05-07:00")
+
+    exit_code = validate_prompts.main(
+        [
+            "--prompts-dir",
+            str(prompts_dir),
+            "--recipes-dir",
+            str(recipes_dir),
+        ]
+    )
+
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert payload["timestamp_mst"] == "2024-01-02 03:04 MST"
+    assert payload["prompts_root"] == "prompts"
+    assert payload["prompts_dirs"] == ["prompts"]
+    assert payload["recipes_dir"] == "recipes"
+
+
 def test_validator_passes_with_relative_paths(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

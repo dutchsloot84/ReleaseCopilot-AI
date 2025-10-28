@@ -39,3 +39,12 @@ def test_build_comment_respects_custom_timezone(monkeypatch) -> None:
     assert "90.0%" in comment
     assert "75.0%" in comment
     assert "2025-10-17 15:30:00 UTC" in comment
+
+
+def test_build_comment_uses_override(monkeypatch) -> None:
+    monkeypatch.delenv("PHOENIX_TIMESTAMP_OVERRIDE", raising=False)
+    monkeypatch.setenv("PHOENIX_TIMESTAMP_OVERRIDE", "2024-05-06T07:08:09-07:00")
+
+    comment = coverage_comment.build_comment(coverage=80.0)
+
+    assert "2024-05-06 07:08:09 MST" in comment
