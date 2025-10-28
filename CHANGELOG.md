@@ -1,4 +1,8 @@
 ## [Unreleased]
+### Pre-commit scope realignment
+**Decision:** Keep the default pre-commit suite lightweight (Ruff, formatters, text hygiene) and rely on CI for mypy, generator drift, and other deterministic gates.
+**Note:** Phoenix-aware determinism, coverage enforcement, and prompt validation remain CI responsibilities on Python 3.11.x with editable installs.
+**Action:** Removed mypy and generator drift from `.pre-commit-config.yaml`, refreshed runbooks to document the split responsibilities, and pointed contributors to `make check-generated`/`mypy --config-file pyproject.toml` for on-demand local checks.
 ### Editable install parity for CI hooks
 **Decision:** Require every CI job that runs pre-commit, generators, or tests to activate Python 3.11.x and perform `pip install -e .[dev]` before invoking project tooling.
 **Note:** This keeps the `releasecopilot` package, Click CLI dependencies, and Phoenix-deterministic generators importable inside hooks and GitHub Actions (no stray Python 3.12 runtimes).

@@ -1,8 +1,8 @@
 # CI Execution Parity
 
-**Decision:** Keep local developer workflows identical to Actions by running the full Phoenix-aware lint/type/test suite with `pre-commit`.
+**Decision:** Keep pre-commit lightweight for fast local polish while CI enforces the full Phoenix-aware lint/type/test suite.
 **Note:** Use deterministic timestamps (`PHOENIX_TIMESTAMP_OVERRIDE`) when regenerating artifacts or validating prompts to avoid generator drift in CI.
-**Action:** Activate a Python 3.11.x environment, install dev extras, run `pre-commit run --all-files`, execute mypy/pytest/coverage gate locally, and document prompt validator/CDK guardrails.
+**Action:** Activate a Python 3.11.x environment, install dev extras, run the lightweight pre-commit hooks, then execute mypy/pytest/coverage gate manually as needed to mirror CI.
 
 Traceability: `backlog/wave3.yaml` → entry `ci-coverage-gate-pr-summary-comment` and MOP “CI Recovery Plan”.
 
@@ -19,8 +19,8 @@ Always run these commands from Python 3.11.x; CI executes the same interpreter a
 
 ## Lint, types, and prompt validation
 
-1. Run `python -m pre_commit run --all-files --show-diff-on-failure`. CI now uses the same entrypoint via `scripts/ci/run_precommit.sh`, cached under `~/.cache/pre-commit`.
-2. Execute `mypy --config-file pyproject.toml` to match the lint matrix. Narrow ignores locally before pushing.
+1. Run `python -m pre_commit run --all-files --show-diff-on-failure` for quick format/lint hygiene (Ruff, codespell, YAML/private-key checks).
+2. Execute `mypy --config-file pyproject.toml` separately to match the lint matrix. Narrow ignores locally before pushing.
 3. For prompt waves, run `python tools/validate_prompts.py --prompts-root project/prompts --recipes-dir project/prompts/prompt_recipes`. Set `PHOENIX_TIMESTAMP_OVERRIDE=<iso8601>` when diffing generated metadata to keep timestamps stable across reruns.
 
 ## Tests and coverage gate
@@ -33,7 +33,7 @@ Always run these commands from Python 3.11.x; CI executes the same interpreter a
 
 - `make gen-wave3` resolves `python` from your active environment (see the `PYTHON` variable in `Makefile`). Activate the Python 3.11 virtualenv first or call `make PYTHON=$(which python)` to ensure the generator never falls back to a system interpreter.
 - Set `PHOENIX_TIMESTAMP_OVERRIDE` (ISO-8601, Phoenix offset) before running `make gen-wave3`, `python tools/render_actions_comment.py`, or `python tools/generator/archive.py` to avoid drift.
-- Verify `make check-generated` is clean before pushing; generator drift fails both pre-commit and CI.
+- Verify `make check-generated` is clean before pushing. CI always runs this target, and developers can invoke it manually when touching generated artifacts.
 - For CDK synth/diff jobs ensure `cdk.json` points to the repo root entrypoint (`python -m infra.app`). Run `npm ci && npx cdk synth` locally when touching infrastructure modules.
 
 ## Troubleshooting

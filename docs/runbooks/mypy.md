@@ -2,7 +2,7 @@
 
 **Decision:** Keep `mypy --config-file pyproject.toml` as the single source of truth for type checks across CI and local runs.
 **Note:** Prefer tightening ignores incrementally—document any temporary `type: ignore` annotations in PR descriptions.
-**Action:** Activate a Python 3.11.x environment, install dev extras, invoke mypy via `pre-commit` or CLI, and refresh stubs when third-party packages bleed `Any`.
+**Action:** Activate a Python 3.11.x environment, install dev extras, invoke mypy directly via CLI, and refresh stubs when third-party packages bleed `Any`.
 
 ## Installation
 
@@ -19,7 +19,7 @@ Use Python 3.11.x here; CI type checks run on the same interpreter, which keeps 
 
 - Primary command: `mypy --config-file pyproject.toml` (same as CI matrix).
 - Scoped package checks: `mypy -p releasecopilot -p clients -p services` when iterating quickly.
-- Pre-commit integration: `python -m pre_commit run mypy --all-files` shares caches with CI via `~/.cache/pre-commit`.
+- Optional integration: run `python -m pre_commit run mypy --all-files` if you add the hook locally, but the default pre-commit configuration keeps mypy out-of-band for speed.
 
 ## Fixing failures
 

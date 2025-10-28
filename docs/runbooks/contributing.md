@@ -12,7 +12,7 @@ The Wave 3 Mission Outline Plan codified our contributor workflow, including the
    ```bash
    pre-commit install
    ```
-3. Run every hook at least once before opening a pull request. CI runs the same command and expects timestamps in America/Phoenix (UTC-7 year round):
+3. Run every hook at least once before opening a pull request. CI runs the same entrypoint but supplements it with heavier checks downstream; keep timestamps in America/Phoenix (UTC-7 year round):
    ```bash
    pre-commit run --all-files --show-diff-on-failure
    ```
@@ -21,9 +21,9 @@ The Wave 3 Mission Outline Plan codified our contributor workflow, including the
 
 - `ruff check --fix` applies lint fixes and flags style regressions.
 - `ruff format` keeps Python code deterministic without relying on Black.
-- `mypy` performs static type checks using the repository configuration in `pyproject.toml`.
+- `codespell` guards against spelling regressions in text assets.
 
-The `.github/workflows/ci.yml` pipeline now runs the same tooling directly—`pre-commit run --all-files`, `ruff check .`, `ruff format --check .`, `mypy -p releasecopilot -p src.cli -p clients`, and `pytest` (with the coverage gate) before packaging/CDK jobs begin. Any failure blocks packaging and deployment jobs downstream.
+The `.github/workflows/ci.yml` pipeline builds on these quick hooks by running `pip install -e .[dev]`, mypy, generator drift detection, prompt validation, and the pytest + coverage gate on Python 3.11.x before packaging/CDK jobs begin. Any failure blocks packaging and deployment jobs downstream.
 
 ### Test isolation policies
 
