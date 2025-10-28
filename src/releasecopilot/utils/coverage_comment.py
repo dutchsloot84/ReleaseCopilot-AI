@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime
+import os
 from zoneinfo import ZoneInfo
 
 PHOENIX_TZ = ZoneInfo("America/Phoenix")
 COMMENT_MARKER = "<!-- releasecopilot:coverage -->"
+TIMESTAMP_ENV = "PHOENIX_TIMESTAMP_OVERRIDE"
 
 
 def build_comment(
@@ -19,7 +21,7 @@ def build_comment(
     """Return a Markdown comment summarising coverage results."""
 
     zone = tz or PHOENIX_TZ
-    timestamp = datetime.now(zone).strftime("%Y-%m-%d %H:%M:%S %Z")
+    timestamp = _phoenix_now(zone).strftime("%Y-%m-%d %H:%M:%S %Z")
     file_count = len(paths) if paths else None
     lines = [
         COMMENT_MARKER,
@@ -36,6 +38,20 @@ def build_comment(
     if file_count is not None:
         lines.append(f"| Files gated | {file_count} |")
     return "\n".join(lines)
+
+
+def _phoenix_now(zone: ZoneInfo) -> datetime:
+    override = os.environ.get(TIMESTAMP_ENV)
+    if override:
+        try:
+            candidate = datetime.fromisoformat(override)
+        except ValueError:
+            pass
+        else:
+            if candidate.tzinfo is None:
+                candidate = candidate.replace(tzinfo=zone)
+            return candidate.astimezone(zone)
+    return datetime.now(zone)
 
 
 __all__ = ["PHOENIX_TZ", "COMMENT_MARKER", "build_comment"]

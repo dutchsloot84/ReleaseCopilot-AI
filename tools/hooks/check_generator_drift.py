@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from importlib import util as importlib_util
 import os
 from pathlib import Path
 import subprocess
@@ -24,10 +25,18 @@ def _run(
     cwd: Path | None = None,
     env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
+    effective_env = dict(os.environ)
+    python_path_parts = [str(REPO_ROOT), str(REPO_ROOT / "src")]
+    if env:
+        effective_env.update(env)
+    existing_python_path = effective_env.get("PYTHONPATH")
+    if existing_python_path:
+        python_path_parts.append(existing_python_path)
+    effective_env["PYTHONPATH"] = os.pathsep.join(python_path_parts)
     return subprocess.run(
         list(command),
         cwd=str(cwd or REPO_ROOT),
-        env=env,
+        env=effective_env,
         check=True,
         text=True,
     )
@@ -35,6 +44,15 @@ def _run(
 
 def _should_skip() -> bool:
     return os.environ.get("RELEASECOPILOT_SKIP_GENERATOR", "0") == "1"
+
+
+def _missing_modules() -> list[str]:
+    modules = ["releasecopilot", "click"]
+    missing: list[str] = []
+    for module in modules:
+        if importlib_util.find_spec(module) is None:
+            missing.append(module)
+    return missing
 
 
 def run_generator(*, spec: Path = DEFAULT_SPEC, timezone: str = DEFAULT_TIMEZONE) -> None:
@@ -66,6 +84,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     del argv  # currently unused, reserved for future options
     if _should_skip():
         return 0
+
+    missing = _missing_modules()
+    if missing:
+        module_list = ", ".join(sorted(missing))
+        print(
+            f"Missing required modules for generator drift hook: {module_list}.",
+            file=sys.stderr,
+        )
+        print(
+            "Activate the Python 3.11 virtualenv and run 'pip install -e .[dev]'"
+            " before re-running pre-commit.",
+            file=sys.stderr,
+        )
+        return 1
 
     run_generator()
     try:

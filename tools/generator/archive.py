@@ -6,12 +6,14 @@ from dataclasses import dataclass
 from datetime import datetime
 import io
 import json
+import os
 from pathlib import Path
 import tarfile
 from typing import Final
 from zoneinfo import ZoneInfo
 
 PHOENIX_TZ: Final[str] = "America/Phoenix"
+TIMESTAMP_ENV = "PHOENIX_TIMESTAMP_OVERRIDE"
 
 
 @dataclass(frozen=True)
@@ -40,7 +42,22 @@ def archive_previous_wave(
         return None
 
     zone = ZoneInfo(timezone)
-    moment = (now or datetime.now(tz=zone)).astimezone(zone)
+    moment_candidate: datetime | None = None
+    if now is not None:
+        moment_candidate = now
+    else:
+        override = os.environ.get(TIMESTAMP_ENV)
+        if override:
+            try:
+                candidate = datetime.fromisoformat(override)
+            except ValueError:
+                candidate = None
+            else:
+                if candidate.tzinfo is None:
+                    candidate = candidate.replace(tzinfo=zone)
+                moment_candidate = candidate.astimezone(zone)
+
+    moment = (moment_candidate or datetime.now(tz=zone)).astimezone(zone)
     archive_dir = root / "artifacts" / "issues" / "archive"
     archive_dir.mkdir(parents=True, exist_ok=True)
     day_stamp = moment.strftime("%Y-%m-%d")

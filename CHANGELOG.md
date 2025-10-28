@@ -1,4 +1,12 @@
 ## [Unreleased]
+### Pre-commit scope realignment
+**Decision:** Keep the default pre-commit suite lightweight (Ruff, formatters, text hygiene) and rely on CI for mypy, generator drift, and other deterministic gates.
+**Note:** Phoenix-aware determinism, coverage enforcement, and prompt validation remain CI responsibilities on Python 3.11.x with editable installs.
+**Action:** Removed mypy and generator drift from `.pre-commit-config.yaml`, refreshed runbooks to document the split responsibilities, and pointed contributors to `make check-generated`/`mypy --config-file pyproject.toml` for on-demand local checks.
+### Editable install parity for CI hooks
+**Decision:** Require every CI job that runs pre-commit, generators, or tests to activate Python 3.11.x and perform `pip install -e .[dev]` before invoking project tooling.
+**Note:** This keeps the `releasecopilot` package, Click CLI dependencies, and Phoenix-deterministic generators importable inside hooks and GitHub Actions (no stray Python 3.12 runtimes).
+**Action:** Updated GitHub workflows to pin Python 3.11.x, install the package in editable mode ahead of lint/tests/prompt validation, refreshed docs runbooks with the 3.11.dev workflow, and added verification guidance for byte-stable generator reruns. The generator drift hook now warns when editable installs are missing, and `make gen-wave3` resolves the active interpreter to avoid Python 3.12 regressions.
 ### Console entry points & coverage alignment
 **Decision:** Migrate executable scripts to src-layout entry points with editable-install console scripts and explicit coverage scope.
 **Note:** Developers should run `pip install -e .[dev]` to expose `rc`, `rc-audit`, `rc-recover`, and `rc-wave2`, then rely on Phoenix-stamped coverage gates configured in `pyproject.toml`.

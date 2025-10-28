@@ -1,4 +1,4 @@
-PYTHON ?= python3
+PYTHON ?= $(shell command -v python)
 
 .PHONY: gen-wave3 check-generated lint lint-fix
 

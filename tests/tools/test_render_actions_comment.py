@@ -40,6 +40,13 @@ def test_build_comment_without_matching_actions() -> None:
     assert "No outstanding human actions" in body
 
 
+def test_build_comment_honors_timestamp_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PHOENIX_TIMESTAMP_OVERRIDE", "2024-05-06T07:08:00-07:00")
+    actions: List[render_actions_comment.PendingAction] = []
+    body = render_actions_comment.build_comment(actions, actions, pr_number=3, git_sha="abc123")
+    assert "2024-05-06 07:08 MST" in body
+
+
 def test_main_updates_comment(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
