@@ -31,6 +31,7 @@ Always run these commands from Python 3.11.x; CI executes the same interpreter a
 
 ## Artifact determinism & CDK guardrails
 
+- `make gen-wave3` resolves `python` from your active environment (see the `PYTHON` variable in `Makefile`). Activate the Python 3.11 virtualenv first or call `make PYTHON=$(which python)` to ensure the generator never falls back to a system interpreter.
 - Set `PHOENIX_TIMESTAMP_OVERRIDE` (ISO-8601, Phoenix offset) before running `make gen-wave3`, `python tools/render_actions_comment.py`, or `python tools/generator/archive.py` to avoid drift.
 - Verify `make check-generated` is clean before pushing; generator drift fails both pre-commit and CI.
 - For CDK synth/diff jobs ensure `cdk.json` points to the repo root entrypoint (`python -m infra.app`). Run `npm ci && npx cdk synth` locally when touching infrastructure modules.

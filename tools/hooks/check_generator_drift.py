@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from importlib import util as importlib_util
 import os
 from pathlib import Path
 import subprocess
@@ -45,6 +46,15 @@ def _should_skip() -> bool:
     return os.environ.get("RELEASECOPILOT_SKIP_GENERATOR", "0") == "1"
 
 
+def _missing_modules() -> list[str]:
+    modules = ["releasecopilot", "click"]
+    missing: list[str] = []
+    for module in modules:
+        if importlib_util.find_spec(module) is None:
+            missing.append(module)
+    return missing
+
+
 def run_generator(*, spec: Path = DEFAULT_SPEC, timezone: str = DEFAULT_TIMEZONE) -> None:
     command = (
         sys.executable,
@@ -74,6 +84,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     del argv  # currently unused, reserved for future options
     if _should_skip():
         return 0
+
+    missing = _missing_modules()
+    if missing:
+        module_list = ", ".join(sorted(missing))
+        print(
+            f"Missing required modules for generator drift hook: {module_list}.",
+            file=sys.stderr,
+        )
+        print(
+            "Activate the Python 3.11 virtualenv and run 'pip install -e .[dev]'"
+            " before re-running pre-commit.",
+            file=sys.stderr,
+        )
+        return 1
 
     run_generator()
     try:
